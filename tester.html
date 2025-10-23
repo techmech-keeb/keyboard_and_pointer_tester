@@ -1,0 +1,1104 @@
+<!doctype html>
+<!-- Original code by mass -->
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Keyboard & Pointer Tester — unified / visual / offline</title>
+  <style>
+    :root {
+      --bg: #0c0f14;
+      --panel: #111827;
+      --panel-2: #0e1524;
+      --text: #eef6ff;
+      --muted: #b7c1d1;
+      --accent: #7fffd4;
+      --accent-2: #8fd3ff;
+      --ok: #6ee7a0;
+      --warn: #ffba08;
+      --danger: #ff5a5a;
+      --grid: #1a2540;
+      --border: #213052;
+      --shadow: 0 12px 30px rgba(0, 0, 0, .28);
+      --key: #19233a;
+      --keyEdge: #2a3b66;
+      --keyGlow: rgba(127, 255, 212, .65);
+      /* canvas/dials color vars (DARK default) */
+      --pad-bg: var(--panel-2);
+      --grid-x: rgba(173, 216, 255, .50);
+      --grid-y: rgba(127, 255, 212, .38);
+      --trail: rgba(143, 211, 255, .80);
+      --cross-fill: rgba(127, 255, 212, .90);
+      --cross-stroke: rgba(127, 255, 212, .60);
+      --ptr-line: rgba(143, 211, 255, .95);
+      --ptr-tip: rgba(127, 255, 212, .95);
+      --ptr-arc: rgba(143, 211, 255, .35);
+      --scr-line: rgba(95, 211, 154, .95);
+      --scr-tip: rgba(110, 231, 160, .95);
+      --scr-arc: rgba(110, 231, 160, .35);
+    }
+
+    [data-theme="light"] {
+      --bg: #f7fbff;
+      --panel: #ffffff;
+      --panel-2: #f3f8ff;
+      --text: #0b1220;
+      --muted: #475569;
+      --accent: #0ea5e9;
+      --accent-2: #3757ff;
+      --ok: #059669;
+      --warn: #b45309;
+      --danger: #dc2626;
+      --grid: #e5ecff;
+      --border: #cfe0ff;
+      --shadow: 0 6px 18px rgba(0, 0, 0, .08);
+      --key: #eef3ff;
+      --keyEdge: #cbd8ff;
+      --keyGlow: rgba(55, 87, 255, .35);
+      --pad-bg: var(--panel-2);
+      --grid-x: rgba(2, 6, 23, .18);
+      --grid-y: rgba(2, 6, 23, .12);
+      --trail: rgba(37, 99, 235, .75);
+      --cross-fill: #0ea5e9;
+      --cross-stroke: #075985;
+      --ptr-line: #2563eb;
+      --ptr-tip: #0ea5e9;
+      --ptr-arc: rgba(37, 99, 235, .40);
+      --scr-line: #16a34a;
+      --scr-tip: #22c55e;
+      --scr-arc: rgba(34, 197, 94, .40);
+    }
+
+    [data-theme="pop"] {
+      /* Warm, colorful pastel: yellow × green focus (reduced pink) */
+      --bg: #fffdf5;
+      --panel: #ffffff;
+      --panel-2: #fff7e6;
+      --text: #2f2a1d;
+      --muted: #6b6250;
+      --accent: #f59e0b;
+      --accent-2: #10b981;
+      --ok: #22c55e;
+      --warn: #fbbf24;
+      --danger: #ef4444;
+      --grid: #ffecc7;
+      --border: #ffe1a3;
+      --shadow: 0 10px 26px rgba(245, 158, 11, .20);
+      --key: #fffaf0;
+      --keyEdge: #ffe2b3;
+      --keyGlow: rgba(251, 191, 36, .45);
+      --pad-bg: var(--panel-2);
+      /* pastel grid lines (amber × mint) */
+      --grid-x: rgba(251, 191, 36, .60);
+      /* amber */
+      --grid-y: rgba(52, 211, 153, .60);
+      /* emerald/mint */
+      /* pointer & dials tuned to green/yellow */
+      --trail: rgba(52, 211, 153, .85);
+      --cross-fill: #10b981;
+      --cross-stroke: #f59e0b;
+      --ptr-line: #10b981;
+      --ptr-tip: #34d399;
+      --ptr-arc: rgba(16, 185, 129, .45);
+      --scr-line: #f59e0b;
+      --scr-tip: #fbbf24;
+      --scr-arc: rgba(251, 191, 36, .45);
+    }
+
+    [data-theme="classic"] {
+      --bg: #0e0e10;
+      --panel: #17181b;
+      --panel-2: #111215;
+      --text: #f2f2f2;
+      --muted: #c7c7c7;
+      --accent: #e5e7eb;
+      --accent-2: #a3a3a3;
+      --ok: #a3e635;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --grid: #202225;
+      --border: #3a3c40;
+      --shadow: 0 10px 24px rgba(0, 0, 0, .25);
+      --key: #1b1c1f;
+      --keyEdge: #2b2c30;
+      --keyGlow: rgba(229, 231, 235, .35);
+      --pad-bg: var(--panel-2);
+      --grid-x: rgba(255, 255, 255, .50);
+      --grid-y: rgba(255, 255, 255, .35);
+      --trail: rgba(229, 231, 235, .85);
+      --cross-fill: #e5e7eb;
+      --cross-stroke: #9ca3af;
+      --ptr-line: #e5e7eb;
+      --ptr-tip: #f3f4f6;
+      --ptr-arc: rgba(229, 231, 235, .40);
+      --scr-line: #a3e635;
+      --scr-tip: #bef264;
+      --scr-arc: rgba(163, 230, 53, .40);
+    }
+
+    --trail: rgba(229, 231, 235, .85);
+    --cross-fill: #e5e7eb;
+    --cross-stroke: #9ca3af;
+    --ptr-line: #e5e7eb;
+    --ptr-tip: #f3f4f6;
+    --ptr-arc: rgba(229, 231, 235, .40);
+    --scr-line: #a3e635;
+    --scr-tip: #bef264;
+    --scr-arc: rgba(163, 230, 53, .40);
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Noto Sans JP, sans-serif
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 16px 28px
+    }
+
+    header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 6px 0 12px
+    }
+
+    .title {
+      font-weight: 800;
+      letter-spacing: .2px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .title small {
+      opacity: .75;
+      font-weight: 600
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden
+    }
+
+    .card .body {
+      padding: 12px 16px
+    }
+
+    button,
+    .chip {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 0 rgba(0, 0, 0, .08);
+      transition: transform .05s ease, background .2s ease, border .2s ease
+    }
+
+    button:hover {
+      background: #1b2338
+    }
+
+    button:active {
+      transform: translateY(1px)
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px
+    }
+
+    .muted {
+      color: var(--muted)
+    }
+
+    .spacer {
+      flex: 1
+    }
+
+    .hint {
+      font-size: 13px;
+      opacity: .9;
+      margin: .25rem 0
+    }
+
+    .lead {
+      font-weight: 700
+    }
+
+    /* unified layout */
+    #unified {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px
+    }
+
+    @media (max-width:980px) {
+      #unified {
+        grid-template-columns: 1fr
+      }
+    }
+
+    /* left column */
+    .leftCol {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 12px
+    }
+
+    textarea#typingArea {
+      width: 96%;
+      min-height: 240px;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 14px;
+      background: var(--panel-2);
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.7
+    }
+
+    /* On-screen keyboard */
+    .kbdWrap {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: radial-gradient(1200px 300px at 10% -10%, rgba(143, 211, 255, .15), transparent), radial-gradient(800px 300px at 100% 120%, rgba(127, 255, 212, .12), transparent)
+    }
+
+    .keyboard {
+      display: grid;
+      grid-template-columns: repeat(30, 1fr);
+      grid-auto-rows: 42px;
+      gap: 8px
+    }
+
+    .row {
+      display: contents
+    }
+
+    .k {
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-radius: 10px;
+      border: 1px solid var(--keyEdge);
+      background: linear-gradient(180deg, var(--key), rgba(0, 0, 0, .05));
+      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .2), 0 6px 14px rgba(0, 0, 0, .18);
+      font-weight: 700;
+      letter-spacing: .3px;
+      position: relative
+    }
+
+    .k small {
+      opacity: .7;
+      font-weight: 600
+    }
+
+    .k.down {
+      outline: 2px solid var(--accent);
+      box-shadow: 0 0 0 3px var(--keyGlow), inset 0 -2px 0 rgba(0, 0, 0, .15), 0 8px 22px rgba(0, 0, 0, .35);
+      background: linear-gradient(180deg, rgba(127, 255, 212, .08), rgba(0, 0, 0, .06))
+    }
+
+    .k[data-code="CapsLock"] {
+      justify-content: center;
+      text-align: center
+    }
+
+    .w1 {
+      grid-column: span 2
+    }
+
+    .w15 {
+      grid-column: span 3
+    }
+
+    .w2 {
+      grid-column: span 4
+    }
+
+    .w225 {
+      grid-column: span 4
+    }
+
+    .w275 {
+      grid-column: span 5
+    }
+
+    .w6 {
+      grid-column: span 12
+    }
+
+    .w7 {
+      grid-column: span 14
+    }
+
+    /* right column */
+    .rightCol {
+      display: grid;
+      grid-template-rows: auto auto;
+      gap: 12px
+    }
+
+    #padWrap {
+      position: relative;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: auto;
+      height: 360px;
+      cursor: crosshair;
+      user-select: none;
+      background: var(--pad-bg);
+    }
+
+    #padCanvas {
+      display: block;
+      width: 100%;
+      height: 100%
+    }
+
+    #padContent {
+      position: relative;
+      width: 2400px;
+      height: 1600px
+    }
+
+    .hud {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .hud .chip {
+      backdrop-filter: blur(8px);
+      background: rgba(0, 0, 0, .25)
+    }
+
+    /* XY dials (pointer & scroll) */
+    .xyMeters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px
+    }
+
+    .dial {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      background: var(--panel-2)
+    }
+
+    .dial h3 {
+      margin: 0 0 6px 0;
+      font-size: 13px;
+      opacity: .9
+    }
+
+    .dial canvas {
+      width: 100%;
+      height: 220px;
+      display: block;
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(0, 0, 0, .05))
+    }
+
+    .dialLegend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      opacity: .9
+    }
+
+    .dialLegend span {
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .04)
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="1.8" />
+          <rect x="6" y="8" width="12" height="2" rx="1" fill="currentColor" />
+          <rect x="6" y="12" width="4" height="2" rx="1" fill="currentColor" />
+          <rect x="12" y="12" width="6" height="2" rx="1" fill="currentColor" />
+        </svg>
+        <span>Keyboard & Pointer Tester</span>
+        <small class="muted">(Unified / Visual / Offline)</small>
+      </div>
+      <div class="toolbar">
+        <button id="themeBtn" class="chip" title="テーマ切り替え">🖌 Theme</button>
+        <button id="fsBtn" class="chip" title="フルスクリーン">⛶ Fullscreen</button>
+        <button id="resetBtn" class="chip" title="全リセット">↺ Reset</button>
+      </div>
+    </header>
+
+    <section class="card" id="unifiedCard">
+      <div class="body" id="unified">
+        <!-- LEFT: キー入力テスト -->
+        <div class="leftCol">
+          <div>
+            <p class="hint lead">入力テストアプリです。</p>
+            <div class="toolbar" style="margin:6px 0">
+              <div class="spacer"></div><button id="clearText">Clear</button>
+            </div>
+            <textarea id="typingArea" placeholder="ここにタイプして確認（日本語IME/英語IMEどちらもOK。キーを押すと下のキーボードが光ります）"></textarea>
+          </div>
+
+          <div class="kbdWrap">
+            <div class="keyboard" id="visualKb" aria-label="on-screen keyboard">
+              <!-- Row 0 (Grave to Bs) -->
+              <div class="row">
+                <div class="k w1" data-code="Escape">Esc</div>
+                <div class="k w1" data-code="Backquote">`</div>
+                <div class="k w1" data-code="Digit1">1</div>
+                <div class="k w1" data-code="Digit2">2</div>
+                <div class="k w1" data-code="Digit3">3</div>
+                <div class="k w1" data-code="Digit4">4</div>
+                <div class="k w1" data-code="Digit5">5</div>
+                <div class="k w1" data-code="Digit6">6</div>
+                <div class="k w1" data-code="Digit7">7</div>
+                <div class="k w1" data-code="Digit8">8</div>
+                <div class="k w1" data-code="Digit9">9</div>
+                <div class="k w1" data-code="Digit0">0</div>
+                <div class="k w1" data-code="Minus">-</div>
+                <div class="k w1" data-code="Equal">=</div>
+                <div class="k w1" data-code="Backspace">Bs</div>
+              </div>
+              <!-- Row 1 (Tab row) -->
+              <div class="row">
+                <div class="k w15" data-code="Tab">Tab</div>
+                <div class="k w1" data-code="KeyQ">Q</div>
+                <div class="k w1" data-code="KeyW">W</div>
+                <div class="k w1" data-code="KeyE">E</div>
+                <div class="k w1" data-code="KeyR">R</div>
+                <div class="k w1" data-code="KeyT">T</div>
+                <div class="k w1" data-code="KeyY">Y</div>
+                <div class="k w1" data-code="KeyU">U</div>
+                <div class="k w1" data-code="KeyI">I</div>
+                <div class="k w1" data-code="KeyO">O</div>
+                <div class="k w1" data-code="KeyP">P</div>
+                <div class="k w1" data-code="BracketLeft">[</div>
+                <div class="k w1" data-code="BracketRight">]</div>
+                <div class="k w15" data-code="Backslash">&#92;</div>
+              </div>
+              <!-- Row 2 (Caps row) -->
+              <div class="row">
+                <div class="k w2" data-code="CapsLock">Caps Lock</div>
+                <div class="k w1" data-code="KeyA">A</div>
+                <div class="k w1" data-code="KeyS">S</div>
+                <div class="k w1" data-code="KeyD">D</div>
+                <div class="k w1" data-code="KeyF">F</div>
+                <div class="k w1" data-code="KeyG">G</div>
+                <div class="k w1" data-code="KeyH">H</div>
+                <div class="k w1" data-code="KeyJ">J</div>
+                <div class="k w1" data-code="KeyK">K</div>
+                <div class="k w1" data-code="KeyL">L</div>
+                <div class="k w1" data-code="Semicolon">;</div>
+                <div class="k w1" data-code="Quote">'</div>
+                <div class="k w2" data-code="Enter">Enter</div>
+              </div>
+              <!-- Row 3 (Shift row, enlarge both ends) -->
+              <div class="row">
+                <div class="k w275" data-code="ShiftLeft">Shift</div>
+                <div class="k w1" data-code="KeyZ">Z</div>
+                <div class="k w1" data-code="KeyX">X</div>
+                <div class="k w1" data-code="KeyC">C</div>
+                <div class="k w1" data-code="KeyV">V</div>
+                <div class="k w1" data-code="KeyB">B</div>
+                <div class="k w1" data-code="KeyN">N</div>
+                <div class="k w1" data-code="KeyM">M</div>
+                <div class="k w1" data-code="Comma">,</div>
+                <div class="k w1" data-code="Period">.</div>
+                <div class="k w1" data-code="Slash">/</div>
+                <div class="k w275" data-code="ShiftRight">Shift</div>
+              </div>
+              <!-- Row 4 (Space row; no Shift on this row; GUI between Ctrl & Alt) -->
+              <div class="row">
+                <div class="k w2" data-code="ControlLeft">Ctrl</div>
+                <div class="k w15" data-code="MetaLeft">GUI</div>
+                <div class="k w15" data-code="AltLeft">Alt</div>
+                <div class="k w7" data-code="Space">Space</div>
+                <div class="k w15" data-code="AltRight">Alt</div>
+                <div class="k w15" data-code="ContextMenu"><small>Menu</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: マウステスト -->
+        <div class="rightCol">
+          <p class="hint lead">カーソルを下の領域に移動すると、軌跡とスクロールの確認ができます。</p>
+          <div id="padWrap">
+            <div id="padContent"><canvas id="padCanvas"></canvas></div>
+            <div class="hud">
+              <span class="chip">Type: <b id="pType">mouse</b></span>
+              <span class="chip">client: <b id="clientXY">0,0</b></span>
+              <span class="chip">movement: <b id="moveXY">0,0</b></span>
+              <span class="chip">Btns L/M/R: <b id="btnState">0 0 0</b></span>
+            </div>
+          </div>
+
+          <div class="xyMeters">
+            <div class="dial">
+              <h3>ポインタ速度 XY</h3>
+              <canvas id="ptrDial"></canvas>
+              <div class="dialLegend">
+                <span>vx=<b id="pvx">0</b></span>
+                <span>vy=<b id="pvy">0</b></span>
+                <span>|v|=<b id="pspd">0</b></span>
+              </div>
+            </div>
+            <div class="dial">
+              <h3>スクロール XY</h3>
+              <canvas id="scrDial"></canvas>
+              <div class="dialLegend">
+                <span>dx=<b id="sdx">0</b></span>
+                <span>dy=<b id="sdy">0</b></span>
+                <span>|v|=<b id="sspd">0</b></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function() {
+      const $ = (sel, root = document) => root.querySelector(sel);
+      const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+      // ---------- Theme system ----------
+      const themes = ['dark', 'light', 'pop', 'classic'];
+      let themeIdx = 0;
+
+      function applyTheme(name) {
+        document.documentElement.setAttribute('data-theme', name);
+      }
+
+      function themeColors() {
+        const cs = getComputedStyle(document.documentElement);
+        const get = k => cs.getPropertyValue(k).trim();
+        return {
+          gridX: get('--grid-x'),
+          gridY: get('--grid-y'),
+          trail: get('--trail'),
+          crossFill: get('--cross-fill'),
+          crossStroke: get('--cross-stroke'),
+          ptrLine: get('--ptr-line'),
+          ptrTip: get('--ptr-tip'),
+          ptrArc: get('--ptr-arc'),
+          scrLine: get('--scr-line'),
+          scrTip: get('--scr-tip'),
+          scrArc: get('--scr-arc')
+        };
+      }
+
+      function cycleTheme() {
+        themeIdx = (themeIdx + 1) % themes.length;
+        applyTheme(themes[themeIdx]);
+        updateThemeBtn();
+        draw();
+      }
+      applyTheme('dark');
+      const themeBtnEl = $('#themeBtn');
+
+      function updateThemeBtn() {
+        const n = document.documentElement.getAttribute('data-theme') || 'dark';
+        themeBtnEl.textContent = '🎨 ' + n.charAt(0).toUpperCase() + n.slice(1);
+      }
+      updateThemeBtn();
+      // ---------- LEFT: Keyboard highlighting ----------
+      const typingArea = $('#typingArea');
+      const clearBtn = $('#clearText');
+      const downKeys = new Set();
+
+      function mapMod(code) {
+        switch (code) {
+          case 'ShiftRight':
+            return 'ShiftLeft';
+          case 'ControlRight':
+            return 'ControlLeft';
+          case 'AltRight':
+            return 'AltLeft';
+          case 'MetaRight':
+            return 'MetaLeft';
+          default:
+            return code;
+        }
+      }
+
+      function highlight(code, isDown) {
+        $$('#visualKb .k[data-code="' + CSS.escape(code) + '"]').forEach(el => {
+          if (isDown) el.classList.add('down');
+          else el.classList.remove('down');
+        });
+      }
+
+      function onKeyDown(e) {
+        const code = mapMod(e.code || e.key);
+        downKeys.add(code);
+        highlight(code, true);
+      }
+
+      function onKeyUp(e) {
+        const code = mapMod(e.code || e.key);
+        downKeys.delete(code);
+        highlight(code, false);
+      }
+      typingArea.addEventListener('keydown', onKeyDown);
+      typingArea.addEventListener('keyup', onKeyUp);
+      typingArea.addEventListener('blur', () => {
+        downKeys.clear();
+        $$('#visualKb .k.down').forEach(k => k.classList.remove('down'));
+      }, true);
+      clearBtn.addEventListener('click', () => {
+        typingArea.value = '';
+        typingArea.focus();
+      });
+      // Theme / Fullscreen / Reset
+      $('#themeBtn').addEventListener('click', () => {
+        cycleTheme();
+      });
+      $('#fsBtn').addEventListener('click', () => {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+        else document.exitFullscreen().catch(() => {});
+      });
+      // ---------- RIGHT: Pointer visual & dials ----------
+      const padWrap = $('#padWrap');
+      const padContent = $('#padContent');
+      const pad = $('#padCanvas');
+      const ctx = pad.getContext('2d');
+      const CONTENT_W = 2400,
+        CONTENT_H = 1600;
+      const clientXY = $('#clientXY');
+      const moveXY = $('#moveXY');
+      const pType = $('#pType');
+      const btnState = $('#btnState');
+      const pVel = {
+        x: 0,
+        y: 0
+      }; // pointer velocity accumulator
+      const sVel = {
+        x: 0,
+        y: 0
+      }; // scroll velocity accumulator
+      let crossX = CONTENT_W / 2,
+        crossY = CONTENT_H / 2,
+        trail = [];
+      const ripples = [];
+      let lastClient = null; // last client pos while inside pad
+      let lastClientGlobal = null; // last client pos while outside pad
+      let inPad = false;
+
+      function size() {
+        const dpr = window.devicePixelRatio || 1;
+        padContent.style.width = CONTENT_W + 'px';
+        padContent.style.height = CONTENT_H + 'px';
+        pad.width = Math.floor(CONTENT_W * dpr);
+        pad.height = Math.floor(CONTENT_H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        draw();
+      }
+      window.addEventListener('resize', size, {
+        passive: true
+      });
+      size();
+
+      function draw() {
+        const C = themeColors();
+        const gridX = C.gridX,
+          gridY = C.gridY,
+          trailCol = C.trail,
+          crossFill = C.crossFill,
+          crossStroke = C.crossStroke,
+          rippleCol = C.ptrLine;
+        const w = pad.width / (window.devicePixelRatio || 1),
+          h = pad.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, w, h);
+        // grid
+        ctx.save();
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = 1;
+        for (let x = 0; x < w; x += 24) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.strokeStyle = gridX;
+          ctx.stroke();
+        }
+        for (let y = 0; y < h; y += 24) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.strokeStyle = gridY;
+          ctx.stroke();
+        }
+        ctx.restore();
+        // trail
+        ctx.lineWidth = 2;
+        ctx.save();
+        for (let i = 0; i < trail.length; i++) {
+          const t = trail[i];
+          const a = (i + 1) / Math.max(1, trail.length);
+          ctx.globalAlpha = Math.min(1, 0.2 + a * 0.8);
+          ctx.strokeStyle = trailCol;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, 2.4, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+        // crosshair
+        ctx.fillStyle = crossFill;
+        ctx.beginPath();
+        ctx.arc(crossX, crossY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = crossStroke;
+        ctx.beginPath();
+        ctx.arc(crossX, crossY, 18, 0, Math.PI * 2);
+        ctx.stroke();
+        // ripples
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          const r = ripples[i];
+          r.radius += 2.8;
+          r.alpha *= 0.95;
+          if (r.alpha < 0.03) {
+            ripples.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.globalAlpha = r.alpha;
+          ctx.strokeStyle = rippleCol;
+          ctx.beginPath();
+          ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function clamp(v, min, max) {
+        return v < min ? min : v > max ? max : v;
+      }
+      padWrap.addEventListener('mouseenter', () => {
+        inPad = true;
+        lastClientGlobal = null;
+      });
+      padWrap.addEventListener('mouseleave', () => {
+        inPad = false;
+        lastClient = null;
+      });
+      // Inside the pad: update crosshair, trail, and pointer speed
+      padWrap.addEventListener('mousemove', (e) => {
+        const rect = padWrap.getBoundingClientRect();
+        let mvX = 0,
+          mvY = 0;
+        if (lastClient) {
+          mvX = (e.clientX - lastClient.x);
+          mvY = (e.clientY - lastClient.y);
+        }
+        lastClient = {
+          x: e.clientX,
+          y: e.clientY
+        };
+        const cx = (e.clientX - rect.left) + padWrap.scrollLeft;
+        const cy = (e.clientY - rect.top) + padWrap.scrollTop;
+        crossX = clamp(cx, 0, CONTENT_W);
+        crossY = clamp(cy, 0, CONTENT_H);
+        clientXY.textContent = String(Math.round(crossX)) + ',' + String(Math.round(crossY));
+        moveXY.textContent = String(Math.round(mvX)) + ',' + String(Math.round(mvY));
+        pType.textContent = e.pointerType || 'mouse';
+        trail.push({
+          x: crossX,
+          y: crossY
+        });
+        if (trail.length > 100) trail.shift();
+        pVel.x += mvX;
+        pVel.y += mvY;
+        draw();
+      });
+      padWrap.addEventListener('scroll', draw, {
+        passive: true
+      });
+      padWrap.addEventListener('mousedown', (e) => {
+        const buttons = [e.buttons & 1, e.buttons & 4, e.buttons & 2].map(b => b ? 1 : 0);
+        btnState.textContent = buttons.join(' ');
+        ripples.push({
+          x: crossX,
+          y: crossY,
+          radius: 0,
+          alpha: .9
+        });
+        draw();
+      });
+      padWrap.addEventListener('mouseup', (e) => {
+        const buttons = [e.buttons & 1, e.buttons & 4, e.buttons & 2].map(b => b ? 1 : 0);
+        btnState.textContent = buttons.join(' ');
+      });
+      padWrap.addEventListener('dblclick', () => {
+        ripples.push({
+          x: crossX,
+          y: crossY,
+          radius: 0,
+          alpha: .9
+        });
+        draw();
+      });
+      // Outside the pad: only update the dials (pointer & scroll)
+      document.addEventListener('mousemove', (e) => {
+        if (inPad) return;
+        if (lastClientGlobal) {
+          pVel.x += (e.clientX - lastClientGlobal.x);
+          pVel.y += (e.clientY - lastClientGlobal.y);
+        }
+        lastClientGlobal = {
+          x: e.clientX,
+          y: e.clientY
+        };
+      }, {
+        passive: true
+      });
+      document.addEventListener('wheel', (e) => {
+        if (inPad) return;
+        sVel.x += e.deltaX;
+        sVel.y += -e.deltaY;
+      }, {
+        passive: true
+      });
+      // Dials
+      const ptrDial = $('#ptrDial');
+      const scrDial = $('#scrDial');
+      const pvxEl = $('#pvx'),
+        pvyEl = $('#pvy'),
+        pspdEl = $('#pspd');
+      const sdxEl = $('#sdx'),
+        sdyEl = $('#sdy'),
+        sspdEl = $('#sspd');
+
+      function sizeDial(canvas) {
+        const r = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(r.width * dpr);
+        canvas.height = Math.floor(r.height * dpr);
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return ctx;
+      }
+      let ptrCtx = sizeDial(ptrDial),
+        scrCtx = sizeDial(scrDial);
+      window.addEventListener('resize', () => {
+        ptrCtx = sizeDial(ptrDial);
+        scrCtx = sizeDial(scrDial);
+      }, {
+        passive: true
+      });
+
+      function drawDial(ctx, vel, range, colors) {
+        const w = ctx.canvas.width / (window.devicePixelRatio || 1);
+        const h = ctx.canvas.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, w, h);
+        const cx = w / 2,
+          cy = h / 2,
+          rad = Math.min(w, h) / 2 - 14;
+        // ring grid
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,.10)';
+        for (let r = rad; r > 0; r -= rad / 4) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        // axis
+        ctx.beginPath();
+        ctx.moveTo(cx - rad, cy);
+        ctx.lineTo(cx + rad, cy);
+        ctx.moveTo(cx, cy - rad);
+        ctx.lineTo(cx, cy + rad);
+        ctx.stroke();
+        ctx.restore();
+        // vector
+        const nx = (vel.x / range) * rad;
+        const ny = (-vel.y / range) * rad; // y up
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + nx, cy + ny);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = colors.line;
+        ctx.stroke();
+        // tip
+        ctx.beginPath();
+        ctx.arc(cx + nx, cy + ny, 5, 0, Math.PI * 2);
+        ctx.fillStyle = colors.tip;
+        ctx.fill();
+        // magnitude arc
+        const mag = Math.hypot(vel.x, vel.y);
+        const ratio = Math.min(1, mag / range);
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad * ratio, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = colors.arc;
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function tick() {
+        const decay = 0.90; // smooth decay
+        pVel.x *= decay;
+        pVel.y *= decay;
+        sVel.x *= decay;
+        sVel.y *= decay;
+        const Cc = themeColors();
+        drawDial(ptrCtx, pVel, 300, {
+          line: Cc.ptrLine,
+          tip: Cc.ptrTip,
+          arc: Cc.ptrArc
+        });
+        drawDial(scrCtx, sVel, 600, {
+          line: Cc.scrLine,
+          tip: Cc.scrTip,
+          arc: Cc.scrArc
+        });
+        pvxEl.textContent = String(Math.round(pVel.x));
+        pvyEl.textContent = String(Math.round(pVel.y));
+        pspdEl.textContent = String(Math.round(Math.hypot(pVel.x, pVel.y)));
+        sdxEl.textContent = String(Math.round(sVel.x));
+        sdyEl.textContent = String(Math.round(sVel.y));
+        sspdEl.textContent = String(Math.round(Math.hypot(sVel.x, sVel.y)));
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      // Wheel inside pad contributes to scroll dial
+      padWrap.addEventListener('wheel', (e) => {
+        sVel.x += e.deltaX;
+        sVel.y += -e.deltaY;
+      }, {
+        passive: true
+      });
+      // Reset
+      $('#resetBtn').addEventListener('click', () => {
+        typingArea.value = '';
+        typingArea.focus();
+        downKeys.clear();
+        $$('#visualKb .k.down').forEach(k => k.classList.remove('down'));
+        crossX = CONTENT_W / 2;
+        crossY = CONTENT_H / 2;
+        trail.length = 0;
+        ripples.length = 0;
+        draw();
+        pVel.x = 0;
+        pVel.y = 0;
+        sVel.x = 0;
+        sVel.y = 0;
+        lastClient = null;
+        lastClientGlobal = null;
+        pvxEl.textContent = pvyEl.textContent = pspdEl.textContent = '0';
+        sdxEl.textContent = sdyEl.textContent = sspdEl.textContent = '0';
+      });
+      // ------------- Minimal Self Tests (console only) -------------
+      (function selfTests() {
+        const tests = [];
+        const ok = (name, cond) => tests.push({
+          name,
+          pass: !!cond
+        });
+        try {
+          ok('DOM要素の存在', ['typingArea', 'visualKb', 'padCanvas', 'ptrDial', 'scrDial'].every(id => document.getElementById(id)));
+          // draw() should not throw
+          let drew = true;
+          try {
+            draw();
+          } catch (e) {
+            drew = false;
+            console.error('draw() error:', e);
+          }
+          ok('draw()が例外を投げない', drew);
+          // theme cycle
+          const before = document.documentElement.getAttribute('data-theme');
+          cycleTheme();
+          const after = document.documentElement.getAttribute('data-theme');
+          ok('テーマ切替が機能', before !== after);
+          // keyboard highlight via synthetic event
+          const keyA = document.querySelector('[data-code="KeyA"]');
+          let hl = true;
+          try {
+            typingArea.dispatchEvent(new KeyboardEvent('keydown', {
+              bubbles: true,
+              code: 'KeyA',
+              key: 'a'
+            }));
+            hl = hl && keyA.classList.contains('down');
+            typingArea.dispatchEvent(new KeyboardEvent('keyup', {
+              bubbles: true,
+              code: 'KeyA',
+              key: 'a'
+            }));
+            hl = hl && !keyA.classList.contains('down');
+          } catch (e) {
+            hl = false;
+            console.warn('synthetic key event not allowed', e);
+          }
+          ok('キー点灯の合成イベント', hl);
+          // dial updates when velocity injected
+          const prev = document.getElementById('pspd').textContent;
+          const prevS = document.getElementById('sspd').textContent;
+          pVel.x += 120;
+          pVel.y += 80;
+          sVel.x += 200;
+          sVel.y += -150;
+          setTimeout(() => {
+            ok('ポインタ速度ダイアルが更新', document.getElementById('pspd').textContent !== prev);
+            ok('スクロールダイアルが更新', document.getElementById('sspd').textContent !== prevS);
+            console.group('%cSelfTests', 'color:#22c55e');
+            tests.forEach(t => console.log((t.pass ? '✔' : '✖'), t.name));
+            console.groupEnd();
+          }, 80);
+        } catch (e) {
+          console.warn('selfTests aborted:', e);
+        }
+      })();
+    })();
+  </script>
+</body>
+
+</html>
