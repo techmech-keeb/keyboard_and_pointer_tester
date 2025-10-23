@@ -161,7 +161,7 @@
     }
 
     .wrap {
-      max-width: 1200px;
+      width: min(1728px, 90vw);
       margin: 0 auto;
       padding: 16px 16px 28px
     }
@@ -296,8 +296,8 @@
 
     .keyboard {
       display: grid;
-      grid-template-columns: repeat(30, 1fr);
-      grid-auto-rows: 42px;
+      grid-template-columns: repeat(88, minmax(0, 1fr));
+      grid-auto-rows: 44px;
       gap: 8px
     }
 
@@ -336,32 +336,60 @@
       text-align: center
     }
 
-    .w1 {
+    .gap {
+      pointer-events: none
+    }
+
+    .w05 {
       grid-column: span 2
     }
 
-    .w15 {
-      grid-column: span 3
-    }
-
-    .w2 {
+    .w1 {
       grid-column: span 4
     }
 
-    .w225 {
-      grid-column: span 4
-    }
-
-    .w275 {
+    .w125 {
       grid-column: span 5
     }
 
-    .w6 {
+    .w15 {
+      grid-column: span 6
+    }
+
+    .w175 {
+      grid-column: span 7
+    }
+
+    .w2 {
+      grid-column: span 8
+    }
+
+    .w225 {
+      grid-column: span 9
+    }
+
+    .w25 {
+      grid-column: span 10
+    }
+
+    .w275 {
+      grid-column: span 11
+    }
+
+    .w3 {
       grid-column: span 12
     }
 
+    .w6 {
+      grid-column: span 24
+    }
+
     .w7 {
-      grid-column: span 14
+      grid-column: span 28
+    }
+
+    .w625 {
+      grid-column: span 25
     }
 
     /* right column */
@@ -488,9 +516,29 @@
 
           <div class="kbdWrap">
             <div class="keyboard" id="visualKb" aria-label="on-screen keyboard">
-              <!-- Row 0 (Grave to Bs) -->
               <div class="row">
                 <div class="k w1" data-code="Escape">Esc</div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1" data-code="F1">F1</div>
+                <div class="k w1" data-code="F2">F2</div>
+                <div class="k w1" data-code="F3">F3</div>
+                <div class="k w1" data-code="F4">F4</div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1" data-code="F5">F5</div>
+                <div class="k w1" data-code="F6">F6</div>
+                <div class="k w1" data-code="F7">F7</div>
+                <div class="k w1" data-code="F8">F8</div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1" data-code="F9">F9</div>
+                <div class="k w1" data-code="F10">F10</div>
+                <div class="k w1" data-code="F11">F11</div>
+                <div class="k w1" data-code="F12">F12</div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1" data-code="PrintScreen">PrtSc</div>
+                <div class="k w1" data-code="ScrollLock">Scroll</div>
+                <div class="k w1" data-code="Pause">Pause</div>
+              </div>
+              <div class="row">
                 <div class="k w1" data-code="Backquote">`</div>
                 <div class="k w1" data-code="Digit1">1</div>
                 <div class="k w1" data-code="Digit2">2</div>
@@ -504,9 +552,12 @@
                 <div class="k w1" data-code="Digit0">0</div>
                 <div class="k w1" data-code="Minus">-</div>
                 <div class="k w1" data-code="Equal">=</div>
-                <div class="k w1" data-code="Backspace">Bs</div>
+                <div class="k w2" data-code="Backspace">Backspace</div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1" data-code="Insert">Ins</div>
+                <div class="k w1" data-code="Home">Home</div>
+                <div class="k w1" data-code="PageUp">PgUp</div>
               </div>
-              <!-- Row 1 (Tab row) -->
               <div class="row">
                 <div class="k w15" data-code="Tab">Tab</div>
                 <div class="k w1" data-code="KeyQ">Q</div>
@@ -522,10 +573,13 @@
                 <div class="k w1" data-code="BracketLeft">[</div>
                 <div class="k w1" data-code="BracketRight">]</div>
                 <div class="k w15" data-code="Backslash">&#92;</div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1" data-code="Delete">Del</div>
+                <div class="k w1" data-code="End">End</div>
+                <div class="k w1" data-code="PageDown">PgDn</div>
               </div>
-              <!-- Row 2 (Caps row) -->
               <div class="row">
-                <div class="k w2" data-code="CapsLock">Caps Lock</div>
+                <div class="k w175" data-code="CapsLock">Caps</div>
                 <div class="k w1" data-code="KeyA">A</div>
                 <div class="k w1" data-code="KeyS">S</div>
                 <div class="k w1" data-code="KeyD">D</div>
@@ -537,11 +591,14 @@
                 <div class="k w1" data-code="KeyL">L</div>
                 <div class="k w1" data-code="Semicolon">;</div>
                 <div class="k w1" data-code="Quote">'</div>
-                <div class="k w2" data-code="Enter">Enter</div>
+                <div class="k w225" data-code="Enter">Enter</div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="gap w1" aria-hidden="true"></div>
+                <div class="k w1" data-code="ArrowUp">↑</div>
+                <div class="gap w1" aria-hidden="true"></div>
               </div>
-              <!-- Row 3 (Shift row, enlarge both ends) -->
               <div class="row">
-                <div class="k w275" data-code="ShiftLeft">Shift</div>
+                <div class="k w225" data-code="ShiftLeft">Shift</div>
                 <div class="k w1" data-code="KeyZ">Z</div>
                 <div class="k w1" data-code="KeyX">X</div>
                 <div class="k w1" data-code="KeyC">C</div>
@@ -553,15 +610,20 @@
                 <div class="k w1" data-code="Period">.</div>
                 <div class="k w1" data-code="Slash">/</div>
                 <div class="k w275" data-code="ShiftRight">Shift</div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1" data-code="ArrowLeft">←</div>
+                <div class="k w1" data-code="ArrowDown">↓</div>
+                <div class="k w1" data-code="ArrowRight">→</div>
               </div>
-              <!-- Row 4 (Space row; no Shift on this row; GUI between Ctrl & Alt) -->
               <div class="row">
-                <div class="k w2" data-code="ControlLeft">Ctrl</div>
-                <div class="k w15" data-code="MetaLeft">GUI</div>
-                <div class="k w15" data-code="AltLeft">Alt</div>
-                <div class="k w7" data-code="Space">Space</div>
-                <div class="k w15" data-code="AltRight">Alt</div>
-                <div class="k w15" data-code="ContextMenu"><small>Menu</small></div>
+                <div class="k w125" data-code="ControlLeft">Ctrl</div>
+                <div class="k w125" data-code="MetaLeft">Win</div>
+                <div class="k w125" data-code="AltLeft">Alt</div>
+                <div class="k w625" data-code="Space">Space</div>
+                <div class="k w125" data-code="AltRight">Alt</div>
+                <div class="k w125" data-code="MetaRight">Win</div>
+                <div class="k w125" data-code="ContextMenu">Menu</div>
+                <div class="k w125" data-code="ControlRight">Ctrl</div>
               </div>
             </div>
           </div>
@@ -728,6 +790,10 @@
         crossY = CONTENT_H / 2,
         trail = [];
       const ripples = [];
+      const MAX_RIPPLES = 6;
+      const RIPPLE_SPEED = 2.8 / 16.7;
+      const RIPPLE_DECAY_RATE = Math.log(0.95) / 16.7;
+      let rippleAnim = null;
       let lastClient = null; // last client pos while inside pad
       let lastClientGlobal = null; // last client pos while outside pad
       let inPad = false;
@@ -799,21 +865,57 @@
         ctx.arc(crossX, crossY, 18, 0, Math.PI * 2);
         ctx.stroke();
         // ripples
-        for (let i = ripples.length - 1; i >= 0; i--) {
+        ctx.save();
+        ctx.strokeStyle = rippleCol;
+        for (let i = 0; i < ripples.length; i++) {
           const r = ripples[i];
-          r.radius += 2.8;
-          r.alpha *= 0.95;
-          if (r.alpha < 0.03) {
-            ripples.splice(i, 1);
-            continue;
-          }
-          ctx.save();
+          if (r.alpha <= 0) continue;
           ctx.globalAlpha = r.alpha;
-          ctx.strokeStyle = rippleCol;
           ctx.beginPath();
           ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
           ctx.stroke();
-          ctx.restore();
+        }
+        ctx.restore();
+      }
+
+      function spawnRipple(x, y) {
+        const now = performance.now();
+        if (ripples.length >= MAX_RIPPLES) {
+          ripples.splice(0, ripples.length - MAX_RIPPLES + 1);
+        }
+        ripples.push({
+          x,
+          y,
+          radius: 0,
+          alpha: .9,
+          time: now
+        });
+        draw();
+        if (!rippleAnim) {
+          rippleAnim = requestAnimationFrame(stepRipples);
+        }
+      }
+
+      function stepRipples(ts) {
+        let needsRedraw = false;
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          const r = ripples[i];
+          const dt = Math.max(0, ts - (r.time || ts));
+          r.time = ts;
+          r.radius += dt * RIPPLE_SPEED;
+          r.alpha *= Math.exp(RIPPLE_DECAY_RATE * dt);
+          needsRedraw = true;
+          if (r.alpha < 0.03) {
+            ripples.splice(i, 1);
+          }
+        }
+        if (needsRedraw) {
+          draw();
+        }
+        if (ripples.length) {
+          rippleAnim = requestAnimationFrame(stepRipples);
+        } else {
+          rippleAnim = null;
         }
       }
 
@@ -863,26 +965,14 @@
       padWrap.addEventListener('mousedown', (e) => {
         const buttons = [e.buttons & 1, e.buttons & 4, e.buttons & 2].map(b => b ? 1 : 0);
         btnState.textContent = buttons.join(' ');
-        ripples.push({
-          x: crossX,
-          y: crossY,
-          radius: 0,
-          alpha: .9
-        });
-        draw();
+        spawnRipple(crossX, crossY);
       });
       padWrap.addEventListener('mouseup', (e) => {
         const buttons = [e.buttons & 1, e.buttons & 4, e.buttons & 2].map(b => b ? 1 : 0);
         btnState.textContent = buttons.join(' ');
       });
       padWrap.addEventListener('dblclick', () => {
-        ripples.push({
-          x: crossX,
-          y: crossY,
-          radius: 0,
-          alpha: .9
-        });
-        draw();
+        spawnRipple(crossX, crossY);
       });
       // Outside the pad: only update the dials (pointer & scroll)
       document.addEventListener('mousemove', (e) => {
@@ -1025,6 +1115,10 @@
         crossY = CONTENT_H / 2;
         trail.length = 0;
         ripples.length = 0;
+        if (rippleAnim) {
+          cancelAnimationFrame(rippleAnim);
+          rippleAnim = null;
+        }
         draw();
         pVel.x = 0;
         pVel.y = 0;
