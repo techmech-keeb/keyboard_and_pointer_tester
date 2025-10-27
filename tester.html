@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- Original code by mass -->
 <html lang="ja">
 
 <head>
@@ -70,8 +69,11 @@
       --scr-arc: rgba(34, 197, 94, .40);
     }
 
+    [data-theme="light"] .kbdWrap {
+      box-shadow: none;
+    }
+
     [data-theme="pop"] {
-      /* Warm, colorful pastel: yellow × green focus (reduced pink) */
       --bg: #fffdf5;
       --panel: #ffffff;
       --panel-2: #fff7e6;
@@ -89,12 +91,8 @@
       --keyEdge: #ffe2b3;
       --keyGlow: rgba(251, 191, 36, .45);
       --pad-bg: var(--panel-2);
-      /* pastel grid lines (amber × mint) */
       --grid-x: rgba(251, 191, 36, .60);
-      /* amber */
       --grid-y: rgba(52, 211, 153, .60);
-      /* emerald/mint */
-      /* pointer & dials tuned to green/yellow */
       --trail: rgba(52, 211, 153, .85);
       --cross-fill: #10b981;
       --cross-stroke: #f59e0b;
@@ -104,6 +102,10 @@
       --scr-line: #f59e0b;
       --scr-tip: #fbbf24;
       --scr-arc: rgba(251, 191, 36, .45);
+    }
+
+    [data-theme="pop"] .kbdWrap {
+      box-shadow: none;
     }
 
     [data-theme="classic"] {
@@ -160,8 +162,15 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Noto Sans JP, sans-serif
     }
 
+    body:fullscreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+    }
+
     .wrap {
-      max-width: 1200px;
+      width: min(1728px, 90vw);
       margin: 0 auto;
       padding: 16px 16px 28px
     }
@@ -256,7 +265,7 @@
     /* unified layout */
     #unified {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 4fr 3fr;
       gap: 16px
     }
 
@@ -289,16 +298,18 @@
     /* On-screen keyboard */
     .kbdWrap {
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px;
-      background: radial-gradient(1200px 300px at 10% -10%, rgba(143, 211, 255, .15), transparent), radial-gradient(800px 300px at 100% 120%, rgba(127, 255, 212, .12), transparent)
+      border-radius: 10px;
+      padding: 48px 16px;
+      background: linear-gradient(160deg, var(--panel), var(--panel-2));
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, .3), 0 4px 12px rgba(0, 0, 0, .3);
     }
 
     .keyboard {
       display: grid;
-      grid-template-columns: repeat(30, 1fr);
-      grid-auto-rows: 42px;
-      gap: 8px
+      grid-template-columns: repeat(74, minmax(0, 1fr));
+      grid-auto-rows: clamp(30px, 2.8vw, 40px);
+      gap: 2px;
+      align-items: stretch
     }
 
     .row {
@@ -311,24 +322,85 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      border-radius: 10px;
-      border: 1px solid var(--keyEdge);
-      background: linear-gradient(180deg, var(--key), rgba(0, 0, 0, .05));
-      box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .2), 0 6px 14px rgba(0, 0, 0, .18);
+      border-radius: 6px;
+      background: var(--keyEdge);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, .4);
       font-weight: 700;
       letter-spacing: .3px;
-      position: relative
+      position: relative;
+      line-height: 1.1;
+      font-size: clamp(12px, 1.5vw, 15px);
+      padding-inline: 4px;
+      padding-bottom: 4px;
+      border: 1px solid var(--border);
+      transition: transform .05s ease, box-shadow .05s ease, filter .1s ease, background .05s ease;
+      filter: brightness(1);
+    }
+
+    .k::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: calc(100% - 4px);
+      background: var(--key);
+      border-radius: 6px 6px 5px 5px;
+      box-shadow: inset 0 1px 0px rgba(255, 255, 255, .15);
+      border: 1px solid var(--keyEdge);
+      border-bottom: 0;
+      z-index: 0;
+      transition: height .05s ease, background .05s ease, filter .1s ease, box-shadow .05s ease;
+      filter: brightness(1);
+    }
+
+    .k>span {
+      position: relative;
+      z-index: 1;
     }
 
     .k small {
       opacity: .7;
-      font-weight: 600
+      font-weight: 600;
+      font-size: .78em;
+      display: block;
+      margin-top: 2px
     }
 
     .k.down {
-      outline: 2px solid var(--accent);
-      box-shadow: 0 0 0 3px var(--keyGlow), inset 0 -2px 0 rgba(0, 0, 0, .15), 0 8px 22px rgba(0, 0, 0, .35);
-      background: linear-gradient(180deg, rgba(127, 255, 212, .08), rgba(0, 0, 0, .06))
+      transform: translateY(2px);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+      outline: none;
+      color: var(--bg);
+      background: var(--accent);
+      filter: brightness(0.7);
+    }
+
+    .k.down::before {
+      height: calc(100% - 2px);
+      background: var(--accent);
+      box-shadow: inset 0 1px 0px rgba(0, 0, 0, .2);
+      filter: brightness(1);
+    }
+
+    .k.pressed {
+      filter: brightness(0.9);
+    }
+
+    .k.pressed::before {
+      filter: brightness(0.8);
+    }
+
+    [data-theme="dark"] .k.pressed,
+    [data-theme="classic"] .k.pressed {
+      /* ★変更: Dark/Classic 押下済み側面 */
+      filter: brightness(1.2);
+    }
+
+    [data-theme="dark"] .k.pressed::before,
+    [data-theme="classic"] .k.pressed::before {
+      /* ★変更: Dark/Classic 押下済み上面 */
+      filter: brightness(1.3);
     }
 
     .k[data-code="CapsLock"] {
@@ -336,32 +408,75 @@
       text-align: center
     }
 
-    .w1 {
+    .gap {
+      pointer-events: none
+    }
+
+    .w05 {
       grid-column: span 2
     }
 
-    .w15 {
-      grid-column: span 3
-    }
-
-    .w2 {
+    .w1 {
       grid-column: span 4
     }
 
-    .w225 {
-      grid-column: span 4
-    }
-
-    .w275 {
+    .w125 {
       grid-column: span 5
     }
 
-    .w6 {
+    .w15 {
+      grid-column: span 6
+    }
+
+    .w175 {
+      grid-column: span 7
+    }
+
+    .w2 {
+      grid-column: span 8
+    }
+
+    .w225 {
+      grid-column: span 9
+    }
+
+    .w25 {
+      grid-column: span 10
+    }
+
+    .w275 {
+      grid-column: span 11
+    }
+
+    .w3 {
       grid-column: span 12
     }
 
+    .w6 {
+      grid-column: span 24
+    }
+
     .w7 {
-      grid-column: span 14
+      grid-column: span 28
+    }
+
+    .w625 {
+      grid-column: span 25
+    }
+
+    .kbdRowLabel {
+      position: absolute;
+      bottom: 4px;
+      right: 6px;
+      font-size: 10px;
+      letter-spacing: .1em;
+      opacity: .45;
+      font-weight: 600
+    }
+
+    .clusterLabel {
+      font-size: .8em;
+      line-height: 1.2
     }
 
     /* right column */
@@ -476,7 +591,6 @@
 
     <section class="card" id="unifiedCard">
       <div class="body" id="unified">
-        <!-- LEFT: キー入力テスト -->
         <div class="leftCol">
           <div>
             <p class="hint lead">入力テストアプリです。</p>
@@ -488,86 +602,121 @@
 
           <div class="kbdWrap">
             <div class="keyboard" id="visualKb" aria-label="on-screen keyboard">
-              <!-- Row 0 (Grave to Bs) -->
               <div class="row">
-                <div class="k w1" data-code="Escape">Esc</div>
-                <div class="k w1" data-code="Backquote">`</div>
-                <div class="k w1" data-code="Digit1">1</div>
-                <div class="k w1" data-code="Digit2">2</div>
-                <div class="k w1" data-code="Digit3">3</div>
-                <div class="k w1" data-code="Digit4">4</div>
-                <div class="k w1" data-code="Digit5">5</div>
-                <div class="k w1" data-code="Digit6">6</div>
-                <div class="k w1" data-code="Digit7">7</div>
-                <div class="k w1" data-code="Digit8">8</div>
-                <div class="k w1" data-code="Digit9">9</div>
-                <div class="k w1" data-code="Digit0">0</div>
-                <div class="k w1" data-code="Minus">-</div>
-                <div class="k w1" data-code="Equal">=</div>
-                <div class="k w1" data-code="Backspace">Bs</div>
+                <div class="k w1 clusterLabel" data-code="Escape"><span>Esc</span></div>
+                <div class="gap w1" aria-hidden="true"></div>
+                <div class="k w1 clusterLabel" data-code="F1"><span>F1</span></div>
+                <div class="k w1 clusterLabel" data-code="F2"><span>F2</span></div>
+                <div class="k w1 clusterLabel" data-code="F3"><span>F3</span></div>
+                <div class="k w1 clusterLabel" data-code="F4"><span>F4</span></div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1 clusterLabel" data-code="F5"><span>F5</span></div>
+                <div class="k w1 clusterLabel" data-code="F6"><span>F6</span></div>
+                <div class="k w1 clusterLabel" data-code="F7"><span>F7</span></div>
+                <div class="k w1 clusterLabel" data-code="F8"><span>F8</span></div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1 clusterLabel" data-code="F9"><span>F9</span></div>
+                <div class="k w1 clusterLabel" data-code="F10"><span>F10</span></div>
+                <div class="k w1 clusterLabel" data-code="F11"><span>F11</span></div>
+                <div class="k w1 clusterLabel" data-code="F12"><span>F12</span></div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1 clusterLabel" data-code="PrintScreen"><span>PrtSc</span></div>
+                <div class="k w1 clusterLabel" data-code="ScrollLock"><span>ScrLk</span></div>
+                <div class="k w1 clusterLabel" data-code="Pause"><span>Pause</span></div>
               </div>
-              <!-- Row 1 (Tab row) -->
               <div class="row">
-                <div class="k w15" data-code="Tab">Tab</div>
-                <div class="k w1" data-code="KeyQ">Q</div>
-                <div class="k w1" data-code="KeyW">W</div>
-                <div class="k w1" data-code="KeyE">E</div>
-                <div class="k w1" data-code="KeyR">R</div>
-                <div class="k w1" data-code="KeyT">T</div>
-                <div class="k w1" data-code="KeyY">Y</div>
-                <div class="k w1" data-code="KeyU">U</div>
-                <div class="k w1" data-code="KeyI">I</div>
-                <div class="k w1" data-code="KeyO">O</div>
-                <div class="k w1" data-code="KeyP">P</div>
-                <div class="k w1" data-code="BracketLeft">[</div>
-                <div class="k w1" data-code="BracketRight">]</div>
-                <div class="k w15" data-code="Backslash">&#92;</div>
+                <div class="k w1 clusterLabel" data-code="Backquote"><span>~<small>`</small></span></div>
+                <div class="k w1" data-code="Digit1"><span>!<small>1</small></span></div>
+                <div class="k w1" data-code="Digit2"><span>@<small>2</small></span></div>
+                <div class="k w1" data-code="Digit3"><span>#<small>3</small></span></div>
+                <div class="k w1" data-code="Digit4"><span>$<small>4</small></span></div>
+                <div class="k w1" data-code="Digit5"><span>%<small>5</small></span></div>
+                <div class="k w1" data-code="Digit6"><span>^<small>6</small></span></div>
+                <div class="k w1" data-code="Digit7"><span>&<small>7</small></span></div>
+                <div class="k w1" data-code="Digit8"><span>*<small>8</small></span></div>
+                <div class="k w1" data-code="Digit9"><span>(<small>9</small></span></div>
+                <div class="k w1" data-code="Digit0"><span>)<small>0</small></span></div>
+                <div class="k w1 clusterLabel" data-code="Minus"><span>_<small>-</small></span></div>
+                <div class="k w1 clusterLabel" data-code="Equal"><span>+<small>=</small></span></div>
+                <div class="k w2 clusterLabel" data-code="Backspace"><span>Bksp</span></div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1 clusterLabel" data-code="Insert"><span>Ins</span></div>
+                <div class="k w1 clusterLabel" data-code="Home"><span>Home</span></div>
+                <div class="k w1 clusterLabel" data-code="PageUp"><span>PgUp</span></div>
               </div>
-              <!-- Row 2 (Caps row) -->
               <div class="row">
-                <div class="k w2" data-code="CapsLock">Caps Lock</div>
-                <div class="k w1" data-code="KeyA">A</div>
-                <div class="k w1" data-code="KeyS">S</div>
-                <div class="k w1" data-code="KeyD">D</div>
-                <div class="k w1" data-code="KeyF">F</div>
-                <div class="k w1" data-code="KeyG">G</div>
-                <div class="k w1" data-code="KeyH">H</div>
-                <div class="k w1" data-code="KeyJ">J</div>
-                <div class="k w1" data-code="KeyK">K</div>
-                <div class="k w1" data-code="KeyL">L</div>
-                <div class="k w1" data-code="Semicolon">;</div>
-                <div class="k w1" data-code="Quote">'</div>
-                <div class="k w2" data-code="Enter">Enter</div>
+                <div class="k w15 clusterLabel" data-code="Tab"><span>Tab</span></div>
+                <div class="k w1" data-code="KeyQ"><span>Q</span></div>
+                <div class="k w1" data-code="KeyW"><span>W</span></div>
+                <div class="k w1" data-code="KeyE"><span>E</span></div>
+                <div class="k w1" data-code="KeyR"><span>R</span></div>
+                <div class="k w1" data-code="KeyT"><span>T</span></div>
+                <div class="k w1" data-code="KeyY"><span>Y</span></div>
+                <div class="k w1" data-code="KeyU"><span>U</span></div>
+                <div class="k w1" data-code="KeyI"><span>I</span></div>
+                <div class="k w1" data-code="KeyO"><span>O</span></div>
+                <div class="k w1" data-code="KeyP"><span>P</span></div>
+                <div class="k w1 clusterLabel" data-code="BracketLeft"><span>{<small>[</small></span></div>
+                <div class="k w1 clusterLabel" data-code="BracketRight"><span>}<small>]</small></span></div>
+                <div class="k w15 clusterLabel" data-code="Backslash"><span>|<small>\</small></span></div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1 clusterLabel" data-code="Delete"><span>Del</span></div>
+                <div class="k w1 clusterLabel" data-code="End"><span>End</span></div>
+                <div class="k w1 clusterLabel" data-code="PageDown"><span>PgDn</span></div>
               </div>
-              <!-- Row 3 (Shift row, enlarge both ends) -->
               <div class="row">
-                <div class="k w275" data-code="ShiftLeft">Shift</div>
-                <div class="k w1" data-code="KeyZ">Z</div>
-                <div class="k w1" data-code="KeyX">X</div>
-                <div class="k w1" data-code="KeyC">C</div>
-                <div class="k w1" data-code="KeyV">V</div>
-                <div class="k w1" data-code="KeyB">B</div>
-                <div class="k w1" data-code="KeyN">N</div>
-                <div class="k w1" data-code="KeyM">M</div>
-                <div class="k w1" data-code="Comma">,</div>
-                <div class="k w1" data-code="Period">.</div>
-                <div class="k w1" data-code="Slash">/</div>
-                <div class="k w275" data-code="ShiftRight">Shift</div>
+                <div class="k w175 clusterLabel" data-code="CapsLock"><span>Caps</span></div>
+                <div class="k w1" data-code="KeyA"><span>A</span></div>
+                <div class="k w1" data-code="KeyS"><span>S</span></div>
+                <div class="k w1" data-code="KeyD"><span>D</span></div>
+                <div class="k w1" data-code="KeyF"><span>F</span></div>
+                <div class="k w1" data-code="KeyG"><span>G</span></div>
+                <div class="k w1" data-code="KeyH"><span>H</span></div>
+                <div class="k w1" data-code="KeyJ"><span>J</span></div>
+                <div class="k w1" data-code="KeyK"><span>K</span></div>
+                <div class="k w1" data-code="KeyL"><span>L</span></div>
+                <div class="k w1 clusterLabel" data-code="Semicolon"><span>:<small>;</small></span></div>
+                <div class="k w1 clusterLabel" data-code="Quote"><span>"<small>'</small></span></div>
+                <div class="k w225 clusterLabel" data-code="Enter"><span>Enter</span></div>
+                <div class="gap w3" aria-hidden="true"></div>
+                <div class="gap w05" aria-hidden="true"></div>
               </div>
-              <!-- Row 4 (Space row; no Shift on this row; GUI between Ctrl & Alt) -->
               <div class="row">
-                <div class="k w2" data-code="ControlLeft">Ctrl</div>
-                <div class="k w15" data-code="MetaLeft">GUI</div>
-                <div class="k w15" data-code="AltLeft">Alt</div>
-                <div class="k w7" data-code="Space">Space</div>
-                <div class="k w15" data-code="AltRight">Alt</div>
-                <div class="k w15" data-code="ContextMenu"><small>Menu</small></div>
+                <div class="k w225 clusterLabel" data-code="ShiftLeft"><span>Shift</span></div>
+                <div class="k w1" data-code="KeyZ"><span>Z</span></div>
+                <div class="k w1" data-code="KeyX"><span>X</span></div>
+                <div class="k w1" data-code="KeyC"><span>C</span></div>
+                <div class="k w1" data-code="KeyV"><span>V</span></div>
+                <div class="k w1" data-code="KeyB"><span>B</span></div>
+                <div class="k w1" data-code="KeyN"><span>N</span></div>
+                <div class="k w1" data-code="KeyM"><span>M</span></div>
+                <div class="k w1 clusterLabel" data-code="Comma"><span>&lt;<small>,</small></span></div>
+                <div class="k w1 clusterLabel" data-code="Period"><span>&gt;<small>.</small></span></div>
+                <div class="k w1 clusterLabel" data-code="Slash"><span>?<small>/</small></span></div>
+                <div class="k w275 clusterLabel" data-code="ShiftRight"><span>Shift</span></div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="gap w1" aria-hidden="true"></div>
+                <div class="k w1 clusterLabel" data-code="ArrowUp"><span>↑</span></div>
+                <div class="gap w1" aria-hidden="true"></div>
+              </div>
+              <div class="row">
+                <div class="k w125 clusterLabel" data-code="ControlLeft"><span>Ctrl</span></div>
+                <div class="k w125 clusterLabel" data-code="MetaLeft"><span>Win</span></div>
+                <div class="k w125 clusterLabel" data-code="AltLeft"><span>Alt</span></div>
+                <div class="k w625 clusterLabel" data-code="Space"><span>Space</span></div>
+                <div class="k w125 clusterLabel" data-code="AltRight"><span>Alt</span></div>
+                <div class="k w125 clusterLabel" data-code="MetaRight"><span>Win</span></div>
+                <div class="k w125 clusterLabel" data-code="ContextMenu"><span>Menu</span></div>
+                <div class="k w125 clusterLabel" data-code="ControlRight"><span>Ctrl</span></div>
+                <div class="gap w05" aria-hidden="true"></div>
+                <div class="k w1 clusterLabel" data-code="ArrowLeft"><span>←</span></div>
+                <div class="k w1 clusterLabel" data-code="ArrowDown"><span>↓</span></div>
+                <div class="k w1 clusterLabel" data-code="ArrowRight"><span>→</span></div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- RIGHT: マウステスト -->
         <div class="rightCol">
           <p class="hint lead">カーソルを下の領域に移動すると、軌跡とスクロールの確認ができます。</p>
           <div id="padWrap">
@@ -653,6 +802,7 @@
       const typingArea = $('#typingArea');
       const clearBtn = $('#clearText');
       const downKeys = new Set();
+      const pressedKeysHistory = new Set();
 
       function mapMod(code) {
         switch (code) {
@@ -664,6 +814,16 @@
             return 'AltLeft';
           case 'MetaRight':
             return 'MetaLeft';
+          case 'OSLeft':
+            return 'MetaLeft';
+          case 'OSRight':
+            return 'MetaRight';
+          case 'AltGraph':
+            return 'AltRight';
+          case 'Spacebar':
+            return 'Space';
+          case 'IntlYen':
+            return 'Backslash';
           default:
             return code;
         }
@@ -671,14 +831,22 @@
 
       function highlight(code, isDown) {
         $$('#visualKb .k[data-code="' + CSS.escape(code) + '"]').forEach(el => {
-          if (isDown) el.classList.add('down');
-          else el.classList.remove('down');
+          if (isDown) {
+            el.classList.add('down');
+            // .down style has higher specificity or overrides .pressed styles
+          } else {
+            el.classList.remove('down');
+            if (pressedKeysHistory.has(code)) {
+              el.classList.add('pressed');
+            }
+          }
         });
       }
 
       function onKeyDown(e) {
         const code = mapMod(e.code || e.key);
         downKeys.add(code);
+        pressedKeysHistory.add(code);
         highlight(code, true);
       }
 
@@ -692,18 +860,47 @@
       typingArea.addEventListener('blur', () => {
         downKeys.clear();
         $$('#visualKb .k.down').forEach(k => k.classList.remove('down'));
+        pressedKeysHistory.forEach(code => {
+          $$('#visualKb .k[data-code="' + CSS.escape(code) + '"]').forEach(el => el.classList.add('pressed'));
+        });
       }, true);
       clearBtn.addEventListener('click', () => {
         typingArea.value = '';
         typingArea.focus();
+        pressedKeysHistory.clear();
+        $$('#visualKb .k.pressed').forEach(k => k.classList.remove('pressed'));
       });
-      // Theme / Fullscreen / Reset
       $('#themeBtn').addEventListener('click', () => {
         cycleTheme();
       });
       $('#fsBtn').addEventListener('click', () => {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
         else document.exitFullscreen().catch(() => {});
+      });
+      $('#resetBtn').addEventListener('click', () => {
+        typingArea.value = '';
+        typingArea.focus();
+        downKeys.clear();
+        $$('#visualKb .k.down').forEach(k => k.classList.remove('down'));
+        crossX = CONTENT_W / 2;
+        crossY = CONTENT_H / 2;
+        trail.length = 0;
+        ripples.length = 0;
+        if (rippleAnim) {
+          cancelAnimationFrame(rippleAnim);
+          rippleAnim = null;
+        }
+        draw();
+        pVel.x = 0;
+        pVel.y = 0;
+        sVel.x = 0;
+        sVel.y = 0;
+        lastClient = null;
+        lastClientGlobal = null;
+        pvxEl.textContent = pvyEl.textContent = pspdEl.textContent = '0';
+        sdxEl.textContent = sdyEl.textContent = sspdEl.textContent = '0';
+        pressedKeysHistory.clear();
+        $$('#visualKb .k.pressed').forEach(k => k.classList.remove('pressed'));
       });
       // ---------- RIGHT: Pointer visual & dials ----------
       const padWrap = $('#padWrap');
@@ -719,17 +916,21 @@
       const pVel = {
         x: 0,
         y: 0
-      }; // pointer velocity accumulator
+      };
       const sVel = {
         x: 0,
         y: 0
-      }; // scroll velocity accumulator
+      };
       let crossX = CONTENT_W / 2,
         crossY = CONTENT_H / 2,
         trail = [];
       const ripples = [];
-      let lastClient = null; // last client pos while inside pad
-      let lastClientGlobal = null; // last client pos while outside pad
+      const MAX_RIPPLES = 6;
+      const RIPPLE_SPEED = 2.8 / 16.7;
+      const RIPPLE_DECAY_RATE = Math.log(0.95) / 16.7;
+      let rippleAnim = null;
+      let lastClient = null;
+      let lastClientGlobal = null;
       let inPad = false;
 
       function size() {
@@ -799,21 +1000,57 @@
         ctx.arc(crossX, crossY, 18, 0, Math.PI * 2);
         ctx.stroke();
         // ripples
-        for (let i = ripples.length - 1; i >= 0; i--) {
+        ctx.save();
+        ctx.strokeStyle = rippleCol;
+        for (let i = 0; i < ripples.length; i++) {
           const r = ripples[i];
-          r.radius += 2.8;
-          r.alpha *= 0.95;
-          if (r.alpha < 0.03) {
-            ripples.splice(i, 1);
-            continue;
-          }
-          ctx.save();
+          if (r.alpha <= 0) continue;
           ctx.globalAlpha = r.alpha;
-          ctx.strokeStyle = rippleCol;
           ctx.beginPath();
           ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
           ctx.stroke();
-          ctx.restore();
+        }
+        ctx.restore();
+      }
+
+      function spawnRipple(x, y) {
+        const now = performance.now();
+        if (ripples.length >= MAX_RIPPLES) {
+          ripples.splice(0, ripples.length - MAX_RIPPLES + 1);
+        }
+        ripples.push({
+          x,
+          y,
+          radius: 0,
+          alpha: .9,
+          time: now
+        });
+        draw();
+        if (!rippleAnim) {
+          rippleAnim = requestAnimationFrame(stepRipples);
+        }
+      }
+
+      function stepRipples(ts) {
+        let needsRedraw = false;
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          const r = ripples[i];
+          const dt = Math.max(0, ts - (r.time || ts));
+          r.time = ts;
+          r.radius += dt * RIPPLE_SPEED;
+          r.alpha *= Math.exp(RIPPLE_DECAY_RATE * dt);
+          needsRedraw = true;
+          if (r.alpha < 0.03) {
+            ripples.splice(i, 1);
+          }
+        }
+        if (needsRedraw) {
+          draw();
+        }
+        if (ripples.length) {
+          rippleAnim = requestAnimationFrame(stepRipples);
+        } else {
+          rippleAnim = null;
         }
       }
 
@@ -863,26 +1100,14 @@
       padWrap.addEventListener('mousedown', (e) => {
         const buttons = [e.buttons & 1, e.buttons & 4, e.buttons & 2].map(b => b ? 1 : 0);
         btnState.textContent = buttons.join(' ');
-        ripples.push({
-          x: crossX,
-          y: crossY,
-          radius: 0,
-          alpha: .9
-        });
-        draw();
+        spawnRipple(crossX, crossY);
       });
       padWrap.addEventListener('mouseup', (e) => {
         const buttons = [e.buttons & 1, e.buttons & 4, e.buttons & 2].map(b => b ? 1 : 0);
         btnState.textContent = buttons.join(' ');
       });
       padWrap.addEventListener('dblclick', () => {
-        ripples.push({
-          x: crossX,
-          y: crossY,
-          radius: 0,
-          alpha: .9
-        });
-        draw();
+        spawnRipple(crossX, crossY);
       });
       // Outside the pad: only update the dials (pointer & scroll)
       document.addEventListener('mousemove', (e) => {
@@ -933,7 +1158,7 @@
         passive: true
       });
 
-      function drawDial(ctx, vel, range, colors) {
+      function drawDial(ctx, vel, range, colors, theme) {
         const w = ctx.canvas.width / (window.devicePixelRatio || 1);
         const h = ctx.canvas.height / (window.devicePixelRatio || 1);
         ctx.clearRect(0, 0, w, h);
@@ -942,7 +1167,7 @@
           rad = Math.min(w, h) / 2 - 14;
         // ring grid
         ctx.save();
-        ctx.strokeStyle = 'rgba(255,255,255,.10)';
+        ctx.strokeStyle = theme.gridX;
         for (let r = rad; r > 0; r -= rad / 4) {
           ctx.beginPath();
           ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -993,18 +1218,18 @@
           line: Cc.ptrLine,
           tip: Cc.ptrTip,
           arc: Cc.ptrArc
-        });
+        }, Cc);
         drawDial(scrCtx, sVel, 600, {
           line: Cc.scrLine,
           tip: Cc.scrTip,
           arc: Cc.scrArc
-        });
+        }, Cc);
         pvxEl.textContent = String(Math.round(pVel.x));
         pvyEl.textContent = String(Math.round(pVel.y));
         pspdEl.textContent = String(Math.round(Math.hypot(pVel.x, pVel.y)));
         sdxEl.textContent = String(Math.round(sVel.x));
         sdyEl.textContent = String(Math.round(sVel.y));
-        sspdEl.textContent = String(Math.round(Math.hypot(sVel.x, sVel.y)));
+        sspdEl.textContent = String(Math.round(Math.hypot(sVel.x, pVel.y)));
         requestAnimationFrame(tick);
       }
       requestAnimationFrame(tick);
@@ -1014,26 +1239,6 @@
         sVel.y += -e.deltaY;
       }, {
         passive: true
-      });
-      // Reset
-      $('#resetBtn').addEventListener('click', () => {
-        typingArea.value = '';
-        typingArea.focus();
-        downKeys.clear();
-        $$('#visualKb .k.down').forEach(k => k.classList.remove('down'));
-        crossX = CONTENT_W / 2;
-        crossY = CONTENT_H / 2;
-        trail.length = 0;
-        ripples.length = 0;
-        draw();
-        pVel.x = 0;
-        pVel.y = 0;
-        sVel.x = 0;
-        sVel.y = 0;
-        lastClient = null;
-        lastClientGlobal = null;
-        pvxEl.textContent = pvyEl.textContent = pspdEl.textContent = '0';
-        sdxEl.textContent = sdyEl.textContent = sspdEl.textContent = '0';
       });
       // ------------- Minimal Self Tests (console only) -------------
       (function selfTests() {
@@ -1074,11 +1279,14 @@
               key: 'a'
             }));
             hl = hl && !keyA.classList.contains('down');
+            hl = hl && keyA.classList.contains('pressed'); // Check if pressed class is added
+            $('#resetBtn').click(); // Reset
+            hl = hl && !keyA.classList.contains('pressed'); // Check if pressed class is removed
           } catch (e) {
             hl = false;
             console.warn('synthetic key event not allowed', e);
           }
-          ok('キー点灯の合成イベント', hl);
+          ok('キー点灯の合成イベント (pressed含む)', hl);
           // dial updates when velocity injected
           const prev = document.getElementById('pspd').textContent;
           const prevS = document.getElementById('sspd').textContent;
