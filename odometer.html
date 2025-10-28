@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TrackPoint Cursor Odometer – 軌跡内オーバーレイ操作＋100pxインジケーター</title>
+<style>
+  :root{--bg:#0a0d12;--panel:#111827;--ink:#e8eef7;--muted:#9fb0c9;--line:#213047;--accent:#7ce3ff;--ok:#79e28a}
+  html,body{height:100%;margin:0;background:radial-gradient(900px 700px at 20% -10%,#0f1627 0%,#0a0d12 60%);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr;gap:12px;padding:12px;height:100%}
+  header{grid-column:1;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#121a2a,#0f1523);border:1px solid #1f2c44;border-radius:14px;padding:10px 14px;box-shadow:0 10px 30px #0007}
+  header h1{margin:0;font-size:16px;font-weight:800}
+  button,input{background:#142136;color:var(--ink);border:1px solid #263956;border-radius:12px;padding:8px 10px;font-size:13px}
+  button{cursor:pointer}
+  .sidebar{background:linear-gradient(180deg,#101728,#0d1422);border:1px solid #1b2944;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:12px}
+  .card{background:#0e1524;border:1px solid #1b2944;border-radius:12px;padding:10px}
+  .card h3{margin:0 0 8px 0;font-size:13px;color:var(--muted)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .big{font-variant-numeric:tabular-nums;letter-spacing:.5px}
+  .odometer{font-size:40px;font-weight:900}
+  .sub{font-size:14px;color:var(--muted)}
+  .laps{max-height:220px;overflow:auto;border:1px solid #20304a;border-radius:10px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{padding:6px 8px;border-bottom:1px solid #20304a}
+  th{color:#cfe7ff;text-align:left;position:sticky;top:0;background:#0f1526}
+  .grid{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(260px,1fr);gap:12px;height:100%}
+  canvas{background:#08101b;border:1px solid #1b2436;border-radius:12px;width:100%;height:100%}
+  .barsWrap{position:relative}
+  .totalPxDisplay{position:absolute;top:12px;left:12px;font-size:48px;font-weight:900;font-variant-numeric:tabular-nums;color:rgba(232,238,247,0.85);text-shadow:0 2px 8px rgba(0,0,0,0.5);pointer-events:none;z-index:10}
+  /* 軌跡キャンバスのオーバーレイUI */
+  .trajWrap{position:relative}
+  .overlayControls{position:absolute;top:8px;right:8px;display:flex;gap:6px;backdrop-filter:blur(6px);background:rgba(10,15,25,.35);border:1px solid #213047;border-radius:10px;padding:6px}
+  .iconBtn{width:36px;height:36px;border-radius:9px;border:1px solid #2a3b55;background:#121a20;display:grid;place-items:center;cursor:pointer;user-select:none}
+  .iconBtn:hover{background:#182230}
+  .iconBtn.active{outline:2px solid #7ce3ff55}
+  .icon{font-size:18px;line-height:1}
+  /* 左下の100pxインジケーター（約1cm四方 ~ 38px） */
+  .pulseBox{position:absolute;left:8px;bottom:8px;width:38px;height:38px;border-radius:8px;border:1px solid #2a3b55;background:#0c1220;display:grid;place-items:center;overflow:hidden}
+  .pulseInner{width:70%;height:70%;border-radius:6px;background:#22324a;transition:transform .08s ease, background .08s ease}
+  .pulseBox.flash .pulseInner{transform:scale(1.15);background:#79e28a}
+  .pulseProg{position:absolute;inset:0;pointer-events:none}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>TrackPoint Cursor Odometer — 軌跡内のミニ操作＆100pxチック</h1>
+      <div class="row">
+        <button id="toggleBtn">▶ 計測開始</button>
+        <button id="reset">⟲ リセット</button>
+      </div>
+    </header>
+
+    <main class="grid">
+      <div class="trajWrap">
+        <canvas id="traj" title="軌跡ビュー（速いほど明るい）"></canvas>
+        <div class="overlayControls">
+          <div class="iconBtn" id="icoToggle" title="開始/停止"><span class="icon">▶</span></div>
+          <div class="iconBtn" id="icoReset" title="リセット"><span class="icon">⟲</span></div>
+          <div class="iconBtn active" id="icoSound" title="速度ピッチ音 ON/OFF"><span class="icon" id="icoSoundGlyph">🔊</span></div>
+        </div>
+        <div class="pulseBox" id="pulseBox" title="100pxごとにフラッシュ＆チック音">
+          <div class="pulseInner"></div>
+          <canvas class="pulseProg" id="pulseProg"></canvas>
+        </div>
+      </div>
+      <div class="barsWrap">
+        <canvas id="bars" title="距離/秒のバー（直近30秒）"></canvas>
+        <div class="totalPxDisplay" id="totalPxDisplay">0 px</div>
+      </div>
+    </main>
+  </div>
+
+<script>
+(function(){
+  // ========= Config =========
+  const BIN_MS = 200;           // 中間案：サンプリング200ms
+  const SHOW_SEC = 24;          // 中間案：表示約24秒（120本）
+  const MAX_BINS = Math.ceil((SHOW_SEC*1000)/BIN_MS);
+
+  // ========= State =========
+  let running=false; let startedAt=0; let last={t:0,x:0,y:0};
+  let totalPx=0; let nextPulse=100;
+  // 100msビン：{tbin, dist(px), v(px/s), a(px/s^2)}
+  let bins=[]; // 末尾が最新
+
+  // ========= Audio =========
+  let ac=null, osc=null, gain=null; let tickOsc=null, tickGain=null;
+  function initAudio(){
+    if(ac) return; try{
+      ac=new (window.AudioContext||window.webkitAudioContext)();
+      // continuous pitch by speed
+      osc=ac.createOscillator(); gain=ac.createGain(); osc.type='sine'; osc.frequency.value=200; gain.gain.value=0.0; osc.connect(gain).connect(ac.destination); osc.start();
+      // tick for 100px indicator
+      tickOsc=ac.createOscillator(); tickGain=ac.createGain(); tickOsc.type='square'; tickOsc.frequency.value=880; tickGain.gain.value=0.0; tickOsc.connect(tickGain).connect(ac.destination); tickOsc.start();
+    }catch(e){ console.warn('Audio init failed', e); }
+  }
+  function setPitchBySpeed(v){ if(!ac || !sndChk.checked) return; const f= Math.max(120, Math.min(2200, 120 + v*0.25)); osc.frequency.setTargetAtTime(f, ac.currentTime, 0.015); const g=Math.max(0, Math.min(0.25, v/3000)); gain.gain.setTargetAtTime(g, ac.currentTime, 0.02); }
+  function pulseTick(){ if(!ac || !sndChk.checked) return; const t=ac.currentTime; tickGain.gain.cancelScheduledValues(t); tickGain.gain.setValueAtTime(0.0, t); tickGain.gain.linearRampToValueAtTime(0.18, t+0.005); tickGain.gain.exponentialRampToValueAtTime(0.0008, t+0.07); }
+
+  // ========= DOM =========
+  let sndChk={checked:true}; // サウンド制御用のダミーオブジェクト
+  const toggleBtn=document.getElementById('toggleBtn'); const btnReset=document.getElementById('reset');
+
+  const traj=document.getElementById('traj'); const bars=document.getElementById('bars');
+  const icoToggle=document.getElementById('icoToggle'); const icoToggleIcon=icoToggle.querySelector('.icon');
+  const icoReset=document.getElementById('icoReset'); const icoSound=document.getElementById('icoSound'); const icoSoundGlyph=document.getElementById('icoSoundGlyph');
+  const pulseBox=document.getElementById('pulseBox'); const pulseInner=document.querySelector('.pulseInner'); const pulseProg=document.getElementById('pulseProg');
+  const totalPxDisplay=document.getElementById('totalPxDisplay');
+
+  const canvases=[traj,bars,pulseProg];
+  function resize(){ for(const c of canvases){ const r=c.getBoundingClientRect(); c.width=Math.max(280, Math.floor(r.width*devicePixelRatio)); c.height=Math.max(220, Math.floor(r.height*devicePixelRatio)); } // pulseProg fixed small
+    pulseProg.width=pulseBox.clientWidth*devicePixelRatio; pulseProg.height=pulseBox.clientHeight*devicePixelRatio; }
+  addEventListener('resize', resize); resize();
+
+  // ========= Capture =========
+  // 軌跡用の滑らかな速度（vs）も保存し、縞々を抑制
+  let trail=[]; // {x,y,v,vs,t}
+  let lastVs=0;
+
+  addEventListener('pointerdown', e=>{ if(!running) return; last.t=performance.now(); last.x=e.clientX; last.y=e.clientY; });
+  addEventListener('pointermove', e=>{
+    if(!running) return; const t=performance.now(); if(!last.t){ last.t=t; last.x=e.clientX; last.y=e.clientY; return; }
+    const dt=(t-last.t)/1000; const dx=e.clientX-last.x; const dy=e.clientY-last.y; const d=Math.hypot(dx,dy); const v= dt>0? d/dt:0;
+    // vs: 軌跡の色用に速度をEMA(α=0.3)で平滑化
+    const vs = lastVs = 0.3*v + 0.7*lastVs;
+
+    totalPx+=d; setPitchBySpeed(v);
+    // 100msビンへ加算
+    const tbin = Math.floor((t-startedAt)/BIN_MS);
+    if(!bins.length || bins[bins.length-1].tbin!==tbin){
+      // 新規ビン開始、前ビンの速度と加速度を確定
+      if(bins.length){
+        const prev=bins[bins.length-1];
+        prev.v = (prev.dist) / (BIN_MS/1000);
+        const preprev = bins.length>1 ? bins[bins.length-2] : null;
+        prev.a = preprev ? (prev.v - preprev.v) / (BIN_MS/1000) : 0;
+      }
+      bins.push({tbin, dist:0, v:0, a:0});
+      if(bins.length>MAX_BINS) bins.shift();
+    }
+    bins[bins.length-1].dist += d;
+
+    // tick per 100px
+    while(totalPx>=nextPulse){ doPulse(); nextPulse+=100; }
+    last.t=t; last.x=e.clientX; last.y=e.clientY;
+
+    // 軌跡記録（上限保持）
+    trail.push({x:e.clientX,y:e.clientY,v,vs,t}); if(trail.length>900) trail.shift();
+  });
+
+  // ========= Buttons =========
+  function toggleRecord(){ if(running) pause(); else start(); }
+  toggleBtn.onclick=()=>toggleRecord(); btnReset.onclick=()=>resetAll();
+  icoToggle.onclick=()=>toggleRecord(); icoReset.onclick=()=>resetAll();
+  icoSound.onclick=()=>{ sndChk.checked=!sndChk.checked; icoSound.classList.toggle('active', sndChk.checked); icoSoundGlyph.textContent = sndChk.checked ? '🔊' : '🔇'; if(!sndChk.checked && gain){ gain.gain.value=0; tickGain.gain.value=0; } };
+
+  // ========= Actions =========
+  function updateToggleDisplay(){
+    if(running){
+      toggleBtn.textContent='⏸ 一時停止';
+      icoToggleIcon.textContent='⏸';
+      icoToggle.classList.add('active');
+    }else{
+      toggleBtn.textContent='▶ 計測開始';
+      icoToggleIcon.textContent='▶';
+      icoToggle.classList.remove('active');
+    }
+  }
+  function start(){ running=true; startedAt=performance.now(); last.t=0; initAudio(); if(ac) ac.resume(); lastVs=0; updateToggleDisplay(); }
+  function pause(){ running=false; if(gain) gain.gain.value=0; finalizeLastBin(); updateToggleDisplay(); }
+  function resetAll(){ running=false; totalPx=0; bins=[]; nextPulse=100; if(gain) gain.gain.value=0; draw(); removePulseFlash(); trail=[]; lastVs=0; updateToggleDisplay(); }
+  function finalizeLastBin(){ if(!bins.length) return; const prev=bins[bins.length-1]; prev.v = (prev.dist) / (BIN_MS/1000); const preprev = bins.length>1 ? bins[bins.length-2] : null; prev.a = preprev ? (prev.v - preprev.v) / (BIN_MS/1000) : 0; }
+
+  // ========= Pulse visuals & sound =========
+  function doPulse(){ pulseTick(); pulseFlash(); }
+  function pulseFlash(){ pulseBox.classList.add('flash'); setTimeout(removePulseFlash, 90); }
+  function removePulseFlash(){ pulseBox.classList.remove('flash'); }
+
+  // ========= Render =========
+  function draw(){
+    totalPxDisplay.textContent = `${Math.round(totalPx)} px`;
+    drawBars(); drawTraj(); drawPulseProgress();
+  }
+  function drawGrid(ctx,c){ ctx.save(); ctx.strokeStyle='#142033'; ctx.lineWidth=1; const step=20*devicePixelRatio; for(let x=0;x<c.width;x+=step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,c.height); ctx.stroke(); } for(let y=0;y<c.height;y+=step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(c.width,y); ctx.stroke(); } ctx.restore(); }
+
+  // ユーティリティ：パーセンタイル
+  function percentile(arr, p){ if(!arr.length) return 0; const a=[...arr].sort((x,y)=>x-y); const idx=Math.min(a.length-1, Math.max(0, Math.floor((a.length-1)*p))); return a[idx]; }
+
+  // 100msサンプリングの高密度バーグラフ（色相で加速度、明度で速度）
+  function drawBars(){ const c=bars, ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); drawGrid(ctx,c); const pad=20*devicePixelRatio; const W=c.width-2*pad, H=c.height-2*pad; const N=Math.min(MAX_BINS, bins.length);
+    ctx.fillStyle='#9fb0c9'; ctx.font=`${12*devicePixelRatio}px system-ui`; ctx.fillText(`px/秒（${BIN_MS}msサンプル・表示約${SHOW_SEC}s） / 色=加速度（ロバストスケール・中間設定）`, pad, pad);
+    if(!N) return;
+    const vmax = Math.max(200, ...bins.map(b=>b.v));
+    // |a|の90パーセンタイルをレンジに採用（サチり対策）
+    const absA = bins.map(b=>Math.abs(b.a));
+    // 中間案：レンジは95パーセンタイル、最低1000
+    let aRange = Math.max(1000, percentile(absA, 0.95)); // 最低800で頭打ち感を低減
+    const barStep = W / MAX_BINS; const barW = Math.max(1, Math.floor(barStep*0.82));
+
+    ctx.save(); ctx.translate(pad, c.height-pad);
+    for(let i=0;i<N;i++){
+      const b = bins[bins.length-N + i];
+      const h = (b.v / vmax) * H;
+      // 加速度のロバスト正規化（-1..+1）
+      const an = Math.max(-1, Math.min(1, b.a / aRange));
+      // 中間案：hue 210±90、saturationやや強め、lightnessは速度の0.8乗で変化
+      const hue = 210 + an * 90; // 減速: 120〜 加速: 300
+      const sat = 70;
+      const light = 32 + Math.min(50, Math.pow(b.v / vmax, 0.8) * 50);
+      ctx.fillStyle = `hsl(${hue} ${sat}% ${light}%)`;
+      ctx.fillRect(i*barStep, -h, barW, h);
+    }
+    ctx.restore();
+  }
+
+  function drawTraj(){ const c=traj, ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); drawGrid(ctx,c); const rect=traj.getBoundingClientRect(); const nowt=performance.now();
+    for(let i=1;i<trail.length;i++){
+      const p0=trail[i-1], p1=trail[i];
+      const age=(nowt-p1.t)/1000; const alpha=Math.max(0, 1.0 - age/2.0); if(alpha<=0) continue;
+      // 速度に応じて「同系色で明度変化」＋わずかに色相シフト（縞々抑制）
+      const v = p1.vs || p1.v; // 平滑速度
+      const norm = Math.min(1, v/2500);
+      const hue = 200 + norm*40;     // 200→240 (青→青紫)
+      const sat = 72;                 // 固定
+      const light = 35 + norm*45;     // 明るさで速度感
+      ctx.strokeStyle=`hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
+      ctx.lineWidth=2*devicePixelRatio; ctx.lineCap='round'; ctx.lineJoin='round';
+      const x0=(p0.x-rect.left)*devicePixelRatio, y0=(p0.y-rect.top)*devicePixelRatio; const x1=(p1.x-rect.left)*devicePixelRatio, y1=(p1.y-rect.top)*devicePixelRatio;
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    }
+  }
+
+  // 1cmインジケーター内の進捗リング
+  function drawPulseProgress(){ const c=pulseProg, ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); const W=c.width, H=c.height; const cx=W/2, cy=H/2; const r=Math.min(cx,cy)-4*devicePixelRatio; const prog=(totalPx%100)/100; ctx.strokeStyle='#20324a'; ctx.lineWidth=6*devicePixelRatio; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); ctx.strokeStyle='#79e28a'; ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2, -Math.PI/2 + prog*2*Math.PI); ctx.stroke(); }
+
+  // animation loop
+  function loop(){ draw(); requestAnimationFrame(loop); }
+  updateToggleDisplay(); loop();
+})();
+</script>
+</body>
+</html>

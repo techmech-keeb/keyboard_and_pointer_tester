@@ -139,17 +139,6 @@
       --scr-arc: rgba(163, 230, 53, .40);
     }
 
-    --trail: rgba(229, 231, 235, .85);
-    --cross-fill: #e5e7eb;
-    --cross-stroke: #9ca3af;
-    --ptr-line: #e5e7eb;
-    --ptr-tip: #f3f4f6;
-    --ptr-arc: rgba(229, 231, 235, .40);
-    --scr-line: #a3e635;
-    --scr-tip: #bef264;
-    --scr-arc: rgba(163, 230, 53, .40);
-    }
-
     html,
     body {
       height: 100%
@@ -525,8 +514,7 @@
 
     /* XY dials (pointer & scroll) */
     .xyMeters {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
       gap: 12px
     }
 
@@ -535,7 +523,8 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 10px;
-      background: var(--panel-2)
+      background: var(--panel-2);
+      flex: 0 0 auto;
     }
 
     .dial h3 {
@@ -730,22 +719,17 @@
           </div>
 
           <div class="xyMeters">
-            <div class="dial">
-              <h3>ポインタ速度 XY</h3>
+            <div class="dial" style="width: min(350px, 38vw);">
+              <h3>ポインタ速度 XY <span class="muted">(スクロールXY重ね表示)</span></h3>
               <canvas id="ptrDial"></canvas>
-              <div class="dialLegend">
-                <span>vx=<b id="pvx">0</b></span>
-                <span>vy=<b id="pvy">0</b></span>
-                <span>|v|=<b id="pspd">0</b></span>
-              </div>
             </div>
-            <div class="dial">
+            <div class="dial" style="display:none;">
               <h3>スクロール XY</h3>
               <canvas id="scrDial"></canvas>
               <div class="dialLegend">
-                <span>dx=<b id="sdx">0</b></span>
-                <span>dy=<b id="sdy">0</b></span>
-                <span>|v|=<b id="sspd">0</b></span>
+                <span>dx=<b id="sdxOld">0</b></span>
+                <span>dy=<b id="sdyOld">0</b></span>
+                <span>|v|=<b id="sspdOld">0</b></span>
               </div>
             </div>
           </div>
@@ -780,7 +764,8 @@
           ptrArc: get('--ptr-arc'),
           scrLine: get('--scr-line'),
           scrTip: get('--scr-tip'),
-          scrArc: get('--scr-arc')
+          scrArc: get('--scr-arc'),
+          panel2: get('--panel-2')
         };
       }
 
@@ -897,8 +882,6 @@
         sVel.y = 0;
         lastClient = null;
         lastClientGlobal = null;
-        pvxEl.textContent = pvyEl.textContent = pspdEl.textContent = '0';
-        sdxEl.textContent = sdyEl.textContent = sspdEl.textContent = '0';
         pressedKeysHistory.clear();
         $$('#visualKb .k.pressed').forEach(k => k.classList.remove('pressed'));
       });
@@ -1207,6 +1190,126 @@
         ctx.setLineDash([]);
       }
 
+      function drawCombinedDial(ctx, ptrVel, scrVel, ptrRange, scrRange, ptrColors, scrColors, theme) {
+        const w = ctx.canvas.width / (window.devicePixelRatio || 1);
+        const h = ctx.canvas.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, w, h);
+        const cx = w / 2,
+          cy = h / 2,
+          rad = Math.min(w, h) / 2 - 14;
+        // ring grid
+        ctx.save();
+        ctx.strokeStyle = theme.gridX;
+        for (let r = rad; r > 0; r -= rad / 4) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        // axis
+        ctx.beginPath();
+        ctx.moveTo(cx - rad, cy);
+        ctx.lineTo(cx + rad, cy);
+        ctx.moveTo(cx, cy - rad);
+        ctx.lineTo(cx, cy + rad);
+        ctx.stroke();
+        ctx.restore();
+        
+        // === スクロールXY (背面に描画) ===
+        // magnitude arc (dashed) - 最初に描画
+        const scrMag = Math.hypot(scrVel.x, scrVel.y);
+        const scrRatio = Math.min(1, scrMag / scrRange);
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad * scrRatio, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = scrColors.arc;
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // vector
+        const scrNx = (scrVel.x / scrRange) * rad;
+        const scrNy = (-scrVel.y / scrRange) * rad; // y up
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + scrNx, cy + scrNy);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = scrColors.line;
+        ctx.stroke();
+        
+        // hollow circle (ring) at tip
+        // 外径: 8px, 内径: 6px (ポインタ速度XYの円(5px)より1px大きい内径)
+        // 外周を描画
+        ctx.beginPath();
+        ctx.arc(cx + scrNx, cy + scrNy, 8, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = scrColors.tip;
+        ctx.stroke();
+        // 中心を背景色で塗りつぶす
+        ctx.beginPath();
+        ctx.arc(cx + scrNx, cy + scrNy, 6, 0, Math.PI * 2);
+        ctx.fillStyle = theme.panel2;
+        ctx.fill();
+        
+        // === ポインタ速度XY (前面に描画) ===
+        // magnitude arc
+        const ptrMag = Math.hypot(ptrVel.x, ptrVel.y);
+        const ptrRatio = Math.min(1, ptrMag / ptrRange);
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad * ptrRatio, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = ptrColors.arc;
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // vector
+        const ptrNx = (ptrVel.x / ptrRange) * rad;
+        const ptrNy = (-ptrVel.y / ptrRange) * rad; // y up
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + ptrNx, cy + ptrNy);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = ptrColors.line;
+        ctx.stroke();
+        // tip (filled circle)
+        ctx.beginPath();
+        ctx.arc(cx + ptrNx, cy + ptrNy, 5, 0, Math.PI * 2);
+        ctx.fillStyle = ptrColors.tip;
+        ctx.fill();
+        
+        // === 凡例を右下に描画 ===
+        ctx.save();
+        ctx.font = '11px system-ui, sans-serif';
+        const legendY = h - 10;
+        const legendX = w - 10;
+        
+        // スクロールXY凡例（右側）
+        const scrLegendX = legendX;
+        ctx.strokeStyle = scrColors.tip;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(scrLegendX - 8, legendY - 6, 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(scrLegendX - 8, legendY - 6, 3, 0, Math.PI * 2);
+        ctx.fillStyle = theme.panel2;
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.textAlign = 'right';
+        ctx.fillText('スクロール', scrLegendX - 12, legendY);
+        
+        // ポインタ速度XY凡例（左側、スクロールの左に配置）
+        const ptrLegendX = scrLegendX - 70;
+        ctx.fillStyle = ptrColors.tip;
+        ctx.beginPath();
+        ctx.arc(ptrLegendX - 8, legendY - 6, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillText('ポインタ', ptrLegendX - 12, legendY);
+        
+        ctx.restore();
+      }
+
       function tick() {
         const decay = 0.90; // smooth decay
         pVel.x *= decay;
@@ -1214,22 +1317,16 @@
         sVel.x *= decay;
         sVel.y *= decay;
         const Cc = themeColors();
-        drawDial(ptrCtx, pVel, 300, {
+        // ポインタ速度XYにスクロールXYを重ねて描画
+        drawCombinedDial(ptrCtx, pVel, sVel, 300, 600, {
           line: Cc.ptrLine,
           tip: Cc.ptrTip,
           arc: Cc.ptrArc
-        }, Cc);
-        drawDial(scrCtx, sVel, 600, {
+        }, {
           line: Cc.scrLine,
           tip: Cc.scrTip,
           arc: Cc.scrArc
         }, Cc);
-        pvxEl.textContent = String(Math.round(pVel.x));
-        pvyEl.textContent = String(Math.round(pVel.y));
-        pspdEl.textContent = String(Math.round(Math.hypot(pVel.x, pVel.y)));
-        sdxEl.textContent = String(Math.round(sVel.x));
-        sdyEl.textContent = String(Math.round(sVel.y));
-        sspdEl.textContent = String(Math.round(Math.hypot(sVel.x, pVel.y)));
         requestAnimationFrame(tick);
       }
       requestAnimationFrame(tick);
