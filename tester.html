@@ -204,7 +204,6 @@
       padding: 12px 16px
     }
 
-    button,
     .chip {
       appearance: none;
       border: 1px solid var(--border);
@@ -218,11 +217,11 @@
       transition: transform .05s ease, background .2s ease, border .2s ease
     }
 
-    button:hover {
+    .chip:hover {
       background: #1b2338
     }
 
-    button:active {
+    .chip:active {
       transform: translateY(1px)
     }
 
@@ -271,8 +270,38 @@
       gap: 12px
     }
 
+    .fieldHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .fieldHeader > div:first-child {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .fieldHeader h3 {
+      margin: 0;
+      font-size: 13px;
+      opacity: .9;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .fieldHeader .infoText {
+      margin: 0;
+      font-size: 11px;
+      opacity: .75;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
     textarea#typingArea {
-      width: 96%;
+      width: 100%;
       min-height: 240px;
       resize: vertical;
       border-radius: 12px;
@@ -281,14 +310,15 @@
       background: var(--panel-2);
       color: var(--text);
       font-size: 18px;
-      line-height: 1.7
+      line-height: 1.7;
+      box-sizing: border-box;
     }
 
     /* On-screen keyboard */
     .kbdWrap {
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 48px 16px;
+      padding: 16px;
       background: linear-gradient(160deg, var(--panel), var(--panel-2));
       box-shadow: inset 0 2px 8px rgba(0, 0, 0, .3), 0 4px 12px rgba(0, 0, 0, .3);
     }
@@ -522,9 +552,10 @@
       position: relative;
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 10px;
+      padding: 10px 6px;
       background: var(--panel-2);
       flex: 0 0 auto;
+      height: 296px; /* キーボード表示部と揃える: 280px(キーボード) + 16px(padding) = 296px */
     }
 
     .dial h3 {
@@ -534,11 +565,178 @@
     }
 
     .dial canvas {
-      width: 100%;
-      height: 220px;
+      width: 220px;
+      height: 280px;
       display: block;
       border-radius: 10px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(0, 0, 0, .05))
+      background: linear-gradient(180deg, rgba(255, 255, 255, .02), rgba(0, 0, 0, .05));
+      margin: 0 auto;
+    }
+
+    .barsWrap {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--panel-2);
+      height: 296px; /* キーボード表示部と揃える: 280px(キーボード) + 16px(padding) = 296px */
+    }
+
+    .barsWrap h3 {
+      position: absolute;
+      top: 8px;
+      left: 12px;
+      margin: 0;
+      font-size: 13px;
+      opacity: .9;
+      z-index: 5;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .barsWrap .infoText {
+      position: absolute;
+      top: 30px;
+      left: 12px;
+      margin: 0;
+      font-size: 11px;
+      opacity: .75;
+      z-index: 5;
+      color: var(--muted);
+      font-weight: 400;
+      pointer-events: none;
+    }
+
+    .barsWrap canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .totalPxDisplay {
+      position: absolute;
+      top: 32px;
+      left: 12px;
+      font-size: 48px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: rgba(238, 246, 255, 0.85);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* 軌跡コントロールエリア */
+    .trajControls {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 0;
+    }
+
+    .trajControls .titleSection {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .trajControls h3 {
+      margin: 0;
+      font-size: 13px;
+      opacity: .9;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .trajControls .infoText {
+      margin: 0;
+      font-size: 11px;
+      opacity: .75;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .trajControls .hint {
+      display: none;
+    }
+
+    .controlButtons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    /* サウンドON/OFFボタン */
+    .iconBtn {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+      font-size: 14px;
+      transition: background .2s ease;
+    }
+
+    .iconBtn:hover {
+      background: rgba(255, 255, 255, .05);
+    }
+
+    .iconBtn.active {
+      background: rgba(127, 255, 212, .15);
+    }
+
+    .icon {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    /* 100pxインジケーター */
+    .pulseBox {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .pulseInner {
+      width: 70%;
+      height: 70%;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, .08);
+      transition: transform .08s ease, background .08s ease;
+    }
+
+    .pulseBox.flash .pulseInner {
+      transform: scale(1.15);
+      background: rgba(121, 226, 138, .6);
+    }
+
+    .pulseProg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    .pulseInner {
+      position: relative;
+      z-index: 0;
     }
 
     .dialLegend {
@@ -572,9 +770,9 @@
         <small class="muted">(Unified / Visual / Offline)</small>
       </div>
       <div class="toolbar">
-        <button id="themeBtn" class="chip" title="テーマ切り替え">🖌 Theme</button>
-        <button id="fsBtn" class="chip" title="フルスクリーン">⛶ Fullscreen</button>
-        <button id="resetBtn" class="chip" title="全リセット">↺ Reset</button>
+        <div class="iconBtn" id="themeBtn" title="テーマ切り替え"><span class="icon">🖌</span></div>
+        <div class="iconBtn" id="fsBtn" title="フルスクリーン"><span class="icon">⛶</span></div>
+        <div class="iconBtn" id="resetBtn" title="全リセット"><span class="icon">↺</span></div>
       </div>
     </header>
 
@@ -582,11 +780,14 @@
       <div class="body" id="unified">
         <div class="leftCol">
           <div>
-            <p class="hint lead">入力テストアプリです。</p>
-            <div class="toolbar" style="margin:6px 0">
-              <div class="spacer"></div><button id="clearText">Clear</button>
+            <div class="fieldHeader">
+              <div>
+                <h3>Type Field</h3>
+                <div class="infoText">入力テストアプリです。日本語IME/英語IMEどちらもOK。キーを押すと下のキーボードが光ります。</div>
+              </div>
+              <div class="iconBtn" id="clearText" title="クリア"><span class="icon">🗑</span></div>
             </div>
-            <textarea id="typingArea" placeholder="ここにタイプして確認（日本語IME/英語IMEどちらもOK。キーを押すと下のキーボードが光ります）"></textarea>
+            <textarea id="typingArea" placeholder="ここにタイプして確認"></textarea>
           </div>
 
           <div class="kbdWrap">
@@ -707,7 +908,19 @@
         </div>
 
         <div class="rightCol">
-          <p class="hint lead">カーソルを下の領域に移動すると、軌跡とスクロールの確認ができます。</p>
+          <div class="trajControls">
+            <div class="titleSection">
+              <h3>Motion Path</h3>
+              <div class="infoText">カーソルを下の領域に移動すると、軌跡とスクロールの確認ができます。</div>
+            </div>
+            <div class="controlButtons">
+              <div class="pulseBox" id="pulseBox" title="100pxごとにフラッシュ＆チック音">
+                <div class="pulseInner"></div>
+                <canvas class="pulseProg" id="pulseProg"></canvas>
+              </div>
+              <div class="iconBtn active" id="icoSound" title="速度ピッチ音 ON/OFF"><span class="icon" id="icoSoundGlyph">🔊</span></div>
+            </div>
+          </div>
           <div id="padWrap">
             <div id="padContent"><canvas id="padCanvas"></canvas></div>
             <div class="hud">
@@ -719,8 +932,8 @@
           </div>
 
           <div class="xyMeters">
-            <div class="dial" style="width: min(350px, 38vw);">
-              <h3>ポインタ速度 XY <span class="muted">(スクロールXY重ね表示)</span></h3>
+            <div class="dial" style="width: 232px;">
+              <h3>Motion Compass</h3>
               <canvas id="ptrDial"></canvas>
             </div>
             <div class="dial" style="display:none;">
@@ -731,6 +944,12 @@
                 <span>dy=<b id="sdyOld">0</b></span>
                 <span>|v|=<b id="sspdOld">0</b></span>
               </div>
+            </div>
+            <div class="barsWrap" style="flex: 1; min-width: 300px;">
+              <h3>Motion Profile</h3>
+              <div class="infoText" id="barsInfoText"></div>
+              <canvas id="speedBars" title="距離/秒のバー（直近30秒）"></canvas>
+              <div class="totalPxDisplay" id="totalPxDisplay">0 px</div>
             </div>
           </div>
         </div>
@@ -754,6 +973,7 @@
         const cs = getComputedStyle(document.documentElement);
         const get = k => cs.getPropertyValue(k).trim();
         return {
+          grid: get('--grid'),
           gridX: get('--grid-x'),
           gridY: get('--grid-y'),
           trail: get('--trail'),
@@ -780,7 +1000,10 @@
 
       function updateThemeBtn() {
         const n = document.documentElement.getAttribute('data-theme') || 'dark';
-        themeBtnEl.textContent = '🎨 ' + n.charAt(0).toUpperCase() + n.slice(1);
+        const icon = themeBtnEl.querySelector('.icon');
+        if (icon) {
+          icon.textContent = '🖌';
+        }
       }
       updateThemeBtn();
       // ---------- LEFT: Keyboard highlighting ----------
@@ -882,6 +1105,14 @@
         sVel.y = 0;
         lastClient = null;
         lastClientGlobal = null;
+        lastVs = 0;
+        lastMovePos = {x: 0, y: 0, t: 0};
+        totalPx = 0;
+        nextPulse = 100;
+        bins.length = 0;
+        startedAt = 0;
+        if (gain) gain.gain.value = 0;
+        removePulseFlash();
         pressedKeysHistory.clear();
         $$('#visualKb .k.pressed').forEach(k => k.classList.remove('pressed'));
       });
@@ -896,6 +1127,13 @@
       const moveXY = $('#moveXY');
       const pType = $('#pType');
       const btnState = $('#btnState');
+      const speedBars = $('#speedBars');
+      const totalPxDisplay = $('#totalPxDisplay');
+      const pulseBox = $('#pulseBox');
+      const pulseInner = document.querySelector('.pulseInner');
+      const pulseProg = $('#pulseProg');
+      const icoSound = $('#icoSound');
+      const icoSoundGlyph = $('#icoSoundGlyph');
       const pVel = {
         x: 0,
         y: 0
@@ -906,7 +1144,7 @@
       };
       let crossX = CONTENT_W / 2,
         crossY = CONTENT_H / 2,
-        trail = [];
+        trail = []; // {x, y, v, vs, t} - odometer方式
       const ripples = [];
       const MAX_RIPPLES = 6;
       const RIPPLE_SPEED = 2.8 / 16.7;
@@ -915,6 +1153,107 @@
       let lastClient = null;
       let lastClientGlobal = null;
       let inPad = false;
+      let lastTrailTime = 0; // 軌跡の速度計算用
+      let lastVs = 0; // 平滑化速度
+      let lastMovePos = {x: 0, y: 0, t: 0}; // 最後の移動位置と時刻
+      
+      // 速度バーグラフ用変数
+      const BIN_MS = 200; // サンプリング200ms
+      const SHOW_SEC = 24; // 表示約24秒
+      const MAX_BINS = Math.ceil((SHOW_SEC * 1000) / BIN_MS);
+      let totalPx = 0;
+      let nextPulse = 100;
+      let bins = []; // {tbin, dist(px), v(px/s), a(px/s^2)}
+      let startedAt = 0;
+      
+      // オーディオ関連変数
+      let ac = null, osc = null, gain = null;
+      let tickOsc = null, tickGain = null;
+      let sndChk = {checked: true}; // サウンド制御用
+
+      // オーディオ初期化
+      function initAudio() {
+        if (ac) {
+          // 既に初期化済みの場合、AudioContextがサスペンド状態なら再開
+          if (ac.state === 'suspended') {
+            ac.resume().catch(e => console.warn('AudioContext resume failed', e));
+          }
+          return;
+        }
+        try {
+          ac = new (window.AudioContext || window.webkitAudioContext)();
+          // 速度ピッチ音（連続）
+          osc = ac.createOscillator();
+          gain = ac.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = 200;
+          gain.gain.value = 0.0;
+          osc.connect(gain).connect(ac.destination);
+          osc.start();
+          // 100pxチック音
+          tickOsc = ac.createOscillator();
+          tickGain = ac.createGain();
+          tickOsc.type = 'square';
+          tickOsc.frequency.value = 880;
+          tickGain.gain.value = 0.0;
+          tickOsc.connect(tickGain).connect(ac.destination);
+          tickOsc.start();
+          // AudioContextがサスペンド状態の場合は再開
+          if (ac.state === 'suspended') {
+            ac.resume().catch(e => console.warn('AudioContext resume failed', e));
+          }
+        } catch (e) {
+          console.warn('Audio init failed', e);
+        }
+      }
+
+      // 速度に応じたピッチ制御
+      function setPitchBySpeed(v) {
+        if (!ac || !sndChk.checked) return;
+        // AudioContextがサスペンド状態なら再開を試みる
+        if (ac.state === 'suspended') {
+          ac.resume().catch(e => console.warn('AudioContext resume failed', e));
+          return; // 今回はスキップ、次回から動作する
+        }
+        if (ac.state !== 'running') return;
+        const f = Math.max(120, Math.min(2200, 120 + v * 0.25));
+        osc.frequency.setTargetAtTime(f, ac.currentTime, 0.015);
+        const g = Math.max(0, Math.min(0.25, v / 3000));
+        gain.gain.setTargetAtTime(g, ac.currentTime, 0.02);
+      }
+
+      // 100pxチック音
+      function pulseTick() {
+        if (!ac || !sndChk.checked) return;
+        // AudioContextがサスペンド状態なら再開を試みる
+        if (ac.state === 'suspended') {
+          ac.resume().catch(e => console.warn('AudioContext resume failed', e));
+          return; // 今回はスキップ、次回から動作する
+        }
+        if (ac.state !== 'running') return;
+        const t = ac.currentTime;
+        tickGain.gain.cancelScheduledValues(t);
+        tickGain.gain.setValueAtTime(0.0, t);
+        tickGain.gain.linearRampToValueAtTime(0.18, t + 0.005);
+        tickGain.gain.exponentialRampToValueAtTime(0.0008, t + 0.07);
+      }
+
+      // 100pxフラッシュ
+      function doPulse() {
+        pulseTick();
+        pulseFlash();
+      }
+
+      function pulseFlash() {
+        if (!pulseBox) return;
+        pulseBox.classList.add('flash');
+        setTimeout(removePulseFlash, 90);
+      }
+
+      function removePulseFlash() {
+        if (!pulseBox) return;
+        pulseBox.classList.remove('flash');
+      }
 
       function size() {
         const dpr = window.devicePixelRatio || 1;
@@ -923,6 +1262,14 @@
         pad.width = Math.floor(CONTENT_W * dpr);
         pad.height = Math.floor(CONTENT_H * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        
+        // speedBars canvasのリサイズ
+        if (speedBars) {
+          const r = speedBars.getBoundingClientRect();
+          speedBars.width = Math.floor(r.width * dpr);
+          speedBars.height = Math.floor(r.height * dpr);
+        }
+        
         draw();
       }
       window.addEventListener('resize', size, {
@@ -960,16 +1307,29 @@
           ctx.stroke();
         }
         ctx.restore();
-        // trail
+        // trail (odometer方式: 速度ベース色相・明度 + フェードアウト)
+        const nowt = performance.now();
         ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.save();
-        for (let i = 0; i < trail.length; i++) {
-          const t = trail[i];
-          const a = (i + 1) / Math.max(1, trail.length);
-          ctx.globalAlpha = Math.min(1, 0.2 + a * 0.8);
-          ctx.strokeStyle = trailCol;
+        for (let i = 1; i < trail.length; i++) {
+          const p0 = trail[i - 1];
+          const p1 = trail[i];
+          const age = (nowt - p1.t) / 1000;
+          const alpha = Math.max(0, 1.0 - age / 2.0); // 2秒でフェードアウト
+          if (alpha <= 0) continue;
+          
+          // 速度に応じた色相・明度変化
+          const v = p1.vs || p1.v || 0;
+          const norm = Math.min(1, v / 2500);
+          const hue = 200 + norm * 40;     // 200→240 (青→青紫)
+          const sat = 72;
+          const light = 35 + norm * 45;     // 明るさで速度感
+          ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
           ctx.beginPath();
-          ctx.arc(t.x, t.y, 2.4, 0, Math.PI * 2);
+          ctx.moveTo(p0.x, p0.y);
+          ctx.lineTo(p1.x, p1.y);
           ctx.stroke();
         }
         ctx.restore();
@@ -992,6 +1352,156 @@
           ctx.beginPath();
           ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
           ctx.stroke();
+        }
+        ctx.restore();
+        
+        // 速度バーグラフの描画
+        drawBars();
+        // 積算ピクセル表示の更新
+        if (totalPxDisplay) {
+          totalPxDisplay.textContent = `${Math.round(totalPx)} px`;
+        }
+        // 100pxインジケーターの進捗リング
+        drawPulseProgress();
+      }
+
+      // 100pxインジケーター内の進捗リング描画
+      function drawPulseProgress() {
+        if (!pulseProg || !pulseBox) return;
+        const c = pulseProg;
+        const dpr = window.devicePixelRatio || 1;
+        const ctx = c.getContext('2d');
+        
+        // canvasサイズを設定（毎回確認して更新）
+        const boxW = pulseBox.clientWidth || 38;
+        const boxH = pulseBox.clientHeight || 38;
+        c.width = Math.max(1, Math.floor(boxW * dpr));
+        c.height = Math.max(1, Math.floor(boxH * dpr));
+        
+        // Transformを設定
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        
+        // 論理サイズ（CSSピクセル単位）でclear
+        const W = boxW;
+        const H = boxH;
+        ctx.clearRect(0, 0, W, H);
+        
+        const cx = W / 2;
+        const cy = H / 2;
+        const lineWidth = 6;
+        
+        // 円が切れないように、lineWidth/2 + マージン2pxを確保
+        const r = Math.max(5, Math.min(cx, cy) - lineWidth / 2 - 2);
+        // 進捗を計算
+        let prog = (totalPx % 100) / 100;
+        
+        // 背景の円（常に描画）
+        ctx.strokeStyle = '#20324a';
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'butt'; // 端を切り揃え
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // 中心部分を明示的に背景色で塗りつぶす（pulseInnerの緑色が透けないように）
+        const innerRadius = r - lineWidth / 2 - 2;
+        if (innerRadius > 0) {
+          ctx.fillStyle = 'rgba(255, 255, 255, .08)'; // pulseInnerの初期背景色と同じ
+          ctx.beginPath();
+          ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // 進捗の円（進捗がある時だけ描画、ただし完全な円にはしない）
+        // 進捗が非常に小さい時（10%未満）または大きい時（95%以上）は描画しない（閉じを防ぐ）
+        if (prog >= 0.10 && prog <= 0.95) {
+          ctx.strokeStyle = '#79e28a';
+          ctx.lineWidth = lineWidth;
+          ctx.lineCap = 'round'; // 端を丸くする
+          ctx.beginPath();
+          const startAngle = -Math.PI / 2;
+          
+          // 進捗を調整：最小10%、最大95%で確実に閉じないように
+          let safeProg = Math.max(0.10, Math.min(prog, 0.95));
+          
+          // 最大角度を制限（完全な円にならないように）
+          const maxAngle = 2 * Math.PI - (Math.PI / 30); // 6度のギャップ
+          const angleAmount = safeProg * 2 * Math.PI;
+          const endAngle = startAngle + Math.min(angleAmount, maxAngle);
+          
+          // 円弧を描画（開始角度はそのまま、終了角度のみ調整）
+          ctx.arc(cx, cy, r, startAngle, endAngle, false);
+          ctx.stroke();
+        }
+      }
+
+      // 速度バーグラフ描画用のユーティリティ関数
+      function drawGrid(ctx, c, gridColor) {
+        ctx.save();
+        ctx.strokeStyle = gridColor || '#142033'; // デフォルト色（フォールバック）
+        ctx.lineWidth = 1;
+        const step = 20 * (window.devicePixelRatio || 1);
+        for (let x = 0; x < c.width; x += step) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, c.height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < c.height; y += step) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(c.width, y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function percentile(arr, p) {
+        if (!arr.length) return 0;
+        const a = [...arr].sort((x, y) => x - y);
+        const idx = Math.min(a.length - 1, Math.max(0, Math.floor((a.length - 1) * p)));
+        return a[idx];
+      }
+
+      function drawBars() {
+        if (!speedBars) return;
+        const c = speedBars;
+        const ctx = c.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, c.width / dpr, c.height / dpr);
+        // テーマのグリッド色を使用
+        const C = themeColors();
+        drawGrid(ctx, c, C.grid);
+        const padX = 20;  // 左右のパディング（論理ピクセル）
+        const padTop = 48; // 上部パディング（タイトルと情報テキストの分）
+        const padBottom = 2; // 下部パディングを最小限に
+        const W = (c.width / dpr) - 2 * padX;
+        const H = (c.height / dpr) - padTop - padBottom;
+        const N = Math.min(MAX_BINS, bins.length);
+        // 情報テキストをHTML要素に表示（canvas上ではなく）
+        const infoTextEl = document.getElementById('barsInfoText');
+        if (infoTextEl) {
+          infoTextEl.textContent = `px/秒（${BIN_MS}msサンプル・表示約${SHOW_SEC}s） / 色=加速度`;
+        }
+        if (!N) return;
+        const vmax = Math.max(200, ...bins.map(b => b.v));
+        const absA = bins.map(b => Math.abs(b.a));
+        let aRange = Math.max(1000, percentile(absA, 0.95));
+        const barStep = W / MAX_BINS;
+        const barW = Math.max(1, Math.floor(barStep * 0.82));
+
+        ctx.save();
+        ctx.translate(padX, (c.height / dpr) - padBottom);
+        for (let i = 0; i < N; i++) {
+          const b = bins[bins.length - N + i];
+          const h = (b.v / vmax) * H;
+          const an = Math.max(-1, Math.min(1, b.a / aRange));
+          const hue = 210 + an * 90;
+          const sat = 70;
+          const light = 32 + Math.min(50, Math.pow(b.v / vmax, 0.8) * 50);
+          ctx.fillStyle = `hsl(${hue} ${sat}% ${light}%)`;
+          ctx.fillRect(i * barStep, -h, barW, h);
         }
         ctx.restore();
       }
@@ -1068,11 +1578,66 @@
         clientXY.textContent = String(Math.round(crossX)) + ',' + String(Math.round(crossY));
         moveXY.textContent = String(Math.round(mvX)) + ',' + String(Math.round(mvY));
         pType.textContent = e.pointerType || 'mouse';
+        
+        // odometer方式: 速度計算と軌跡記録
+        const nowt = performance.now();
+        let v = 0, vs = 0;
+        if (lastMovePos.t > 0) {
+          const dt = (nowt - lastMovePos.t) / 1000;
+          if (dt > 0) {
+            const dx = crossX - lastMovePos.x;
+            const dy = crossY - lastMovePos.y;
+            const d = Math.hypot(dx, dy);
+            v = d / dt;
+            // 平滑化速度 (EMA: α=0.3)
+            vs = lastVs = 0.3 * v + 0.7 * lastVs;
+            
+            // 距離計測とビン更新
+            if (startedAt === 0) {
+              startedAt = nowt;
+              initAudio();
+              // AudioContextがサスペンド状態の場合、確実に再開
+              if (ac && ac.state === 'suspended') {
+                ac.resume().catch(e => console.warn('AudioContext resume failed', e));
+              }
+            }
+            totalPx += d;
+            
+            // 速度ピッチ音
+            setPitchBySpeed(v);
+            
+            // 100pxごとにチック音とフラッシュ
+            while (totalPx >= nextPulse) {
+              doPulse();
+              nextPulse += 100;
+            }
+            
+            // 200msビンへ加算
+            const tbin = Math.floor((nowt - startedAt) / BIN_MS);
+            if (!bins.length || bins[bins.length - 1].tbin !== tbin) {
+              // 新規ビン開始、前ビンの速度と加速度を確定
+              if (bins.length) {
+                const prev = bins[bins.length - 1];
+                prev.v = (prev.dist) / (BIN_MS / 1000);
+                const preprev = bins.length > 1 ? bins[bins.length - 2] : null;
+                prev.a = preprev ? (prev.v - preprev.v) / (BIN_MS / 1000) : 0;
+              }
+              bins.push({tbin, dist: 0, v: 0, a: 0});
+              if (bins.length > MAX_BINS) bins.shift();
+            }
+            bins[bins.length - 1].dist += d;
+          }
+        }
         trail.push({
           x: crossX,
-          y: crossY
+          y: crossY,
+          v: v,
+          vs: vs,
+          t: nowt
         });
-        if (trail.length > 100) trail.shift();
+        if (trail.length > 900) trail.shift();
+        lastMovePos = {x: crossX, y: crossY, t: nowt};
+        
         pVel.x += mvX;
         pVel.y += mvY;
         draw();
@@ -1092,6 +1657,18 @@
       padWrap.addEventListener('dblclick', () => {
         spawnRipple(crossX, crossY);
       });
+      // 音ON/OFFボタン
+      if (icoSound) {
+        icoSound.addEventListener('click', () => {
+          sndChk.checked = !sndChk.checked;
+          icoSound.classList.toggle('active', sndChk.checked);
+          icoSoundGlyph.textContent = sndChk.checked ? '🔊' : '🔇';
+          if (!sndChk.checked && gain) {
+            gain.gain.value = 0;
+            tickGain.gain.value = 0;
+          }
+        });
+      }
       // Outside the pad: only update the dials (pointer & scroll)
       document.addEventListener('mousemove', (e) => {
         if (inPad) return;
@@ -1276,38 +1853,6 @@
         ctx.arc(cx + ptrNx, cy + ptrNy, 5, 0, Math.PI * 2);
         ctx.fillStyle = ptrColors.tip;
         ctx.fill();
-        
-        // === 凡例を右下に描画 ===
-        ctx.save();
-        ctx.font = '11px system-ui, sans-serif';
-        const legendY = h - 10;
-        const legendX = w - 10;
-        
-        // スクロールXY凡例（右側）
-        const scrLegendX = legendX;
-        ctx.strokeStyle = scrColors.tip;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(scrLegendX - 8, legendY - 6, 4, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(scrLegendX - 8, legendY - 6, 3, 0, Math.PI * 2);
-        ctx.fillStyle = theme.panel2;
-        ctx.fill();
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.textAlign = 'right';
-        ctx.fillText('スクロール', scrLegendX - 12, legendY);
-        
-        // ポインタ速度XY凡例（左側、スクロールの左に配置）
-        const ptrLegendX = scrLegendX - 70;
-        ctx.fillStyle = ptrColors.tip;
-        ctx.beginPath();
-        ctx.arc(ptrLegendX - 8, legendY - 6, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.fillText('ポインタ', ptrLegendX - 12, legendY);
-        
-        ctx.restore();
       }
 
       function tick() {
@@ -1327,6 +1872,10 @@
           tip: Cc.scrTip,
           arc: Cc.scrArc
         }, Cc);
+        // 軌跡のフェードアウト描画（軌跡がある場合のみ）
+        if (trail.length > 0) {
+          draw();
+        }
         requestAnimationFrame(tick);
       }
       requestAnimationFrame(tick);
