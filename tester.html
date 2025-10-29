@@ -275,6 +275,7 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 12px;
+      margin-bottom: 12px; /* Path Viewと同じ間隔 */
     }
 
     .fieldHeader > div:first-child {
@@ -314,13 +315,16 @@
       box-sizing: border-box;
     }
 
-    /* On-screen keyboard */
+    /* Input Matrix */
     .kbdWrap {
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 16px;
+      padding: 16px 16px 16px 16px; /* 上下左右固定マージン */
       background: linear-gradient(160deg, var(--panel), var(--panel-2));
       box-shadow: inset 0 2px 8px rgba(0, 0, 0, .3), 0 4px 12px rgba(0, 0, 0, .3);
+      height: 296px; /* 右カラムの要素と揃える: 280px(キーボード) + 16px(padding) = 296px */
+      box-sizing: border-box;
+      overflow: hidden; /* 固定高さ内に収める */
     }
 
     .keyboard {
@@ -542,7 +546,7 @@
       background: rgba(0, 0, 0, .25)
     }
 
-    /* XY dials (pointer & scroll) */
+    /* Motion Compass, Scroll Compass, Velocity Graph */
     .xyMeters {
       display: flex;
       gap: 12px
@@ -790,8 +794,16 @@
             <textarea id="typingArea" placeholder="ここにタイプして確認"></textarea>
           </div>
 
+          <div>
+            <div class="fieldHeader">
+              <div>
+                <h3>Input Matrix</h3>
+                <div class="infoText">押下されたキーがリアルタイムで表示されます。</div>
+              </div>
+            </div>
+          </div>
           <div class="kbdWrap">
-            <div class="keyboard" id="visualKb" aria-label="on-screen keyboard">
+            <div class="keyboard" id="visualKb" aria-label="Input Matrix">
               <div class="row">
                 <div class="k w1 clusterLabel" data-code="Escape"><span>Esc</span></div>
                 <div class="gap w1" aria-hidden="true"></div>
@@ -910,7 +922,7 @@
         <div class="rightCol">
           <div class="trajControls">
             <div class="titleSection">
-              <h3>Motion Path</h3>
+              <h3>Path View</h3>
               <div class="infoText">カーソルを下の領域に移動すると、軌跡とスクロールの確認ができます。</div>
             </div>
             <div class="controlButtons">
@@ -937,7 +949,7 @@
               <canvas id="ptrDial"></canvas>
             </div>
             <div class="dial" style="display:none;">
-              <h3>スクロール XY</h3>
+              <h3>Scroll Compass</h3>
               <canvas id="scrDial"></canvas>
               <div class="dialLegend">
                 <span>dx=<b id="sdxOld">0</b></span>
@@ -946,7 +958,7 @@
               </div>
             </div>
             <div class="barsWrap" style="flex: 1; min-width: 300px;">
-              <h3>Motion Profile</h3>
+              <h3>Velocity Graph</h3>
               <div class="infoText" id="barsInfoText"></div>
               <canvas id="speedBars" title="距離/秒のバー（直近30秒）"></canvas>
               <div class="totalPxDisplay" id="totalPxDisplay">0 px</div>
@@ -1006,7 +1018,7 @@
         }
       }
       updateThemeBtn();
-      // ---------- LEFT: Keyboard highlighting ----------
+      // ---------- LEFT: Input Matrix ----------
       const typingArea = $('#typingArea');
       const clearBtn = $('#clearText');
       const downKeys = new Set();
@@ -1116,7 +1128,7 @@
         pressedKeysHistory.clear();
         $$('#visualKb .k.pressed').forEach(k => k.classList.remove('pressed'));
       });
-      // ---------- RIGHT: Pointer visual & dials ----------
+      // ---------- RIGHT: Path View, Motion Compass, Scroll Compass, Velocity Graph ----------
       const padWrap = $('#padWrap');
       const padContent = $('#padContent');
       const pad = $('#padCanvas');
@@ -1669,7 +1681,7 @@
           }
         });
       }
-      // Outside the pad: only update the dials (pointer & scroll)
+      // Outside the pad: only update Motion Compass and Scroll Compass
       document.addEventListener('mousemove', (e) => {
         if (inPad) return;
         if (lastClientGlobal) {
@@ -1791,7 +1803,7 @@
         ctx.stroke();
         ctx.restore();
         
-        // === スクロールXY (背面に描画) ===
+        // === Scroll Compass (背面に描画) ===
         // magnitude arc (dashed) - 最初に描画
         const scrMag = Math.hypot(scrVel.x, scrVel.y);
         const scrRatio = Math.min(1, scrMag / scrRange);
@@ -1814,7 +1826,7 @@
         ctx.stroke();
         
         // hollow circle (ring) at tip
-        // 外径: 8px, 内径: 6px (ポインタ速度XYの円(5px)より1px大きい内径)
+        // 外径: 8px, 内径: 6px (Motion Compassの円(5px)より1px大きい内径)
         // 外周を描画
         ctx.beginPath();
         ctx.arc(cx + scrNx, cy + scrNy, 8, 0, Math.PI * 2);
@@ -1827,7 +1839,7 @@
         ctx.fillStyle = theme.panel2;
         ctx.fill();
         
-        // === ポインタ速度XY (前面に描画) ===
+        // === Motion Compass (前面に描画) ===
         // magnitude arc
         const ptrMag = Math.hypot(ptrVel.x, ptrVel.y);
         const ptrRatio = Math.min(1, ptrMag / ptrRange);
@@ -1862,7 +1874,7 @@
         sVel.x *= decay;
         sVel.y *= decay;
         const Cc = themeColors();
-        // ポインタ速度XYにスクロールXYを重ねて描画
+        // Motion CompassにScroll Compassを重ねて描画
         drawCombinedDial(ptrCtx, pVel, sVel, 300, 600, {
           line: Cc.ptrLine,
           tip: Cc.ptrTip,
@@ -1879,7 +1891,7 @@
         requestAnimationFrame(tick);
       }
       requestAnimationFrame(tick);
-      // Wheel inside pad contributes to scroll dial
+      // Wheel inside pad contributes to Scroll Compass
       padWrap.addEventListener('wheel', (e) => {
         sVel.x += e.deltaX;
         sVel.y += -e.deltaY;
@@ -1941,8 +1953,8 @@
           sVel.x += 200;
           sVel.y += -150;
           setTimeout(() => {
-            ok('ポインタ速度ダイアルが更新', document.getElementById('pspd').textContent !== prev);
-            ok('スクロールダイアルが更新', document.getElementById('sspd').textContent !== prevS);
+            ok('Motion Compassが更新', document.getElementById('pspd').textContent !== prev);
+            ok('Scroll Compassが更新', document.getElementById('sspd').textContent !== prevS);
             console.group('%cSelfTests', 'color:#22c55e');
             tests.forEach(t => console.log((t.pass ? '✔' : '✖'), t.name));
             console.groupEnd();
