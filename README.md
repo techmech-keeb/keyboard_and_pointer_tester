@@ -2,6 +2,8 @@
 
 統合型の入力テストツール。キーボード入力とポインター操作を可視化し、リアルタイムで動作を確認できます。
 
+![Keyboard & Pointer Tester](./screenshot.png)
+
 ## 動作確認
 
 - 本プロジェクト: [https://codepen.io/techmech-keeb/pen/RNrJKgm](https://codepen.io/techmech-keeb/pen/RNrJKgm)
@@ -88,7 +90,8 @@
 ```
 keyboard_and_pointer_tester/
 ├── tester.html          # メインファイル（全ての機能を含む）
-└── README.md            # このファイル
+├── README.md            # このファイル
+└── screenshot.png       # スクリーンショット画像
 ```
 
 ## クレジット
