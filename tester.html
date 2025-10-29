@@ -275,7 +275,9 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 12px;
-      margin-bottom: 12px; /* Path Viewと同じ間隔 */
+      margin-bottom: 14px; /* 説明文と描写領域の間隔を14pxに統一 */
+      /* min-height: 削除 - 自然な高さで表示 */
+      box-sizing: border-box;
     }
 
     .fieldHeader > div:first-child {
@@ -507,7 +509,7 @@
     .rightCol {
       display: grid;
       grid-template-rows: auto auto;
-      gap: 12px
+      gap: 14px /* Path Viewの説明文と描写領域の間隔を14pxに統一（fieldHeaderと合わせる） */
     }
 
     #padWrap {
@@ -560,13 +562,19 @@
       padding: 10px 6px;
       background: var(--panel-2);
       flex: 0 0 auto;
-      height: 296px; /* キーボード表示部と揃える: 280px(キーボード) + 16px(padding) = 296px */
+      height: 296px; /* Input Matrix基準で統一: 280px(コンテンツ) + 16px(padding) = 296px */
+      box-sizing: border-box;
     }
 
     .dial h3 {
       margin: 0 0 6px 0;
       font-size: 13px;
       opacity: .9
+    }
+
+    /* Motion Compass用 - タイトルを枠外に配置したため */
+    .xyMeters > div:first-child .dial {
+      margin-top: 0;
     }
 
     .dial canvas {
@@ -584,33 +592,11 @@
       border-radius: 12px;
       overflow: hidden;
       background: var(--panel-2);
-      height: 296px; /* キーボード表示部と揃える: 280px(キーボード) + 16px(padding) = 296px */
+      height: 296px; /* Input Matrix基準で統一: 280px(コンテンツ) + 16px(padding) = 296px */
+      box-sizing: border-box;
     }
 
-    .barsWrap h3 {
-      position: absolute;
-      top: 8px;
-      left: 12px;
-      margin: 0;
-      font-size: 13px;
-      opacity: .9;
-      z-index: 5;
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .barsWrap .infoText {
-      position: absolute;
-      top: 30px;
-      left: 12px;
-      margin: 0;
-      font-size: 11px;
-      opacity: .75;
-      z-index: 5;
-      color: var(--muted);
-      font-weight: 400;
-      pointer-events: none;
-    }
+    /* Velocity Graph - タイトルと説明文を枠外に移動したため削除 */
 
     .barsWrap canvas {
       width: 100%;
@@ -637,7 +623,9 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 12px;
-      margin-bottom: 0;
+      /* margin-bottom: 右カラムの grid gap で管理 */
+      /* min-height: 削除 - 自然な高さで表示 */
+      box-sizing: border-box;
     }
 
     .trajControls .titleSection {
@@ -802,9 +790,8 @@
                 <div class="infoText">押下されたキーがリアルタイムで表示されます。</div>
               </div>
             </div>
-          </div>
-          <div class="kbdWrap">
-            <div class="keyboard" id="visualKb" aria-label="Input Matrix">
+            <div class="kbdWrap">
+              <div class="keyboard" id="visualKb" aria-label="Input Matrix">
               <div class="row">
                 <div class="k w1 clusterLabel" data-code="Escape"><span>Esc</span></div>
                 <div class="gap w1" aria-hidden="true"></div>
@@ -917,6 +904,7 @@
                 <div class="k w1 clusterLabel" data-code="ArrowRight"><span>→</span></div>
               </div>
             </div>
+            </div>
           </div>
         </div>
 
@@ -945,9 +933,16 @@
           </div>
 
           <div class="xyMeters">
-            <div class="dial" style="width: 232px;">
-              <h3>Motion Compass</h3>
-              <canvas id="ptrDial"></canvas>
+            <div style="width: 232px;">
+              <div class="fieldHeader">
+                <div>
+                  <h3>Motion Compass</h3>
+                  <div class="infoText">ポインタの移動方向と速度をコンパス表示</div>
+                </div>
+              </div>
+              <div class="dial">
+                <canvas id="ptrDial"></canvas>
+              </div>
             </div>
             <div class="dial" style="display:none;">
               <h3>Scroll Compass</h3>
@@ -958,11 +953,17 @@
                 <span>|v|=<b id="sspdOld">0</b></span>
               </div>
             </div>
-            <div class="barsWrap" style="flex: 1; min-width: 300px;">
-              <h3>Velocity Graph</h3>
-              <div class="infoText" id="barsInfoText"></div>
-              <canvas id="speedBars" title="距離/秒のバー（直近30秒）"></canvas>
-              <div class="totalPxDisplay" id="totalPxDisplay">0 px</div>
+            <div style="flex: 1; min-width: 300px;">
+              <div class="fieldHeader">
+                <div>
+                  <h3>Velocity Graph</h3>
+                  <div class="infoText" id="barsInfoText"></div>
+                </div>
+              </div>
+              <div class="barsWrap">
+                <canvas id="speedBars" title="距離/秒のバー（直近30秒）"></canvas>
+                <div class="totalPxDisplay" id="totalPxDisplay">0 px</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1024,6 +1025,22 @@
       const clearBtn = $('#clearText');
       const downKeys = new Set();
       const pressedKeysHistory = new Set();
+      
+      // Type Field と Path View の高さを同期
+      const padWrap = $('#padWrap');
+      function syncHeights() {
+        if (!typingArea || !padWrap) return;
+        const textareaRect = typingArea.getBoundingClientRect();
+        const totalHeight = textareaRect.height;
+        padWrap.style.height = totalHeight + 'px';
+      }
+      // ResizeObserver で textarea の高さ変化を監視
+      if (typingArea && padWrap && window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(syncHeights);
+        resizeObserver.observe(typingArea);
+        // 初期状態も同期
+        syncHeights();
+      }
 
       function mapMod(code) {
         switch (code) {
@@ -1130,7 +1147,7 @@
         $$('#visualKb .k.pressed').forEach(k => k.classList.remove('pressed'));
       });
       // ---------- RIGHT: Path View, Motion Compass, Scroll Compass, Velocity Graph ----------
-      const padWrap = $('#padWrap');
+      // padWrap は上の方で定義済み（高さ同期用）
       const padContent = $('#padContent');
       const pad = $('#padCanvas');
       const ctx = pad.getContext('2d');
@@ -1487,7 +1504,7 @@
         const C = themeColors();
         drawGrid(ctx, c, C.grid);
         const padX = 20;  // 左右のパディング（論理ピクセル）
-        const padTop = 48; // 上部パディング（タイトルと情報テキストの分）
+        const padTop = 12; // 上部パディング（タイトルと説明文は枠外に移動）
         const padBottom = 2; // 下部パディングを最小限に
         const W = (c.width / dpr) - 2 * padX;
         const H = (c.height / dpr) - padTop - padBottom;
