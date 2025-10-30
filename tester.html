@@ -1268,6 +1268,54 @@
         tickGain.gain.exponentialRampToValueAtTime(0.0008, t + 0.07);
       }
 
+      // アナログシンセ風クリック音（非同期単音）
+      function playClickSound(opts = {}) {
+        if (!ac || !sndChk.checked) return;
+        // AudioContextがサスペンド状態なら再開を試みる
+        if (ac.state === 'suspended') {
+          ac.resume().catch(e => console.warn('AudioContext resume failed', e));
+          return;
+        }
+        if (ac.state !== 'running') return;
+        
+        const freq = opts.freq || 1200;
+        const duration = opts.duration || 60; // ms
+        const waveType = opts.waveType || 'sine';
+        const volume = opts.volume || 0.3;
+        const pan = opts.pan || 0; // -1 (左) to 1 (右)
+        
+        try {
+          const osc = ac.createOscillator();
+          const gainNode = ac.createGain();
+          const panner = ac.createStereoPanner ? ac.createStereoPanner() : null;
+          
+          osc.type = waveType;
+          osc.frequency.value = freq;
+          
+          // ASRエンベロープ: Attack 10ms → Decay
+          const t = ac.currentTime;
+          const attackTime = 0.01;
+          const decayTime = duration / 1000;
+          
+          gainNode.gain.setValueAtTime(0, t);
+          gainNode.gain.linearRampToValueAtTime(volume, t + attackTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, t + decayTime);
+          
+          // パン（左右定位）
+          if (panner) {
+            panner.pan.value = pan;
+            osc.connect(gainNode).connect(panner).connect(ac.destination);
+          } else {
+            osc.connect(gainNode).connect(ac.destination);
+          }
+          
+          osc.start(t);
+          osc.stop(t + decayTime);
+        } catch (e) {
+          console.warn('click sound failed', e);
+        }
+      }
+
       // 100pxフラッシュ
       function doPulse() {
         pulseTick();
@@ -1679,6 +1727,48 @@
         const buttons = [e.buttons & 1, e.buttons & 4, e.buttons & 2].map(b => b ? 1 : 0);
         btnState.textContent = buttons.join(' ');
         spawnRipple(crossX, crossY);
+        
+        // AudioContextが初期化されていない場合は初期化
+        if (!ac) {
+          initAudio();
+          if (ac && ac.state === 'suspended') {
+            ac.resume().catch(e => console.warn('AudioContext resume failed', e));
+          }
+        }
+        
+        // アナログシンセ風クリック音
+        const leftClick = e.button === 0;  // 左クリック
+        const rightClick = e.button === 2; // 右クリック
+        const middleClick = e.button === 1; // 中クリック
+        
+        if (leftClick) {
+          // 左クリック: 明るいピッ音
+          playClickSound({
+            freq: 1200 + Math.random() * 200, // ランダム性で面白さUP
+            duration: 50,
+            waveType: 'sine',
+            volume: 0.3,
+            pan: (crossX / CONTENT_W - 0.5) * 0.8 // X座標で左右パン
+          });
+        } else if (rightClick) {
+          // 右クリック: 硬めのカチ音
+          playClickSound({
+            freq: 800 + Math.random() * 100,
+            duration: 60,
+            waveType: 'square',
+            volume: 0.25,
+            pan: (crossX / CONTENT_W - 0.5) * 0.8
+          });
+        } else if (middleClick) {
+          // 中クリック: 低めのトン音
+          playClickSound({
+            freq: 500 + Math.random() * 100,
+            duration: 80,
+            waveType: 'triangle',
+            volume: 0.3,
+            pan: (crossX / CONTENT_W - 0.5) * 0.8
+          });
+        }
       });
       padWrap.addEventListener('mouseup', (e) => {
         const buttons = [e.buttons & 1, e.buttons & 4, e.buttons & 2].map(b => b ? 1 : 0);
@@ -1686,6 +1776,32 @@
       });
       padWrap.addEventListener('dblclick', () => {
         spawnRipple(crossX, crossY);
+        
+        // AudioContextが初期化されていない場合は初期化
+        if (!ac) {
+          initAudio();
+          if (ac && ac.state === 'suspended') {
+            ac.resume().catch(e => console.warn('AudioContext resume failed', e));
+          }
+        }
+        
+        // ダブルクリック: 2音の和音（爽快感）
+        playClickSound({
+          freq: 800,
+          duration: 70,
+          waveType: 'sine',
+          volume: 0.25,
+          pan: (crossX / CONTENT_W - 0.5) * 0.8
+        });
+        setTimeout(() => {
+          playClickSound({
+            freq: 1000,
+            duration: 70,
+            waveType: 'sine',
+            volume: 0.25,
+            pan: (crossX / CONTENT_W - 0.5) * 0.8
+          });
+        }, 30);
       });
       // 音ON/OFFボタン
       if (icoSound) {
