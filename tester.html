@@ -159,7 +159,7 @@
     }
 
     .wrap {
-      width: min(1728px, 90vw);
+      width: min(2048px, 96vw);
       margin: 0 auto;
       padding: 16px 16px 28px
     }
@@ -257,6 +257,12 @@
       gap: 16px
     }
 
+    @media (max-width:1500px) {
+      #unified {
+        grid-template-columns: 1fr
+      }
+    }
+
     @media (max-width:980px) {
       #unified {
         grid-template-columns: 1fr
@@ -305,9 +311,9 @@
 
     textarea#typingArea {
       width: 100%;
-      height: 360px; /* Path Viewと同じ高さ */
-      min-height: 240px; /* リサイズ時の最小値 */
-      resize: vertical;
+      height: clamp(260px, 35vh, 520px);
+      min-height: 220px;
+      resize: none;
       border-radius: 12px;
       border: 1px solid var(--border);
       padding: 14px;
@@ -325,7 +331,7 @@
       padding: 16px 16px 16px 16px; /* 上下左右固定マージン */
       background: linear-gradient(160deg, var(--panel), var(--panel-2));
       box-shadow: inset 0 2px 8px rgba(0, 0, 0, .3), 0 4px 12px rgba(0, 0, 0, .3);
-      height: 296px; /* 右カラムの要素と揃える: 280px(キーボード) + 16px(padding) = 296px */
+      height: clamp(240px, 28vh, 340px);
       box-sizing: border-box;
       overflow: hidden; /* 固定高さ内に収める */
     }
@@ -333,7 +339,7 @@
     .keyboard {
       display: grid;
       grid-template-columns: repeat(74, minmax(0, 1fr));
-      grid-auto-rows: clamp(30px, 2.8vw, 40px);
+      grid-auto-rows: clamp(24px, 2.1vw, 38px);
       gap: 2px;
       align-items: stretch
     }
@@ -517,7 +523,7 @@
       border-radius: 14px;
       border: 1px solid var(--border);
       overflow: auto;
-      height: 360px;
+      height: clamp(260px, 35vh, 520px);
       cursor: crosshair;
       user-select: none;
       background: var(--pad-bg);
@@ -562,7 +568,7 @@
       padding: 10px 6px;
       background: var(--panel-2);
       flex: 0 0 auto;
-      height: 296px; /* Input Matrix基準で統一: 280px(コンテンツ) + 16px(padding) = 296px */
+      height: clamp(240px, 28vh, 340px);
       box-sizing: border-box;
     }
 
@@ -592,8 +598,23 @@
       border-radius: 12px;
       overflow: hidden;
       background: var(--panel-2);
-      height: 296px; /* Input Matrix基準で統一: 280px(コンテンツ) + 16px(padding) = 296px */
+      height: clamp(240px, 28vh, 340px);
       box-sizing: border-box;
+    }
+
+    @media (max-width: 1280px), (max-height: 900px) {
+      .wrap {
+        width: min(1600px, 98vw);
+        padding: 10px 10px 18px;
+      }
+
+      .card .body {
+        padding: 10px;
+      }
+
+      .fieldHeader {
+        margin-bottom: 10px;
+      }
     }
 
     /* Velocity Graph - タイトルと説明文を枠外に移動したため削除 */
@@ -776,11 +797,11 @@
             <div class="fieldHeader">
               <div>
                 <h3>Type Field</h3>
-                <div class="infoText">入力テストアプリです。日本語IME/英語IMEどちらもOK。この領域をクリックしてアクティブにしてから、キーを押すと下のキーボードが光ります。</div>
+                <div class="infoText">入力テストアプリです。日本語IME/英語IMEどちらもOK。画面上のどこでキーを押しても下のキーボードに反映されます。</div>
               </div>
               <div class="iconBtn" id="clearText" title="クリア"><span class="icon">🗑</span></div>
             </div>
-            <textarea id="typingArea" placeholder="ここをクリックしてからタイプ"></textarea>
+            <textarea id="typingArea" placeholder="この欄は入力内容確認用です（キー検知は画面全体で常時有効）"></textarea>
           </div>
 
           <div>
@@ -912,7 +933,7 @@
           <div class="trajControls">
             <div class="titleSection">
               <h3>Path View</h3>
-              <div class="infoText">カーソルを下の領域に移動すると、軌跡とスクロールの確認ができます。</div>
+              <div class="infoText">マウス移動・スクロールは画面上のどこで操作しても軌跡として反映されます。</div>
             </div>
             <div class="controlButtons">
               <div class="pulseBox" id="pulseBox" title="100pxごとにフラッシュ＆チック音">
@@ -1093,15 +1114,8 @@
         downKeys.delete(code);
         highlight(code, false);
       }
-      typingArea.addEventListener('keydown', onKeyDown);
-      typingArea.addEventListener('keyup', onKeyUp);
-      typingArea.addEventListener('blur', () => {
-        downKeys.clear();
-        $$('#visualKb .k.down').forEach(k => k.classList.remove('down'));
-        pressedKeysHistory.forEach(code => {
-          $$('#visualKb .k[data-code="' + CSS.escape(code) + '"]').forEach(el => el.classList.add('pressed'));
-        });
-      }, true);
+      document.addEventListener('keydown', onKeyDown, true);
+      document.addEventListener('keyup', onKeyUp, true);
       clearBtn.addEventListener('click', () => {
         typingArea.value = '';
         typingArea.focus();
@@ -1115,6 +1129,23 @@
         if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
         else document.exitFullscreen().catch(() => {});
       });
+      // Kiosk mode hardening: browser機能(保存/印刷/開発者ツール等)をできるだけ無効化
+      document.addEventListener('contextmenu', (e) => e.preventDefault());
+      document.addEventListener('dragstart', (e) => e.preventDefault());
+      document.addEventListener('drop', (e) => e.preventDefault());
+      window.addEventListener('keydown', (e) => {
+        const key = (e.key || '').toLowerCase();
+        const blockedCtrl = ['s', 'p', 'o', 'n', 'j', 'u', 'h', 'r'];
+        if ((e.ctrlKey || e.metaKey) && blockedCtrl.includes(key)) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        if ((e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(key)) || key === 'f12') {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, true);
       $('#resetBtn').addEventListener('click', () => {
         typingArea.value = '';
         typingArea.focus();
@@ -1133,7 +1164,6 @@
         pVel.y = 0;
         sVel.x = 0;
         sVel.y = 0;
-        lastClient = null;
         lastClientGlobal = null;
         lastVs = 0;
         lastMovePos = {x: 0, y: 0, t: 0};
@@ -1180,9 +1210,7 @@
       const RIPPLE_SPEED = 2.8 / 16.7;
       const RIPPLE_DECAY_RATE = Math.log(0.95) / 16.7;
       let rippleAnim = null;
-      let lastClient = null;
       let lastClientGlobal = null;
-      let inPad = false;
       let lastTrailTime = 0; // 軌跡の速度計算用
       let lastVs = 0; // 平滑化速度
       let lastMovePos = {x: 0, y: 0, t: 0}; // 最後の移動位置と時刻
@@ -1628,29 +1656,17 @@
       function clamp(v, min, max) {
         return v < min ? min : v > max ? max : v;
       }
-      padWrap.addEventListener('mouseenter', () => {
-        inPad = true;
-        lastClientGlobal = null;
-      });
-      padWrap.addEventListener('mouseleave', () => {
-        inPad = false;
-        lastClient = null;
-      });
-      // Inside the pad: update crosshair, trail, and pointer speed
-      padWrap.addEventListener('mousemove', (e) => {
-        const rect = padWrap.getBoundingClientRect();
-        let mvX = 0,
-          mvY = 0;
-        if (lastClient) {
-          mvX = (e.clientX - lastClient.x);
-          mvY = (e.clientY - lastClient.y);
+      function handlePointerMove(e) {
+        let mvX = 0, mvY = 0;
+        if (lastClientGlobal) {
+          mvX = e.clientX - lastClientGlobal.x;
+          mvY = e.clientY - lastClientGlobal.y;
         }
-        lastClient = {
-          x: e.clientX,
-          y: e.clientY
-        };
-        const cx = (e.clientX - rect.left) + padWrap.scrollLeft;
-        const cy = (e.clientY - rect.top) + padWrap.scrollTop;
+        lastClientGlobal = {x: e.clientX, y: e.clientY};
+        const vw = Math.max(1, window.innerWidth);
+        const vh = Math.max(1, window.innerHeight);
+        const cx = (e.clientX / vw) * CONTENT_W;
+        const cy = (e.clientY / vh) * CONTENT_H;
         crossX = clamp(cx, 0, CONTENT_W);
         crossY = clamp(cy, 0, CONTENT_H);
         clientXY.textContent = String(Math.round(crossX)) + ',' + String(Math.round(crossY));
@@ -1719,7 +1735,8 @@
         pVel.x += mvX;
         pVel.y += mvY;
         draw();
-      });
+      }
+      document.addEventListener('mousemove', handlePointerMove, {passive: true});
       padWrap.addEventListener('scroll', draw, {
         passive: true
       });
@@ -1815,22 +1832,7 @@
           }
         });
       }
-      // Outside the pad: only update Motion Compass and Scroll Compass
-      document.addEventListener('mousemove', (e) => {
-        if (inPad) return;
-        if (lastClientGlobal) {
-          pVel.x += (e.clientX - lastClientGlobal.x);
-          pVel.y += (e.clientY - lastClientGlobal.y);
-        }
-        lastClientGlobal = {
-          x: e.clientX,
-          y: e.clientY
-        };
-      }, {
-        passive: true
-      });
       document.addEventListener('wheel', (e) => {
-        if (inPad) return;
         sVel.x += e.deltaX;
         sVel.y += -e.deltaY;
       }, {
