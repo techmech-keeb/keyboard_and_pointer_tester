@@ -309,11 +309,10 @@
       font-weight: 400;
     }
 
-    textarea#typingArea {
+    .keyStream {
       width: 100%;
       height: clamp(260px, 35vh, 520px);
       min-height: 220px;
-      resize: none;
       border-radius: 12px;
       border: 1px solid var(--border);
       padding: 14px;
@@ -322,6 +321,10 @@
       font-size: 18px;
       line-height: 1.7;
       box-sizing: border-box;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
     /* Input Matrix */
@@ -522,7 +525,7 @@
       position: relative;
       border-radius: 14px;
       border: 1px solid var(--border);
-      overflow: auto;
+      overflow: hidden;
       height: clamp(260px, 35vh, 520px);
       cursor: crosshair;
       user-select: none;
@@ -537,8 +540,8 @@
 
     #padContent {
       position: relative;
-      width: 2400px;
-      height: 1600px
+      width: 100%;
+      height: 100%
     }
 
     .hud {
@@ -796,12 +799,12 @@
           <div>
             <div class="fieldHeader">
               <div>
-                <h3>Type Field</h3>
-                <div class="infoText">入力テストアプリです。日本語IME/英語IMEどちらもOK。画面上のどこでキーを押しても下のキーボードに反映されます。</div>
+                <h3>Key Stream</h3>
+                <div class="infoText">画面上のどこでキーを押しても、押下キーと入力文字をここに記録します。</div>
               </div>
-              <div class="iconBtn" id="clearText" title="クリア"><span class="icon">🗑</span></div>
+              <div class="iconBtn" id="clearText" title="ログクリア"><span class="icon">🗑</span></div>
             </div>
-            <textarea id="typingArea" placeholder="この欄は入力内容確認用です（キー検知は画面全体で常時有効）"></textarea>
+            <div id="keyStream" class="keyStream">Ready. Press any key...</div>
           </div>
 
           <div>
@@ -1042,26 +1045,13 @@
       }
       updateThemeBtn();
       // ---------- LEFT: Input Matrix ----------
-      const typingArea = $('#typingArea');
+      const keyStream = $('#keyStream');
       const clearBtn = $('#clearText');
       const downKeys = new Set();
       const pressedKeysHistory = new Set();
+      const keyLog = [];
       
-      // Type Field と Path View の高さを同期
       const padWrap = $('#padWrap');
-      function syncHeights() {
-        if (!typingArea || !padWrap) return;
-        const textareaRect = typingArea.getBoundingClientRect();
-        const totalHeight = textareaRect.height;
-        padWrap.style.height = totalHeight + 'px';
-      }
-      // ResizeObserver で textarea の高さ変化を監視
-      if (typingArea && padWrap && window.ResizeObserver) {
-        const resizeObserver = new ResizeObserver(syncHeights);
-        resizeObserver.observe(typingArea);
-        // 初期状態も同期
-        syncHeights();
-      }
 
       function mapMod(code) {
         switch (code) {
@@ -1107,6 +1097,15 @@
         downKeys.add(code);
         pressedKeysHistory.add(code);
         highlight(code, true);
+        if (keyStream) {
+          const stamp = new Date().toLocaleTimeString();
+          const keyLabel = e.key === ' ' ? 'Space' : e.key;
+          const char = e.key && e.key.length === 1 ? e.key : '';
+          keyLog.push(`[${stamp}] key=${keyLabel} code=${code}${char ? ` char="${char}"` : ''}`);
+          if (keyLog.length > 120) keyLog.shift();
+          keyStream.textContent = keyLog.join('\n');
+          keyStream.scrollTop = keyStream.scrollHeight;
+        }
       }
 
       function onKeyUp(e) {
@@ -1117,8 +1116,8 @@
       document.addEventListener('keydown', onKeyDown, true);
       document.addEventListener('keyup', onKeyUp, true);
       clearBtn.addEventListener('click', () => {
-        typingArea.value = '';
-        typingArea.focus();
+        keyLog.length = 0;
+        if (keyStream) keyStream.textContent = 'Ready. Press any key...';
         pressedKeysHistory.clear();
         $$('#visualKb .k.pressed').forEach(k => k.classList.remove('pressed'));
       });
@@ -1147,8 +1146,8 @@
         }
       }, true);
       $('#resetBtn').addEventListener('click', () => {
-        typingArea.value = '';
-        typingArea.focus();
+        keyLog.length = 0;
+        if (keyStream) keyStream.textContent = 'Ready. Press any key...';
         downKeys.clear();
         $$('#visualKb .k.down').forEach(k => k.classList.remove('down'));
         crossX = CONTENT_W / 2;
@@ -1181,8 +1180,8 @@
       const padContent = $('#padContent');
       const pad = $('#padCanvas');
       const ctx = pad.getContext('2d');
-      const CONTENT_W = 2400,
-        CONTENT_H = 1600;
+      let CONTENT_W = 1600,
+        CONTENT_H = 900;
       const clientXY = $('#clientXY');
       const moveXY = $('#moveXY');
       const pType = $('#pType');
@@ -1363,6 +1362,8 @@
 
       function size() {
         const dpr = window.devicePixelRatio || 1;
+        CONTENT_W = Math.max(480, padWrap.clientWidth || 1600);
+        CONTENT_H = Math.max(280, padWrap.clientHeight || 900);
         padContent.style.width = CONTENT_W + 'px';
         padContent.style.height = CONTENT_H + 'px';
         pad.width = Math.floor(CONTENT_W * dpr);
@@ -2042,7 +2043,7 @@
           pass: !!cond
         });
         try {
-          ok('DOM要素の存在', ['typingArea', 'visualKb', 'padCanvas', 'ptrDial', 'scrDial'].every(id => document.getElementById(id)));
+          ok('DOM要素の存在', ['keyStream', 'visualKb', 'padCanvas', 'ptrDial', 'scrDial'].every(id => document.getElementById(id)));
           // draw() should not throw
           let drew = true;
           try {
@@ -2061,13 +2062,13 @@
           const keyA = document.querySelector('[data-code="KeyA"]');
           let hl = true;
           try {
-            typingArea.dispatchEvent(new KeyboardEvent('keydown', {
+            document.dispatchEvent(new KeyboardEvent('keydown', {
               bubbles: true,
               code: 'KeyA',
               key: 'a'
             }));
             hl = hl && keyA.classList.contains('down');
-            typingArea.dispatchEvent(new KeyboardEvent('keyup', {
+            document.dispatchEvent(new KeyboardEvent('keyup', {
               bubbles: true,
               code: 'KeyA',
               key: 'a'
