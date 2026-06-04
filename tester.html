@@ -47,27 +47,38 @@
     }
 
     .app {
+      position: relative;
+      z-index: 10;
       height: 100dvh;
       width: 100vw;
       padding: 12px;
       display: grid;
-      grid-template-rows: 52px minmax(180px, 1fr) 126px clamp(154px, 23dvh, 226px) 112px;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, .72fr);
+      grid-template-rows: 52px minmax(120px, 1fr) 126px clamp(154px, 23dvh, 226px);
+      grid-template-areas:
+        "topbar topbar"
+        ". ."
+        "editor status"
+        "keyboard keyboard";
       gap: 10px;
-      background:
-        radial-gradient(circle at 12% 4%, rgba(127, 255, 212, .12), transparent 28%),
-        radial-gradient(circle at 92% 0%, rgba(143, 211, 255, .13), transparent 30%),
-        var(--bg);
+      background: transparent;
+      pointer-events: none;
     }
 
     .topbar,
     .panel {
-      border: 1px solid var(--border);
+      border: 1px solid rgba(143, 211, 255, .24);
       border-radius: 16px;
-      background: linear-gradient(160deg, rgba(16, 24, 39, .96), rgba(12, 20, 34, .96));
+      background: linear-gradient(160deg, rgba(16, 24, 39, .84), rgba(12, 20, 34, .78));
       box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      pointer-events: auto;
     }
 
     .topbar {
+      grid-area: topbar;
+      position: relative;
+      z-index: 20;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -153,50 +164,27 @@
       background: rgba(127, 255, 212, .14);
     }
 
-    .pointer-panel {
-      position: relative;
-      overflow: hidden;
-      min-height: 0;
-    }
-
-    .panel-title {
-      position: absolute;
-      left: 16px;
-      top: 12px;
-      z-index: 2;
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      pointer-events: none;
-    }
-
-    .panel-title h2 {
-      margin: 0;
-      font-size: 15px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    .panel-title p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-    }
-
     #pointerCanvas {
-      width: 100%;
-      height: 100%;
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      width: 100vw;
+      height: 100dvh;
       display: block;
+      pointer-events: none;
       background:
         linear-gradient(var(--grid) 1px, transparent 1px),
         linear-gradient(90deg, var(--grid) 1px, transparent 1px),
-        radial-gradient(circle at center, rgba(127, 255, 212, .07), transparent 40%),
+        radial-gradient(circle at 52% 34%, rgba(127, 255, 212, .08), transparent 42%),
+        radial-gradient(circle at 12% 4%, rgba(127, 255, 212, .12), transparent 28%),
+        radial-gradient(circle at 92% 0%, rgba(143, 211, 255, .13), transparent 30%),
         var(--panel-2);
-      background-size: 32px 32px, 32px 32px, auto, auto;
+      background-size: 32px 32px, 32px 32px, auto, auto, auto, auto;
     }
 
     .editor-panel {
+      grid-area: editor;
+      align-self: end;
       display: grid;
       grid-template-rows: 30px 1fr;
       padding: 10px 14px 12px;
@@ -268,6 +256,7 @@
     }
 
     .keyboard-panel {
+      grid-area: keyboard;
       padding: 10px 12px 12px;
       min-height: 0;
       overflow: hidden;
@@ -358,6 +347,8 @@
     .w625 { grid-column: span 25; }
 
     .status-panel {
+      grid-area: status;
+      align-self: end;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
@@ -381,6 +372,10 @@
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
+    }
+
+    .status-panel .metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .metric {
@@ -411,13 +406,26 @@
 
     @media (max-width: 1100px) {
       body { min-width: 0; }
-      .app { padding: 8px; gap: 8px; grid-template-rows: 50px minmax(160px, 1fr) 116px 170px 104px; }
+      .app {
+        padding: 8px;
+        gap: 8px;
+        grid-template-columns: 1fr;
+        grid-template-rows: 50px minmax(100px, 1fr) 116px 170px 104px;
+        grid-template-areas:
+          "topbar"
+          "."
+          "editor"
+          "keyboard"
+          "status";
+      }
       .brand small { display: none; }
       .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
 <body>
+  <canvas id="pointerCanvas" aria-hidden="true"></canvas>
+
   <main class="app" id="app">
     <header class="topbar">
       <div class="brand">
@@ -430,14 +438,6 @@
         <button class="button" type="button" id="resetBtn">Reset</button>
       </div>
     </header>
-
-    <section class="panel pointer-panel" aria-label="Global Pointer Canvas">
-      <div class="panel-title">
-        <h2>Global Pointer Canvas</h2>
-        <p>画面全体のポインター移動・クリック・タップをここに可視化</p>
-      </div>
-      <canvas id="pointerCanvas"></canvas>
-    </section>
 
     <section class="panel editor-panel" aria-label="Live Text">
       <div class="section-head">
@@ -692,20 +692,17 @@
       }
 
       function resizeCanvas() {
-        const rect = canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = Math.max(1, Math.floor(rect.width * dpr));
-        canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        const width = Math.max(1, window.innerWidth);
+        const height = Math.max(1, window.innerHeight);
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         drawPointerCanvas();
       }
 
       function viewportToCanvas(clientX, clientY) {
-        const rect = canvas.getBoundingClientRect();
-        return {
-          x: (clientX / Math.max(1, window.innerWidth)) * rect.width,
-          y: (clientY / Math.max(1, window.innerHeight)) * rect.height,
-        };
+        return {x: clientX, y: clientY};
       }
 
       function buttonText(buttons) {
@@ -747,8 +744,9 @@
       }
 
       function drawPointerCanvas() {
-        const rect = canvas.getBoundingClientRect();
-        ctx.clearRect(0, 0, rect.width, rect.height);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        ctx.clearRect(0, 0, width, height);
 
         if (trail.length > 1) {
           ctx.save();
