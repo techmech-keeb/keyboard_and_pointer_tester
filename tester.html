@@ -60,11 +60,11 @@
       padding: 12px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(340px, .72fr);
-      grid-template-rows: 52px minmax(120px, 1fr) 126px clamp(154px, 23dvh, 226px);
+      grid-template-rows: 52px 132px minmax(60px, 1fr) clamp(300px, 42dvh, 420px);
       grid-template-areas:
         "topbar topbar"
-        ". ."
         "editor status"
+        ". ."
         "keyboard keyboard";
       gap: 10px;
       background: transparent;
@@ -107,7 +107,7 @@
     .brand h1 {
       margin: 0;
       font-size: clamp(18px, 2.1vw, 24px);
-      line-height: 1;
+      line-height: 1.08;
       letter-spacing: .02em;
       text-shadow: 0 0 18px rgba(110, 231, 255, .20);
       white-space: nowrap;
@@ -196,9 +196,10 @@
 
     .editor-panel {
       grid-area: editor;
-      align-self: end;
+      align-self: start;
+      height: 132px;
       display: grid;
-      grid-template-rows: 30px 1fr;
+      grid-template-rows: 30px minmax(0, 1fr);
       padding: 10px 14px 12px;
       min-height: 0;
     }
@@ -226,7 +227,9 @@
 
     .live-text {
       min-height: 0;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
       border: 1px solid rgba(248, 252, 248, .20);
       border-radius: 12px;
       padding: 10px 12px;
@@ -236,6 +239,22 @@
       font: 20px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", "Noto Sans Mono CJK JP", monospace;
       white-space: pre-wrap;
       word-break: break-word;
+      scrollbar-color: rgba(110, 231, 255, .46) rgba(232, 236, 232, .08);
+      scrollbar-width: thin;
+    }
+
+    .live-text::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .live-text::-webkit-scrollbar-track {
+      background: rgba(232, 236, 232, .08);
+      border-radius: 999px;
+    }
+
+    .live-text::-webkit-scrollbar-thumb {
+      background: rgba(110, 231, 255, .46);
+      border-radius: 999px;
     }
 
     .live-text .placeholder {
@@ -270,7 +289,7 @@
 
     .keyboard-panel {
       grid-area: keyboard;
-      padding: 10px 12px 12px;
+      padding: 14px 16px 16px;
       min-height: 0;
       overflow: hidden;
     }
@@ -280,7 +299,7 @@
       display: grid;
       grid-template-columns: repeat(74, minmax(0, 1fr));
       grid-template-rows: repeat(6, minmax(0, 1fr));
-      gap: 3px;
+      gap: 5px;
     }
 
     .row { display: contents; }
@@ -301,9 +320,9 @@
       background: var(--key-edge);
       color: var(--key-label);
       box-shadow: 0 2px 0 rgba(0, 0, 0, .42), 0 0 10px rgba(110, 231, 255, .04);
-      font-size: clamp(10px, 1.1vw, 14px);
+      font-size: clamp(13px, 1.35vw, 18px);
       font-weight: 900;
-      line-height: 1;
+      line-height: 1.08;
       text-align: center;
       user-select: none;
       transition: transform .05s ease, background .08s ease, color .08s ease, filter .08s ease;
@@ -328,8 +347,8 @@
     .k small {
       display: block;
       margin-top: 2px;
-      opacity: .68;
-      font-size: .72em;
+      opacity: .82;
+      font-size: .78em;
     }
 
     .k.down {
@@ -361,7 +380,8 @@
 
     .status-panel {
       grid-area: status;
-      align-self: end;
+      align-self: start;
+      height: 132px;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
@@ -426,14 +446,16 @@
         padding: 8px;
         gap: 8px;
         grid-template-columns: 1fr;
-        grid-template-rows: 50px minmax(100px, 1fr) 116px 170px 104px;
+        grid-template-rows: 50px 124px 104px minmax(40px, 1fr) clamp(280px, 42dvh, 380px);
         grid-template-areas:
           "topbar"
-          "."
           "editor"
-          "keyboard"
-          "status";
+          "status"
+          "."
+          "keyboard";
       }
+      .editor-panel,
+      .status-panel { height: auto; }
       .brand small { display: none; }
       .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
