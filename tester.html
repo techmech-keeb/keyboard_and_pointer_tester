@@ -65,7 +65,7 @@
         "topbar topbar"
         "editor status"
         ". ."
-        "keyboard keyboard";
+        "bottom bottom";
       gap: 10px;
       background: transparent;
       pointer-events: none;
@@ -287,11 +287,20 @@
       resize: none;
     }
 
-    .keyboard-panel {
-      grid-area: keyboard;
+    .bottom-hud {
+      grid-area: bottom;
       justify-self: center;
       width: min(100%, 1240px);
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(176px, 16vw, 220px);
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .keyboard-panel {
       padding: 12px 14px 14px;
+      min-width: 0;
       min-height: 0;
       overflow: hidden;
     }
@@ -396,6 +405,48 @@
     .w3 { grid-column: span 12; }
     .w625 { grid-column: span 25; }
 
+    .compass-panel {
+      min-width: 0;
+      min-height: 0;
+      padding: 10px 12px 12px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .compass-panel h2 {
+      margin: 0;
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    #motionCompass {
+      width: 100%;
+      min-height: 0;
+      height: 100%;
+      display: block;
+      border: 1px solid rgba(248, 252, 248, .18);
+      border-radius: 12px;
+      background: rgba(8, 12, 14, .10);
+      box-shadow: inset 0 1px 18px rgba(0, 0, 0, .12);
+    }
+
+    .compass-readout {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .compass-readout .metric {
+      padding: 6px 7px;
+    }
+
+    .compass-readout .metric strong {
+      font-size: 15px;
+    }
+
     .status-panel {
       grid-area: status;
       align-self: start;
@@ -470,7 +521,11 @@
           "editor"
           "status"
           "."
-          "keyboard";
+          "bottom";
+      }
+      .bottom-hud {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr) clamp(150px, 24vw, 190px);
       }
       .editor-panel,
       .status-panel { height: auto; }
@@ -504,8 +559,9 @@
       <textarea id="hiddenInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Input capture buffer"></textarea>
     </section>
 
-    <section class="panel keyboard-panel" aria-label="Keyboard Matrix">
-      <div class="keyboard" id="visualKb">
+    <section class="bottom-hud" aria-label="Keyboard Matrix and Motion Compass">
+      <section class="panel keyboard-panel" aria-label="Keyboard Matrix">
+        <div class="keyboard" id="visualKb">
         <div class="row">
           <div class="k w1" data-code="Escape"><span>Esc</span></div><div class="gap w1"></div>
           <div class="k w1" data-code="F1"><span>F1</span></div><div class="k w1" data-code="F2"><span>F2</span></div><div class="k w1" data-code="F3"><span>F3</span></div><div class="k w1" data-code="F4"><span>F4</span></div><div class="gap w05"></div>
@@ -528,7 +584,17 @@
         <div class="row">
           <div class="k w125" data-code="ControlLeft"><span>Ctrl</span></div><div class="k w125" data-code="MetaLeft"><span>Win</span></div><div class="k w125" data-code="AltLeft"><span>Alt</span></div><div class="k w625" data-code="Space"><span>Space</span></div><div class="k w125" data-code="AltRight"><span>Alt</span></div><div class="k w125" data-code="MetaRight"><span>Win</span></div><div class="k w125" data-code="ContextMenu"><span>Menu</span></div><div class="k w125" data-code="ControlRight"><span>Ctrl</span></div><div class="gap w05"></div><div class="k w1" data-code="ArrowLeft"><span>←</span></div><div class="k w1" data-code="ArrowDown"><span>↓</span></div><div class="k w1" data-code="ArrowRight"><span>→</span></div>
         </div>
-      </div>
+        </div>
+      </section>
+      <section class="panel compass-panel" aria-label="Motion Compass">
+        <h2>Motion Compass</h2>
+        <canvas id="motionCompass"></canvas>
+        <div class="compass-readout">
+          <div class="metric"><span>vx</span><strong id="motionVx">0</strong></div>
+          <div class="metric"><span>vy</span><strong id="motionVy">0</strong></div>
+          <div class="metric"><span>|v|</span><strong id="motionSpeed">0</strong></div>
+        </div>
+      </section>
     </section>
 
     <section class="status-panel">
@@ -576,6 +642,10 @@
       const lastCodeEl = $('#lastCode');
       const imeStateEl = $('#imeState');
       const wheelStateEl = $('#wheelState');
+      const motionCompass = $('#motionCompass');
+      const motionVxEl = $('#motionVx');
+      const motionVyEl = $('#motionVy');
+      const motionSpeedEl = $('#motionSpeed');
 
       const downKeys = new Set();
       const pressedKeysHistory = new Set();
@@ -588,6 +658,7 @@
       let editorText = '';
       let composingText = '';
       let lastPointer = null;
+      const motionVel = {x: 0, y: 0};
       let wheelX = 0;
       let wheelY = 0;
       let rafId = 0;
@@ -750,7 +821,18 @@
         canvas.width = Math.floor(width * dpr);
         canvas.height = Math.floor(height * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        sizeMotionCompass();
         drawPointerCanvas();
+      }
+
+      function sizeMotionCompass() {
+        if (!motionCompass) return;
+        const rect = motionCompass.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        motionCompass.width = Math.max(1, Math.floor(rect.width * dpr));
+        motionCompass.height = Math.max(1, Math.floor(rect.height * dpr));
+        const compassCtx = motionCompass.getContext('2d');
+        compassCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
 
       function viewportToCanvas(clientX, clientY) {
@@ -765,6 +847,8 @@
         if (!captureEnabled) return;
         const point = viewportToCanvas(e.clientX, e.clientY);
         const move = lastPointer ? {x: e.clientX - lastPointer.clientX, y: e.clientY - lastPointer.clientY} : {x: 0, y: 0};
+        motionVel.x += move.x;
+        motionVel.y += move.y;
         lastPointer = {clientX: e.clientX, clientY: e.clientY};
         trail.push({x: point.x, y: point.y, t: performance.now()});
         if (trail.length > maxTrail) trail.splice(0, trail.length - maxTrail);
@@ -832,13 +916,71 @@
         }
       }
 
+      function drawMotionCompass() {
+        if (!motionCompass) return;
+        const compassCtx = motionCompass.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const w = motionCompass.width / dpr;
+        const h = motionCompass.height / dpr;
+        compassCtx.clearRect(0, 0, w, h);
+        const cx = w / 2;
+        const cy = h / 2;
+        const radius = Math.max(20, Math.min(w, h) / 2 - 16);
+        const speed = Math.hypot(motionVel.x, motionVel.y);
+        const scale = Math.min(1, speed / 90);
+        const angle = Math.atan2(motionVel.y, motionVel.x);
+        const vx = Math.cos(angle) * radius * scale;
+        const vy = Math.sin(angle) * radius * scale;
+
+        compassCtx.save();
+        compassCtx.strokeStyle = 'rgba(248, 252, 248, .18)';
+        compassCtx.lineWidth = 1;
+        for (const r of [0.33, 0.66, 1]) {
+          compassCtx.beginPath();
+          compassCtx.arc(cx, cy, radius * r, 0, Math.PI * 2);
+          compassCtx.stroke();
+        }
+        compassCtx.beginPath();
+        compassCtx.moveTo(cx - radius, cy);
+        compassCtx.lineTo(cx + radius, cy);
+        compassCtx.moveTo(cx, cy - radius);
+        compassCtx.lineTo(cx, cy + radius);
+        compassCtx.stroke();
+
+        compassCtx.strokeStyle = 'rgba(110, 231, 255, .94)';
+        compassCtx.lineWidth = 3;
+        compassCtx.lineCap = 'round';
+        compassCtx.beginPath();
+        compassCtx.moveTo(cx, cy);
+        compassCtx.lineTo(cx + vx, cy + vy);
+        compassCtx.stroke();
+
+        compassCtx.fillStyle = 'rgba(255, 159, 46, .96)';
+        compassCtx.beginPath();
+        compassCtx.arc(cx + vx, cy + vy, 5, 0, Math.PI * 2);
+        compassCtx.fill();
+
+        compassCtx.fillStyle = 'rgba(246, 248, 244, .92)';
+        compassCtx.beginPath();
+        compassCtx.arc(cx, cy, 3, 0, Math.PI * 2);
+        compassCtx.fill();
+        compassCtx.restore();
+
+        motionVxEl.textContent = Math.round(motionVel.x);
+        motionVyEl.textContent = Math.round(motionVel.y);
+        motionSpeedEl.textContent = Math.round(speed);
+      }
+
       function animate() {
         for (let i = ripples.length - 1; i >= 0; i--) {
           ripples[i].radius += 1.8;
           ripples[i].alpha *= 0.965;
           if (ripples[i].alpha < 0.04) ripples.splice(i, 1);
         }
+        motionVel.x *= 0.90;
+        motionVel.y *= 0.90;
         drawPointerCanvas();
+        drawMotionCompass();
         rafId = requestAnimationFrame(animate);
       }
 
@@ -848,6 +990,8 @@
         wheelX = 0;
         wheelY = 0;
         lastPointer = null;
+        motionVel.x = 0;
+        motionVel.y = 0;
         trail.length = 0;
         ripples.length = 0;
         pressedKeysHistory.clear();
@@ -861,9 +1005,13 @@
         lastCodeEl.textContent = '-';
         imeStateEl.textContent = 'idle';
         wheelStateEl.textContent = '0,0';
+        motionVxEl.textContent = '0';
+        motionVyEl.textContent = '0';
+        motionSpeedEl.textContent = '0';
         hiddenInput.value = '';
         renderText();
         drawPointerCanvas();
+        drawMotionCompass();
         focusHiddenInput();
       }
 
@@ -894,7 +1042,7 @@
       function selfTests() {
         const tests = [];
         const ok = (name, pass) => tests.push({name, pass: Boolean(pass)});
-        ok('DOM elements exist', ['pointerCanvas', 'liveText', 'hiddenInput', 'visualKb', 'resetBtn'].every((id) => document.getElementById(id)));
+        ok('DOM elements exist', ['pointerCanvas', 'liveText', 'hiddenInput', 'visualKb', 'motionCompass', 'resetBtn'].every((id) => document.getElementById(id)));
         const keyA = $('[data-code="KeyA"]');
         document.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, code: 'KeyA', key: 'a'}));
         ok('global keydown highlights KeyA', keyA.classList.contains('down'));
