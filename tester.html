@@ -7,25 +7,31 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #070b12;
-      --panel: #101827;
-      --panel-2: #0c1422;
-      --panel-3: #121f33;
-      --text: #f3f8ff;
-      --muted: #9fb0c7;
-      --accent: #7fffd4;
-      --accent-2: #8fd3ff;
-      --danger: #ff6b7a;
-      --border: #243653;
-      --grid: rgba(143, 211, 255, .13);
-      --trail: rgba(127, 255, 212, .86);
-      --ripple: rgba(143, 211, 255, .86);
-      --key: #19243a;
-      --key-edge: #2a3c61;
-      --key-label: #eef6ff;
-      --key-down: #7fffd4;
-      --key-pressed: #48658f;
-      --shadow: 0 18px 50px rgba(0, 0, 0, .36);
+      --bg: #0d1114;
+      --panel: rgba(232, 236, 232, .30);
+      --panel-2: #11181b;
+      --panel-3: rgba(232, 236, 232, .14);
+      --text: #f6f8f4;
+      --muted: rgba(246, 248, 244, .68);
+      --accent: #6ee7ff;
+      --accent-2: #ff9f2e;
+      --danger: #ff9f2e;
+      --border: rgba(248, 252, 248, .42);
+      --grid: rgba(230, 238, 235, .10);
+      --trail: rgba(110, 231, 255, .88);
+      --ripple: rgba(255, 159, 46, .78);
+      --hud-bg-a: rgba(232, 236, 232, .30);
+      --hud-bg-b: rgba(128, 142, 146, .16);
+      --hud-bg-strong-a: rgba(232, 236, 232, .44);
+      --hud-bg-strong-b: rgba(128, 142, 146, .26);
+      --hud-border: rgba(248, 252, 248, .42);
+      --hud-cell: rgba(232, 236, 232, .10);
+      --key: rgba(232, 236, 232, .12);
+      --key-edge: rgba(8, 12, 14, .42);
+      --key-label: #f6f8f4;
+      --key-down: #ff9f2e;
+      --key-pressed: rgba(110, 231, 255, .34);
+      --shadow: 0 18px 50px rgba(0, 0, 0, .26);
     }
 
     * { box-sizing: border-box; }
@@ -67,11 +73,13 @@
 
     .topbar,
     .panel {
-      border: 1px solid rgba(143, 211, 255, .24);
+      border: 1px solid var(--hud-border);
       border-radius: 16px;
-      background: linear-gradient(160deg, rgba(16, 24, 39, .84), rgba(12, 20, 34, .78));
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(12px);
+      background:
+        linear-gradient(145deg, var(--hud-bg-a), var(--hud-bg-b)),
+        linear-gradient(90deg, rgba(255, 255, 255, .12) 0 1px, transparent 1px 100%);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, .22);
+      backdrop-filter: blur(7px) saturate(1.12);
       pointer-events: auto;
     }
 
@@ -84,6 +92,9 @@
       justify-content: space-between;
       gap: 16px;
       padding: 8px 12px 8px 16px;
+      background:
+        linear-gradient(180deg, var(--hud-bg-strong-a), var(--hud-bg-strong-b)),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, .10) 0 1px, transparent 1px 18px);
     }
 
     .brand {
@@ -98,13 +109,14 @@
       font-size: clamp(18px, 2.1vw, 24px);
       line-height: 1;
       letter-spacing: .02em;
+      text-shadow: 0 0 18px rgba(110, 231, 255, .20);
       white-space: nowrap;
     }
 
     .brand small {
       color: var(--muted);
-      font-weight: 700;
-      letter-spacing: .08em;
+      font-weight: 800;
+      letter-spacing: .14em;
       text-transform: uppercase;
       white-space: nowrap;
     }
@@ -118,9 +130,9 @@
     .chip,
     .button {
       min-height: 34px;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(248, 252, 248, .36);
       border-radius: 999px;
-      background: rgba(255, 255, 255, .055);
+      background: rgba(232, 236, 232, .12);
       color: var(--text);
       display: inline-flex;
       align-items: center;
@@ -139,7 +151,7 @@
       height: 9px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 12px var(--accent);
+      box-shadow: 0 0 14px var(--accent);
     }
 
     .chip[data-state="off"]::before {
@@ -161,7 +173,7 @@
     .button:focus-visible {
       outline: none;
       border-color: var(--accent);
-      background: rgba(127, 255, 212, .14);
+      background: rgba(255, 159, 46, .18);
     }
 
     #pointerCanvas {
@@ -175,10 +187,10 @@
       background:
         linear-gradient(var(--grid) 1px, transparent 1px),
         linear-gradient(90deg, var(--grid) 1px, transparent 1px),
-        radial-gradient(circle at 52% 34%, rgba(127, 255, 212, .08), transparent 42%),
-        radial-gradient(circle at 12% 4%, rgba(127, 255, 212, .12), transparent 28%),
-        radial-gradient(circle at 92% 0%, rgba(143, 211, 255, .13), transparent 30%),
-        var(--panel-2);
+        radial-gradient(circle at 48% 32%, rgba(110, 231, 255, .10), transparent 42%),
+        radial-gradient(circle at 13% 8%, rgba(255, 159, 46, .10), transparent 26%),
+        radial-gradient(circle at 88% 4%, rgba(232, 236, 232, .12), transparent 30%),
+        linear-gradient(135deg, #0d1114, #151d20 54%, #0d1114);
       background-size: 32px 32px, 32px 32px, auto, auto, auto, auto;
     }
 
@@ -215,10 +227,11 @@
     .live-text {
       min-height: 0;
       overflow: hidden;
-      border: 1px solid rgba(143, 211, 255, .18);
+      border: 1px solid rgba(248, 252, 248, .20);
       border-radius: 12px;
       padding: 10px 12px;
-      background: rgba(0, 0, 0, .22);
+      background: rgba(8, 12, 14, .10);
+      box-shadow: inset 0 1px 18px rgba(0, 0, 0, .12);
       color: var(--text);
       font: 20px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", "Noto Sans Mono CJK JP", monospace;
       white-space: pre-wrap;
@@ -226,7 +239,7 @@
     }
 
     .live-text .placeholder {
-      color: rgba(243, 248, 255, .42);
+      color: rgba(246, 248, 244, .42);
     }
 
     .live-text .composition {
@@ -283,11 +296,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(248, 252, 248, .22);
       border-radius: 7px;
       background: var(--key-edge);
       color: var(--key-label);
-      box-shadow: 0 2px 0 rgba(0, 0, 0, .5);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, .42), 0 0 10px rgba(110, 231, 255, .04);
       font-size: clamp(10px, 1.1vw, 14px);
       font-weight: 900;
       line-height: 1;
@@ -302,7 +315,7 @@
       inset: 1px 1px 4px;
       border-radius: 6px 6px 5px 5px;
       background: var(--key);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
       z-index: 0;
     }
 
@@ -321,9 +334,9 @@
 
     .k.down {
       transform: translateY(2px);
-      color: #03120e;
+      color: #160d02;
       background: var(--key-down);
-      box-shadow: 0 0 18px rgba(127, 255, 212, .45);
+      box-shadow: 0 0 20px rgba(255, 159, 46, .50);
     }
 
     .k.down::before { background: var(--key-down); bottom: 2px; }
@@ -333,7 +346,7 @@
       filter: brightness(1.18);
     }
 
-    .k.pressed:not(.down)::before { background: #263954; }
+    .k.pressed:not(.down)::before { background: rgba(110, 231, 255, .16); }
 
     .w05 { grid-column: span 2; }
     .w1 { grid-column: span 4; }
@@ -380,10 +393,11 @@
 
     .metric {
       min-width: 0;
-      border: 1px solid rgba(143, 211, 255, .16);
+      border: 1px solid rgba(248, 252, 248, .18);
       border-radius: 10px;
       padding: 7px 9px;
-      background: rgba(0, 0, 0, .2);
+      background: var(--hud-cell);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
     }
 
     .metric span {
@@ -401,6 +415,8 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       margin-top: 4px;
+      color: var(--accent);
+      text-shadow: 0 0 12px rgba(110, 231, 255, .22);
       font: 18px/1.05 ui-monospace, SFMono-Regular, Consolas, monospace;
     }
 
@@ -430,7 +446,7 @@
     <header class="topbar">
       <div class="brand">
         <h1>Keyboard & Pointer Tester</h1>
-        <small>Edge Kiosk MVP</small>
+        <small>Test Chamber // Input Calibration</small>
       </div>
       <div class="toolbar">
         <div class="chip" id="captureChip" data-state="on">CAPTURE ON</div>
@@ -754,7 +770,7 @@
           ctx.lineJoin = 'round';
           for (let i = 1; i < trail.length; i++) {
             const age = i / trail.length;
-            ctx.strokeStyle = 'rgba(127, 255, 212, ' + (0.18 + age * 0.68).toFixed(3) + ')';
+            ctx.strokeStyle = 'rgba(110, 231, 255, ' + (0.16 + age * 0.72).toFixed(3) + ')';
             ctx.lineWidth = 2 + age * 3;
             ctx.beginPath();
             ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
@@ -762,7 +778,7 @@
             ctx.stroke();
           }
           const last = trail[trail.length - 1];
-          ctx.fillStyle = 'rgba(127, 255, 212, .95)';
+          ctx.fillStyle = 'rgba(246, 248, 244, .92)';
           ctx.beginPath();
           ctx.arc(last.x, last.y, 6, 0, Math.PI * 2);
           ctx.fill();
@@ -771,7 +787,7 @@
 
         for (const ripple of ripples) {
           ctx.save();
-          ctx.strokeStyle = 'rgba(143, 211, 255, ' + ripple.alpha.toFixed(3) + ')';
+          ctx.strokeStyle = 'rgba(255, 159, 46, ' + ripple.alpha.toFixed(3) + ')';
           ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
