@@ -594,10 +594,6 @@
 
       function mapMod(code) {
         switch (code) {
-          case 'ShiftRight': return 'ShiftLeft';
-          case 'ControlRight': return 'ControlLeft';
-          case 'AltRight': return 'AltLeft';
-          case 'MetaRight': return 'MetaLeft';
           case 'OSLeft': return 'MetaLeft';
           case 'OSRight': return 'MetaRight';
           case 'AltGraph': return 'AltRight';
@@ -904,6 +900,12 @@
         ok('global keydown highlights KeyA', keyA.classList.contains('down'));
         document.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, code: 'KeyA', key: 'a'}));
         ok('global keyup releases KeyA', !keyA.classList.contains('down') && keyA.classList.contains('pressed'));
+        const shiftLeft = $('[data-code="ShiftLeft"]');
+        const shiftRight = $('[data-code="ShiftRight"]');
+        document.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, code: 'ShiftRight', key: 'Shift'}));
+        ok('right Shift highlights only ShiftRight', shiftRight.classList.contains('down') && !shiftLeft.classList.contains('down'));
+        document.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, code: 'ShiftRight', key: 'Shift'}));
+        ok('right Shift releases independently', !shiftRight.classList.contains('down') && shiftRight.classList.contains('pressed') && !shiftLeft.classList.contains('pressed'));
         const before = liveText.textContent;
         hiddenInput.dispatchEvent(new InputEvent('beforeinput', {bubbles: true, cancelable: true, inputType: 'insertText', data: 'x'}));
         ok('beforeinput updates Live Text', liveText.textContent !== before && liveText.textContent.includes('x'));
