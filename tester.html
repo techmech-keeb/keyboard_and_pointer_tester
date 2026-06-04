@@ -60,7 +60,7 @@
       padding: 12px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(340px, .72fr);
-      grid-template-rows: 52px 132px minmax(60px, 1fr) clamp(300px, 42dvh, 420px);
+      grid-template-rows: 52px 132px minmax(80px, 1fr) clamp(220px, 30dvh, 300px);
       grid-template-areas:
         "topbar topbar"
         "editor status"
@@ -289,7 +289,9 @@
 
     .keyboard-panel {
       grid-area: keyboard;
-      padding: 14px 16px 16px;
+      justify-self: center;
+      width: min(100%, 1240px);
+      padding: 12px 14px 14px;
       min-height: 0;
       overflow: hidden;
     }
@@ -299,7 +301,7 @@
       display: grid;
       grid-template-columns: repeat(74, minmax(0, 1fr));
       grid-template-rows: repeat(6, minmax(0, 1fr));
-      gap: 5px;
+      gap: 4px;
     }
 
     .row { display: contents; }
@@ -320,7 +322,7 @@
       background: var(--key-edge);
       color: var(--key-label);
       box-shadow: 0 2px 0 rgba(0, 0, 0, .42), 0 0 10px rgba(110, 231, 255, .04);
-      font-size: clamp(13px, 1.35vw, 18px);
+      font-size: clamp(12px, 1.18vw, 16px);
       font-weight: 900;
       line-height: 1.08;
       text-align: center;
@@ -345,10 +347,21 @@
     }
 
     .k small {
-      display: block;
-      margin-top: 2px;
-      opacity: .82;
+      display: inline;
+      margin-top: 0;
+      margin-left: .28em;
+      color: rgba(246, 248, 244, .86);
+      opacity: 1;
       font-size: .78em;
+    }
+
+    .k > span:has(small) {
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: .06em;
+      color: var(--accent-2);
+      white-space: nowrap;
     }
 
     .k.down {
@@ -359,6 +372,11 @@
     }
 
     .k.down::before { background: var(--key-down); bottom: 2px; }
+
+    .k.down > span:has(small),
+    .k.down small {
+      color: #160d02;
+    }
 
     .k.pressed:not(.down) {
       background: var(--key-pressed);
@@ -446,7 +464,7 @@
         padding: 8px;
         gap: 8px;
         grid-template-columns: 1fr;
-        grid-template-rows: 50px 124px 104px minmax(40px, 1fr) clamp(280px, 42dvh, 380px);
+        grid-template-rows: 50px 124px 104px minmax(56px, 1fr) clamp(210px, 30dvh, 280px);
         grid-template-areas:
           "topbar"
           "editor"
