@@ -445,7 +445,7 @@
         <p>ページがアクティブなら、入力欄をクリックしなくても文字を表示します</p>
       </div>
       <div class="live-text" id="liveText" aria-live="polite"></div>
-      <textarea id="hiddenInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-hidden="true"></textarea>
+      <textarea id="hiddenInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Input capture buffer"></textarea>
     </section>
 
     <section class="panel keyboard-panel" aria-label="Keyboard Matrix">
@@ -613,12 +613,38 @@
         renderText();
       }
 
-      function isPrintableKey(e) {
-        return e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+      function onBeforeInput(e) {
+        if (!captureEnabled) return;
+        const inputType = e.inputType || '';
+        const isCompositionInput = e.isComposing || inputType.toLowerCase().includes('composition');
+        if (isCompositionInput) return;
+
+        if (inputType === 'insertText' || inputType === 'insertFromPaste') {
+          e.preventDefault();
+          if (e.data) addText(e.data);
+        } else if (inputType === 'insertLineBreak' || inputType === 'insertParagraph') {
+          e.preventDefault();
+          addText('\n');
+        } else if (inputType === 'deleteContentBackward') {
+          e.preventDefault();
+          deleteLastGrapheme();
+        } else if (inputType === 'deleteContentForward') {
+          e.preventDefault();
+        }
+        hiddenInput.value = '';
+      }
+
+      function onInput() {
+        if (!captureEnabled || composingText) return;
+        if (hiddenInput.value) {
+          addText(hiddenInput.value);
+          hiddenInput.value = '';
+        }
       }
 
       function onKeyDown(e) {
         if (!captureEnabled) return;
+        focusHiddenInput();
         const code = mapMod(e.code || e.key);
         downKeys.add(code);
         pressedKeysHistory.add(code);
@@ -628,20 +654,9 @@
 
         if (e.isComposing || composingText) return;
 
-        if (e.key === 'Backspace') {
-          e.preventDefault();
-          deleteLastGrapheme();
-        } else if (e.key === 'Enter') {
-          e.preventDefault();
-          addText('\n');
-        } else if (e.key === 'Tab') {
+        if (e.key === 'Tab') {
           e.preventDefault();
           addText('  ');
-        } else if (e.key === 'Delete') {
-          e.preventDefault();
-        } else if (isPrintableKey(e)) {
-          e.preventDefault();
-          addText(e.key);
         }
       }
 
@@ -816,6 +831,8 @@
       window.addEventListener('focus', focusHiddenInput);
       window.addEventListener('resize', resizeCanvas);
 
+      hiddenInput.addEventListener('beforeinput', onBeforeInput);
+      hiddenInput.addEventListener('input', onInput);
       hiddenInput.addEventListener('compositionstart', onCompositionStart);
       hiddenInput.addEventListener('compositionupdate', onCompositionUpdate);
       hiddenInput.addEventListener('compositionend', onCompositionEnd);
@@ -833,6 +850,9 @@
         ok('global keydown highlights KeyA', keyA.classList.contains('down'));
         document.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, code: 'KeyA', key: 'a'}));
         ok('global keyup releases KeyA', !keyA.classList.contains('down') && keyA.classList.contains('pressed'));
+        const before = liveText.textContent;
+        hiddenInput.dispatchEvent(new InputEvent('beforeinput', {bubbles: true, cancelable: true, inputType: 'insertText', data: 'x'}));
+        ok('beforeinput updates Live Text', liveText.textContent !== before && liveText.textContent.includes('x'));
         resetAll();
         ok('reset clears text', editorText === '' && !keyA.classList.contains('pressed'));
         console.table(tests);
