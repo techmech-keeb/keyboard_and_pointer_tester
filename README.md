@@ -1,125 +1,88 @@
-# Keyboard & Pointer Tester
+# Keyboard & Pointer Tester — Kiosk MVP
 
-統合型の入力テストツール。キーボード入力とポインター操作を可視化し、リアルタイムで動作を確認できます。
+Surface Pro 7 と ThinkPad X9 14インチを想定した、Edge キオスクモード向けのローカル HTML 入力テストツールです。ページがアクティブな状態で、特定の入力欄や描画領域をクリックしなくても、キーボード入力・文字入力・ポインター操作を 1 画面で可視化します。
 
 ![Keyboard & Pointer Tester](./screenshot.png)
 
-## 動作確認
+## 実行前提
 
-- 本プロジェクト: [https://codepen.io/techmech-keeb/pen/RNrJKgm](https://codepen.io/techmech-keeb/pen/RNrJKgm)
-- オリジナル: [https://codepen.io/mass-work/pen/MYaMKzo](https://codepen.io/mass-work/pen/MYaMKzo) (by [@mass-work](https://codepen.io/mass-work))
+- **端末**: Surface Pro 7、ThinkPad X9 14インチ
+- **ブラウザ**: Microsoft Edge
+- **起動形態**: Edge キオスクモードでローカルの `tester.html` を表示
+- **ネットワーク**: 不要（外部ライブラリや CDN なし）
+- **保存**: キオスク運用を優先し、設定保存や入力ログ保存には依存しません
 
-## 機能
+> 注意: OS や Edge キオスクモードに予約されたキー、ブラウザがブロックするショートカット、別アプリ・別タブの入力は JavaScript から取得できない場合があります。
 
-### Type Field（入力テストエリア）
-- キーボード入力のテスト
-- 日本語IME/英語IME対応
-- 入力内容のクリア機能（🗑ボタン）
-- 下部のInput Matrixで押下キーをリアルタイム表示
+## 画面構成
 
-### Input Matrix（キーボード可視化）
-- 押下されたキーがリアルタイムでハイライト表示
-- 押下中は`down`状態、離した後は`pressed`状態で表示
-- 標準QWERTY配列のフルキーボードレイアウト
+### Header / Status / Reset
 
-### Path View（マウス軌跡描写エリア）
-- ポインターの軌跡を速度に応じた色で可視化
-- 速度が速いほど明るく表示（色相200→240、明度35→80）
-- 2秒間のフェードアウト効果
-- クリック・ダブルクリック時の波紋エフェクト
-- 座標（client）・移動量（movement）・ボタン状態（L/M/R）のリアルタイム表示
-- 100pxごとの進捗リング表示とチック音
-- 2400×1600pxのスクロール可能なキャンバス領域
+- 入力キャプチャ状態を `CAPTURE ON / OFF` で表示
+- `Pause / Resume` で入力キャプチャを一時停止・再開
+- `Reset` で文字列、キー履歴、ポインター軌跡、ステータスを初期化
 
-### Motion Compass（ポインタ速度コンパス）
-- ポインタの移動方向と速度をコンパス形式で表示
-- スクロール速度も重ねて表示（リング形式）
-- リアルタイムの速度ベクトル表示
-- 最大速度300px/s（ポインタ）、600px/s（スクロール）でスケール
+### Global Pointer Canvas
 
-### Velocity Graph（速度・加速度グラフ）
-- 移動速度の時系列グラフ（直近24秒、約120サンプル）
-- 加速度を色で表現（青系=減速、紫系=加速）
-- 積算移動距離の大表示（px単位）
-- 200ms単位のサンプリング
-- 最大速度200px/s以上を基準に自動スケール
+- 画面全体の `pointermove` を検知し、上部のキャンバスへ軌跡として表示
+- `pointerdown` でクリック・タップ位置に波紋を表示
+- mouse / touch / pen の `pointerType` をステータス表示
+- viewport 座標をキャンバス座標へスケーリングして描画
 
-### 音声フィードバック
-- 速度に応じた連続ピッチ音（周波数120-2200Hz、速度が速いほど高音）
-- 100px移動ごとのチック音（880Hzの矩形波）
-- **アナログシンセ風クリック音**
-  - 左クリック: 明るいピッ音（1200Hz±200のランダム、正弦波）
-  - 右クリック: 硬めのカチ音（800Hz±100のランダム、矩形波）
-  - 中クリック: 低めのトン音（500Hz±100のランダム、三角波）
-  - ダブルクリック: 2音の和音（800Hz+1000Hz）
-  - クリック位置により左右パン（ステレオ定位）が変化
-  - ASRエンベロープ（10ms Attack、50-80ms Decay）
-- 音声ON/OFF切り替えボタン（🔊/🔇）
-- 移動開始時に自動でAudioContextを初期化
+### Live Text
 
-### テーマ機能
-- 4種類のテーマ：Dark（デフォルト）、Light、Pop、Classic
-- テーマ切り替えボタンで即座に変更
+- 表示用ビューと隠し `textarea` を分離
+- ページがアクティブな状態でキー入力した文字列を表示
+- `Backspace`、`Enter`、`Tab` の最小編集操作に対応
+- IME 入力中の未確定文字を下線付きで表示し、確定時に本文へ反映
 
-### その他の機能
-- フルスクリーン表示（⛶ボタン）
-- 全機能リセット（↺ボタン）
-- オフライン動作（インターネット接続不要）
-- レスポンシブレイアウト（980px以下で1カラム表示）
-- 高DPIディスプレイ対応（devicePixelRatio対応）
+### Keyboard Matrix
+
+- 既存のフルキーボード表示を継続
+- 入力検知は `document` レベルで行い、特定の `textarea` フォーカスに依存しません
+- 押下中のキーは `down`、押下履歴は `pressed` としてハイライト
+
+### Pointer Status / Input Status
+
+- Pointer Status: 入力種別、座標、移動量、ボタン状態を表示
+- Input Status: 最後のキー、物理キーコード、IME状態、ホイール累積量を表示
 
 ## 使い方
 
-1. **キーボード入力の確認**
-   - Type Fieldにテキストを入力
-   - 下部のオンボードキーボードで押下キーがハイライト表示されます
+1. Edge キオスクモード、または通常の Edge で `tester.html` を開きます。
+2. ページがアクティブな状態でキーを押すと、Live Text に文字が表示され、Keyboard Matrix がハイライトされます。
+3. 画面上でマウス、タッチパッド、タッチ、ペンを動かすと、Global Pointer Canvas に軌跡が表示されます。
+4. クリックまたはタップすると波紋が表示されます。
+5. テストをやり直す場合は `Reset` を押します。
 
-2. **ポインター操作の確認**
-   - Path Viewエリアにマウスを移動
-   - 軌跡が速度に応じた色で描画されます（2秒でフェードアウト）
-   - **クリックでアナログシンセ風の音が鳴ります**（左/右/中ボタンで音が異なる）
-   - ダブルクリックで2音の和音
-   - 波紋エフェクトとクリック音が同期
-   - Motion Compassで速度ベクトルとスクロール速度を確認
-   - Velocity Graphで時系列の速度変化と加速度を確認
-   - 100px移動ごとにリングがフラッシュし、チック音が鳴ります
+## MVPで意図的に後回しにした機能
 
-3. **音声フィードバック**
-   - Path Viewの右上の🔊ボタンで音声ON/OFFを切り替え
-   - 移動速度に応じた連続ピッチ音（120-2200Hz）を聞くことができます
-   - 100px移動ごとに880Hzのチック音が鳴ります
-   - **クリックごとにアナログシンセ風の音**（波形・周波数・パンが動的に変化）
-
-4. **テーマの切り替え**
-   - ヘッダー右上の🖌ボタンでテーマを切り替え（Dark → Light → Pop → Classic → ...）
+- 音声フィードバック
+- テーマ切り替え
+- Motion Compass
+- Velocity Graph
+- 速度に応じた軌跡の高度な色分け
+- 入力ログ保存・エクスポート
+- 本格的なテキストエディタ機能（任意位置編集、選択範囲、Undo/Redo など）
+- 全画面透明オーバーレイキャンバス
 
 ## 技術仕様
 
-- **HTML5 Canvas**: グラフィックス描画（軌跡、コンパス、速度グラフ）
-- **Web Audio API**: 音声生成（Oscillator、Gain、AudioContext、StereoPanner）
-  - ASRエンベロープ（Attack/Decay）による滑らかな音量制御
-  - 非同期音声再生（クリックごとに動的に生成）
-  - ステレオパンによる左右定位
-- **CSS Grid/Flexbox**: レスポンシブレイアウト
-- **CSS変数**: テーマシステム（4テーマ対応）
+- **単一HTML**: `tester.html` に CSS / JavaScript を内包
 - **Vanilla JavaScript**: フレームワーク不要
-- **ResizeObserver**: テキストエリアとPath Viewの高さ同期
-- **requestAnimationFrame**: スムーズなアニメーション
-- **EMA平滑化**: 速度計算の滑らか化（α=0.3）
-
-## ブラウザ対応
-
-モダンブラウザ対応（以下を推奨）：
-- Chrome/Edge（最新版）
-- Firefox（最新版）
-- Safari（最新版）
+- **HTML5 Canvas**: Global Pointer Canvas の軌跡・波紋描画
+- **Pointer Events**: mouse / touch / pen を統合的に検知
+- **Keyboard Events**: `document` レベルの `keydown` / `keyup` でグローバル入力を検知
+- **Composition Events**: IME の未確定・確定入力を処理
+- **高DPI対応**: `devicePixelRatio` に応じて Canvas をリサイズ
+- **オフライン動作**: 外部通信なし
 
 ## ファイル構成
 
-```
+```text
 keyboard_and_pointer_tester/
-├── tester.html          # メインファイル（全ての機能を含む）
-├── odometer.html        # （別の実装ファイル、参考用）
+├── tester.html          # Kiosk MVP メインファイル
+├── odometer.html        # 参考実装ファイル
 ├── README.md            # このファイル
 └── screenshot.png       # スクリーンショット画像
 ```
@@ -127,9 +90,8 @@ keyboard_and_pointer_tester/
 ## クレジット
 
 - オリジナルプロジェクト: [@mass-work](https://codepen.io/mass-work) - [CodePen](https://codepen.io/mass-work/pen/MYaMKzo)
-- 本プロジェクトは上記オリジナルをベースに機能拡張・改良したものです
+- 本プロジェクトは上記オリジナルをベースに、キオスク向けの最小構成へ刷新したものです。
 
 ## ライセンス
 
 このプロジェクトは個人利用・学習目的で自由に使用できます。
-
