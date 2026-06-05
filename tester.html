@@ -412,7 +412,7 @@
       min-height: 0;
       padding: 10px 12px 12px;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto;
+      grid-template-rows: auto minmax(0, 1fr);
       gap: 7px;
       overflow: hidden;
     }
@@ -424,33 +424,12 @@
       text-transform: uppercase;
     }
 
-    .compass-stack {
-      min-height: 0;
-      display: grid;
-      grid-template-rows: minmax(0, 1fr) minmax(0, .86fr);
-      gap: 6px;
-    }
-
-    .compass-widget {
+    .compass-frame {
       position: relative;
       min-height: 0;
     }
 
-    .compass-label {
-      position: absolute;
-      top: 7px;
-      left: 9px;
-      z-index: 1;
-      color: var(--muted);
-      font-size: 9px;
-      font-weight: 900;
-      letter-spacing: .09em;
-      text-transform: uppercase;
-      pointer-events: none;
-    }
-
-    #motionCompass,
-    #scrollCompass {
+    #motionCompass {
       width: 100%;
       min-height: 0;
       height: 100%;
@@ -463,24 +442,38 @@
       box-shadow: inset 0 1px 18px rgba(255, 255, 255, .24);
     }
 
-    #scrollCompass {
-      background:
-        radial-gradient(circle at 50% 50%, rgba(11, 126, 164, .12), transparent 58%),
-        rgba(255, 255, 255, .26);
+    .compass-mini-readout {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 8px;
+      min-height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 3px 8px;
+      border: 1px solid rgba(255, 255, 255, .30);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .18);
+      color: rgba(23, 32, 39, .42);
+      font: 10px/1.1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: .03em;
+      pointer-events: none;
+      backdrop-filter: blur(7px) saturate(1.02);
     }
 
-    .compass-readout {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 5px;
+    .compass-mini-readout b {
+      color: rgba(23, 32, 39, .40);
+      font-weight: 800;
     }
 
-    .compass-readout .metric {
-      padding: 5px 6px;
+    .compass-mini-readout .pointer-label {
+      color: rgba(83, 207, 255, .72);
     }
 
-    .compass-readout .metric strong {
-      font-size: 14px;
+    .compass-mini-readout .scroll-label {
+      color: rgba(11, 126, 164, .58);
     }
 
     .status-panel {
@@ -595,7 +588,7 @@
       <textarea id="hiddenInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Input capture buffer"></textarea>
     </section>
 
-    <section class="bottom-hud" aria-label="Keyboard Matrix, Motion Compass and Scroll Compass">
+    <section class="bottom-hud" aria-label="Keyboard Matrix and Motion Compass">
       <section class="panel keyboard-panel" aria-label="Keyboard Matrix">
         <div class="keyboard" id="visualKb">
         <div class="row">
@@ -622,25 +615,14 @@
         </div>
         </div>
       </section>
-      <section class="panel compass-panel" aria-label="Motion and Scroll Compass">
-        <h2>Motion / Scroll Compass</h2>
-        <div class="compass-stack">
-          <div class="compass-widget">
-            <div class="compass-label">Pointer</div>
-            <canvas id="motionCompass"></canvas>
+      <section class="panel compass-panel" aria-label="Motion Compass">
+        <h2>Motion Compass</h2>
+        <div class="compass-frame">
+          <canvas id="motionCompass"></canvas>
+          <div class="compass-mini-readout" aria-label="Pointer and scroll vector readout">
+            <span><b class="pointer-label">P</b> <span id="pointerVector">0,0</span></span>
+            <span><b class="scroll-label">S</b> <span id="scrollVector">0,0</span></span>
           </div>
-          <div class="compass-widget">
-            <div class="compass-label">Scroll</div>
-            <canvas id="scrollCompass"></canvas>
-          </div>
-        </div>
-        <div class="compass-readout">
-          <div class="metric"><span>vx</span><strong id="motionVx">0</strong></div>
-          <div class="metric"><span>vy</span><strong id="motionVy">0</strong></div>
-          <div class="metric"><span>|v|</span><strong id="motionSpeed">0</strong></div>
-          <div class="metric"><span>sx</span><strong id="scrollVx">0</strong></div>
-          <div class="metric"><span>sy</span><strong id="scrollVy">0</strong></div>
-          <div class="metric"><span>|s|</span><strong id="scrollSpeed">0</strong></div>
         </div>
       </section>
     </section>
@@ -691,13 +673,8 @@
       const imeStateEl = $('#imeState');
       const wheelStateEl = $('#wheelState');
       const motionCompass = $('#motionCompass');
-      const scrollCompass = $('#scrollCompass');
-      const motionVxEl = $('#motionVx');
-      const motionVyEl = $('#motionVy');
-      const motionSpeedEl = $('#motionSpeed');
-      const scrollVxEl = $('#scrollVx');
-      const scrollVyEl = $('#scrollVy');
-      const scrollSpeedEl = $('#scrollSpeed');
+      const pointerVectorEl = $('#pointerVector');
+      const scrollVectorEl = $('#scrollVector');
 
       const downKeys = new Set();
       const pressedKeysHistory = new Set();
@@ -879,17 +856,12 @@
       }
 
       function sizeMotionCompass() {
-        sizeCompassCanvas(motionCompass);
-        sizeCompassCanvas(scrollCompass);
-      }
-
-      function sizeCompassCanvas(targetCanvas) {
-        if (!targetCanvas) return;
-        const rect = targetCanvas.getBoundingClientRect();
+        if (!motionCompass) return;
+        const rect = motionCompass.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        targetCanvas.width = Math.max(1, Math.floor(rect.width * dpr));
-        targetCanvas.height = Math.max(1, Math.floor(rect.height * dpr));
-        const compassCtx = targetCanvas.getContext('2d');
+        motionCompass.width = Math.max(1, Math.floor(rect.width * dpr));
+        motionCompass.height = Math.max(1, Math.floor(rect.height * dpr));
+        const compassCtx = motionCompass.getContext('2d');
         compassCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
 
@@ -976,28 +948,11 @@
         }
       }
 
-      function drawCompass(targetCanvas, vel, readout, options = {}) {
-        if (!targetCanvas) return;
-        const compassCtx = targetCanvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
-        const w = targetCanvas.width / dpr;
-        const h = targetCanvas.height / dpr;
-        compassCtx.clearRect(0, 0, w, h);
-        const cx = w / 2;
-        const cy = h / 2;
-        const radius = Math.max(20, Math.min(w, h) / 2 - 16);
-        const speed = Math.hypot(vel.x, vel.y);
-        const range = options.range || 90;
-        const scale = Math.min(1, speed / range);
-        const angle = Math.atan2(vel.y, vel.x);
-        const vx = speed ? Math.cos(angle) * radius * scale : 0;
-        const vy = speed ? Math.sin(angle) * radius * scale : 0;
-        const lineColor = options.lineColor || 'rgba(83, 207, 255, .94)';
-        const tipColor = options.tipColor || 'rgba(83, 207, 255, .96)';
-        const arcColor = options.arcColor || 'rgba(83, 207, 255, .42)';
-        const dashed = Boolean(options.dashed);
+      function formatVector(vel) {
+        return Math.round(vel.x) + ',' + Math.round(vel.y);
+      }
 
-        compassCtx.save();
+      function drawCompassBase(compassCtx, cx, cy, radius) {
         compassCtx.strokeStyle = 'rgba(38, 56, 68, .20)';
         compassCtx.lineWidth = 1;
         for (const r of [0.33, 0.66, 1]) {
@@ -1020,6 +975,19 @@
         compassCtx.fillText('E', cx + radius + 8, cy);
         compassCtx.fillText('S', cx, cy + radius + 8);
         compassCtx.fillText('W', cx - radius - 8, cy);
+      }
+
+      function drawCompassVector(compassCtx, cx, cy, radius, vel, options = {}) {
+        const speed = Math.hypot(vel.x, vel.y);
+        const range = options.range || 90;
+        const scale = Math.min(1, speed / range);
+        const angle = Math.atan2(vel.y, vel.x);
+        const vx = speed ? Math.cos(angle) * radius * scale : 0;
+        const vy = speed ? Math.sin(angle) * radius * scale : 0;
+        const lineColor = options.lineColor || 'rgba(83, 207, 255, .94)';
+        const tipColor = options.tipColor || 'rgba(83, 207, 255, .96)';
+        const arcColor = options.arcColor || 'rgba(83, 207, 255, .42)';
+        const dashed = Boolean(options.dashed);
 
         compassCtx.beginPath();
         compassCtx.arc(cx, cy, radius * scale, 0, Math.PI * 2);
@@ -1049,35 +1017,42 @@
           compassCtx.fillStyle = tipColor;
           compassCtx.fill();
         }
+      }
 
+      function drawMotionCompass() {
+        if (!motionCompass) return;
+        const compassCtx = motionCompass.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const w = motionCompass.width / dpr;
+        const h = motionCompass.height / dpr;
+        compassCtx.clearRect(0, 0, w, h);
+        const cx = w / 2;
+        const cy = h / 2;
+        const radius = Math.max(20, Math.min(w, h) / 2 - 16);
+
+        compassCtx.save();
+        drawCompassBase(compassCtx, cx, cy, radius);
+        drawCompassVector(compassCtx, cx, cy, radius, scrollVel, {
+          range: 520,
+          lineColor: 'rgba(11, 126, 164, .78)',
+          tipColor: 'rgba(11, 126, 164, .70)',
+          arcColor: 'rgba(11, 126, 164, .30)',
+          dashed: true
+        });
+        drawCompassVector(compassCtx, cx, cy, radius, motionVel, {
+          range: 90,
+          lineColor: 'rgba(83, 207, 255, .94)',
+          tipColor: 'rgba(83, 207, 255, .96)',
+          arcColor: 'rgba(83, 207, 255, .42)'
+        });
         compassCtx.fillStyle = 'rgba(23, 32, 39, .82)';
         compassCtx.beginPath();
         compassCtx.arc(cx, cy, 3, 0, Math.PI * 2);
         compassCtx.fill();
         compassCtx.restore();
 
-        readout.x.textContent = Math.round(vel.x);
-        readout.y.textContent = Math.round(vel.y);
-        readout.speed.textContent = Math.round(speed);
-      }
-
-      function drawMotionCompass() {
-        drawCompass(motionCompass, motionVel, {x: motionVxEl, y: motionVyEl, speed: motionSpeedEl}, {
-          range: 90,
-          lineColor: 'rgba(83, 207, 255, .94)',
-          tipColor: 'rgba(83, 207, 255, .96)',
-          arcColor: 'rgba(83, 207, 255, .42)'
-        });
-      }
-
-      function drawScrollCompass() {
-        drawCompass(scrollCompass, scrollVel, {x: scrollVxEl, y: scrollVyEl, speed: scrollSpeedEl}, {
-          range: 520,
-          lineColor: 'rgba(11, 126, 164, .82)',
-          tipColor: 'rgba(11, 126, 164, .78)',
-          arcColor: 'rgba(11, 126, 164, .34)',
-          dashed: true
-        });
+        pointerVectorEl.textContent = formatVector(motionVel);
+        scrollVectorEl.textContent = formatVector(scrollVel);
       }
 
       function animate() {
@@ -1092,7 +1067,6 @@
         scrollVel.y *= 0.88;
         drawPointerCanvas();
         drawMotionCompass();
-        drawScrollCompass();
         rafId = requestAnimationFrame(animate);
       }
 
@@ -1119,17 +1093,10 @@
         lastCodeEl.textContent = '-';
         imeStateEl.textContent = 'idle';
         wheelStateEl.textContent = '0,0';
-        motionVxEl.textContent = '0';
-        motionVyEl.textContent = '0';
-        motionSpeedEl.textContent = '0';
-        scrollVxEl.textContent = '0';
-        scrollVyEl.textContent = '0';
-        scrollSpeedEl.textContent = '0';
         hiddenInput.value = '';
         renderText();
         drawPointerCanvas();
         drawMotionCompass();
-        drawScrollCompass();
         focusHiddenInput();
       }
 
@@ -1160,7 +1127,7 @@
       function selfTests() {
         const tests = [];
         const ok = (name, pass) => tests.push({name, pass: Boolean(pass)});
-        ok('DOM elements exist', ['pointerCanvas', 'liveText', 'hiddenInput', 'visualKb', 'motionCompass', 'scrollCompass', 'resetBtn'].every((id) => document.getElementById(id)));
+        ok('DOM elements exist', ['pointerCanvas', 'liveText', 'hiddenInput', 'visualKb', 'motionCompass', 'pointerVector', 'scrollVector', 'resetBtn'].every((id) => document.getElementById(id)));
         const digit1 = $('[data-code="Digit1"]');
         const slash = $('[data-code="Slash"]');
         ok('dual legends use primary then Shift sublegend', digit1.textContent.trim() === '1!' && slash.textContent.trim() === '/?');
@@ -1177,7 +1144,8 @@
         ok('right Shift releases independently', !shiftRight.classList.contains('down') && shiftRight.classList.contains('pressed') && !shiftLeft.classList.contains('pressed'));
         const before = liveText.textContent;
         document.dispatchEvent(new WheelEvent('wheel', {bubbles: true, deltaX: 12, deltaY: 24}));
-        ok('wheel updates Scroll Compass velocity', Math.round(scrollVel.x) === 12 && Math.round(scrollVel.y) === -24);
+        drawMotionCompass();
+        ok('wheel updates Motion Compass scroll vector', Math.round(scrollVel.x) === 12 && Math.round(scrollVel.y) === -24 && scrollVectorEl.textContent === '12,-24');
         hiddenInput.dispatchEvent(new InputEvent('beforeinput', {bubbles: true, cancelable: true, inputType: 'insertText', data: 'x'}));
         ok('beforeinput updates Live Text', liveText.textContent !== before && liveText.textContent.includes('x'));
         resetAll();
