@@ -413,7 +413,7 @@
       padding: 10px 12px 12px;
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
-      gap: 8px;
+      gap: 7px;
       overflow: hidden;
     }
 
@@ -424,7 +424,33 @@
       text-transform: uppercase;
     }
 
-    #motionCompass {
+    .compass-stack {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) minmax(0, .86fr);
+      gap: 6px;
+    }
+
+    .compass-widget {
+      position: relative;
+      min-height: 0;
+    }
+
+    .compass-label {
+      position: absolute;
+      top: 7px;
+      left: 9px;
+      z-index: 1;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    #motionCompass,
+    #scrollCompass {
       width: 100%;
       min-height: 0;
       height: 100%;
@@ -437,18 +463,24 @@
       box-shadow: inset 0 1px 18px rgba(255, 255, 255, .24);
     }
 
+    #scrollCompass {
+      background:
+        radial-gradient(circle at 50% 50%, rgba(11, 126, 164, .12), transparent 58%),
+        rgba(255, 255, 255, .26);
+    }
+
     .compass-readout {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 6px;
+      gap: 5px;
     }
 
     .compass-readout .metric {
-      padding: 6px 7px;
+      padding: 5px 6px;
     }
 
     .compass-readout .metric strong {
-      font-size: 15px;
+      font-size: 14px;
     }
 
     .status-panel {
@@ -563,7 +595,7 @@
       <textarea id="hiddenInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Input capture buffer"></textarea>
     </section>
 
-    <section class="bottom-hud" aria-label="Keyboard Matrix and Motion Compass">
+    <section class="bottom-hud" aria-label="Keyboard Matrix, Motion Compass and Scroll Compass">
       <section class="panel keyboard-panel" aria-label="Keyboard Matrix">
         <div class="keyboard" id="visualKb">
         <div class="row">
@@ -574,29 +606,41 @@
           <div class="k w1" data-code="PrintScreen"><span>PrtSc</span></div><div class="k w1" data-code="ScrollLock"><span>ScrLk</span></div><div class="k w1" data-code="Pause"><span>Pause</span></div>
         </div>
         <div class="row">
-          <div class="k w1" data-code="Backquote"><span>~<small>`</small></span></div><div class="k w1" data-code="Digit1"><span>!<small>1</small></span></div><div class="k w1" data-code="Digit2"><span>@<small>2</small></span></div><div class="k w1" data-code="Digit3"><span>#<small>3</small></span></div><div class="k w1" data-code="Digit4"><span>$<small>4</small></span></div><div class="k w1" data-code="Digit5"><span>%<small>5</small></span></div><div class="k w1" data-code="Digit6"><span>^<small>6</small></span></div><div class="k w1" data-code="Digit7"><span>&<small>7</small></span></div><div class="k w1" data-code="Digit8"><span>*<small>8</small></span></div><div class="k w1" data-code="Digit9"><span>(<small>9</small></span></div><div class="k w1" data-code="Digit0"><span>)<small>0</small></span></div><div class="k w1" data-code="Minus"><span>_<small>-</small></span></div><div class="k w1" data-code="Equal"><span>+<small>=</small></span></div><div class="k w2" data-code="Backspace"><span>Backspace</span></div><div class="gap w05"></div><div class="k w1" data-code="Insert"><span>Ins</span></div><div class="k w1" data-code="Home"><span>Home</span></div><div class="k w1" data-code="PageUp"><span>PgUp</span></div>
+          <div class="k w1" data-code="Backquote"><span>`<small>~</small></span></div><div class="k w1" data-code="Digit1"><span>1<small>!</small></span></div><div class="k w1" data-code="Digit2"><span>2<small>@</small></span></div><div class="k w1" data-code="Digit3"><span>3<small>#</small></span></div><div class="k w1" data-code="Digit4"><span>4<small>$</small></span></div><div class="k w1" data-code="Digit5"><span>5<small>%</small></span></div><div class="k w1" data-code="Digit6"><span>6<small>^</small></span></div><div class="k w1" data-code="Digit7"><span>7<small>&</small></span></div><div class="k w1" data-code="Digit8"><span>8<small>*</small></span></div><div class="k w1" data-code="Digit9"><span>9<small>(</small></span></div><div class="k w1" data-code="Digit0"><span>0<small>)</small></span></div><div class="k w1" data-code="Minus"><span>-<small>_</small></span></div><div class="k w1" data-code="Equal"><span>=<small>+</small></span></div><div class="k w2" data-code="Backspace"><span>Backspace</span></div><div class="gap w05"></div><div class="k w1" data-code="Insert"><span>Ins</span></div><div class="k w1" data-code="Home"><span>Home</span></div><div class="k w1" data-code="PageUp"><span>PgUp</span></div>
         </div>
         <div class="row">
-          <div class="k w15" data-code="Tab"><span>Tab</span></div><div class="k w1" data-code="KeyQ"><span>Q</span></div><div class="k w1" data-code="KeyW"><span>W</span></div><div class="k w1" data-code="KeyE"><span>E</span></div><div class="k w1" data-code="KeyR"><span>R</span></div><div class="k w1" data-code="KeyT"><span>T</span></div><div class="k w1" data-code="KeyY"><span>Y</span></div><div class="k w1" data-code="KeyU"><span>U</span></div><div class="k w1" data-code="KeyI"><span>I</span></div><div class="k w1" data-code="KeyO"><span>O</span></div><div class="k w1" data-code="KeyP"><span>P</span></div><div class="k w1" data-code="BracketLeft"><span>{<small>[</small></span></div><div class="k w1" data-code="BracketRight"><span>}<small>]</small></span></div><div class="k w15" data-code="Backslash"><span>|<small>\</small></span></div><div class="gap w05"></div><div class="k w1" data-code="Delete"><span>Del</span></div><div class="k w1" data-code="End"><span>End</span></div><div class="k w1" data-code="PageDown"><span>PgDn</span></div>
+          <div class="k w15" data-code="Tab"><span>Tab</span></div><div class="k w1" data-code="KeyQ"><span>Q</span></div><div class="k w1" data-code="KeyW"><span>W</span></div><div class="k w1" data-code="KeyE"><span>E</span></div><div class="k w1" data-code="KeyR"><span>R</span></div><div class="k w1" data-code="KeyT"><span>T</span></div><div class="k w1" data-code="KeyY"><span>Y</span></div><div class="k w1" data-code="KeyU"><span>U</span></div><div class="k w1" data-code="KeyI"><span>I</span></div><div class="k w1" data-code="KeyO"><span>O</span></div><div class="k w1" data-code="KeyP"><span>P</span></div><div class="k w1" data-code="BracketLeft"><span>[<small>{</small></span></div><div class="k w1" data-code="BracketRight"><span>]<small>}</small></span></div><div class="k w15" data-code="Backslash"><span>\<small>|</small></span></div><div class="gap w05"></div><div class="k w1" data-code="Delete"><span>Del</span></div><div class="k w1" data-code="End"><span>End</span></div><div class="k w1" data-code="PageDown"><span>PgDn</span></div>
         </div>
         <div class="row">
-          <div class="k w175" data-code="CapsLock"><span>Caps</span></div><div class="k w1" data-code="KeyA"><span>A</span></div><div class="k w1" data-code="KeyS"><span>S</span></div><div class="k w1" data-code="KeyD"><span>D</span></div><div class="k w1" data-code="KeyF"><span>F</span></div><div class="k w1" data-code="KeyG"><span>G</span></div><div class="k w1" data-code="KeyH"><span>H</span></div><div class="k w1" data-code="KeyJ"><span>J</span></div><div class="k w1" data-code="KeyK"><span>K</span></div><div class="k w1" data-code="KeyL"><span>L</span></div><div class="k w1" data-code="Semicolon"><span>:<small>;</small></span></div><div class="k w1" data-code="Quote"><span>"<small>'</small></span></div><div class="k w225" data-code="Enter"><span>Enter</span></div><div class="gap w3"></div><div class="gap w05"></div>
+          <div class="k w175" data-code="CapsLock"><span>Caps</span></div><div class="k w1" data-code="KeyA"><span>A</span></div><div class="k w1" data-code="KeyS"><span>S</span></div><div class="k w1" data-code="KeyD"><span>D</span></div><div class="k w1" data-code="KeyF"><span>F</span></div><div class="k w1" data-code="KeyG"><span>G</span></div><div class="k w1" data-code="KeyH"><span>H</span></div><div class="k w1" data-code="KeyJ"><span>J</span></div><div class="k w1" data-code="KeyK"><span>K</span></div><div class="k w1" data-code="KeyL"><span>L</span></div><div class="k w1" data-code="Semicolon"><span>;<small>:</small></span></div><div class="k w1" data-code="Quote"><span>'<small>"</small></span></div><div class="k w225" data-code="Enter"><span>Enter</span></div><div class="gap w3"></div><div class="gap w05"></div>
         </div>
         <div class="row">
-          <div class="k w225" data-code="ShiftLeft"><span>Shift</span></div><div class="k w1" data-code="KeyZ"><span>Z</span></div><div class="k w1" data-code="KeyX"><span>X</span></div><div class="k w1" data-code="KeyC"><span>C</span></div><div class="k w1" data-code="KeyV"><span>V</span></div><div class="k w1" data-code="KeyB"><span>B</span></div><div class="k w1" data-code="KeyN"><span>N</span></div><div class="k w1" data-code="KeyM"><span>M</span></div><div class="k w1" data-code="Comma"><span>&lt;<small>,</small></span></div><div class="k w1" data-code="Period"><span>&gt;<small>.</small></span></div><div class="k w1" data-code="Slash"><span>?<small>/</small></span></div><div class="k w275" data-code="ShiftRight"><span>Shift</span></div><div class="gap w05"></div><div class="gap w1"></div><div class="k w1" data-code="ArrowUp"><span>↑</span></div><div class="gap w1"></div>
+          <div class="k w225" data-code="ShiftLeft"><span>Shift</span></div><div class="k w1" data-code="KeyZ"><span>Z</span></div><div class="k w1" data-code="KeyX"><span>X</span></div><div class="k w1" data-code="KeyC"><span>C</span></div><div class="k w1" data-code="KeyV"><span>V</span></div><div class="k w1" data-code="KeyB"><span>B</span></div><div class="k w1" data-code="KeyN"><span>N</span></div><div class="k w1" data-code="KeyM"><span>M</span></div><div class="k w1" data-code="Comma"><span>,<small>&lt;</small></span></div><div class="k w1" data-code="Period"><span>.<small>&gt;</small></span></div><div class="k w1" data-code="Slash"><span>/<small>?</small></span></div><div class="k w275" data-code="ShiftRight"><span>Shift</span></div><div class="gap w05"></div><div class="gap w1"></div><div class="k w1" data-code="ArrowUp"><span>↑</span></div><div class="gap w1"></div>
         </div>
         <div class="row">
           <div class="k w125" data-code="ControlLeft"><span>Ctrl</span></div><div class="k w125" data-code="MetaLeft"><span>Win</span></div><div class="k w125" data-code="AltLeft"><span>Alt</span></div><div class="k w625" data-code="Space"><span>Space</span></div><div class="k w125" data-code="AltRight"><span>Alt</span></div><div class="k w125" data-code="MetaRight"><span>Win</span></div><div class="k w125" data-code="ContextMenu"><span>Menu</span></div><div class="k w125" data-code="ControlRight"><span>Ctrl</span></div><div class="gap w05"></div><div class="k w1" data-code="ArrowLeft"><span>←</span></div><div class="k w1" data-code="ArrowDown"><span>↓</span></div><div class="k w1" data-code="ArrowRight"><span>→</span></div>
         </div>
         </div>
       </section>
-      <section class="panel compass-panel" aria-label="Motion Compass">
-        <h2>Motion Compass</h2>
-        <canvas id="motionCompass"></canvas>
+      <section class="panel compass-panel" aria-label="Motion and Scroll Compass">
+        <h2>Motion / Scroll Compass</h2>
+        <div class="compass-stack">
+          <div class="compass-widget">
+            <div class="compass-label">Pointer</div>
+            <canvas id="motionCompass"></canvas>
+          </div>
+          <div class="compass-widget">
+            <div class="compass-label">Scroll</div>
+            <canvas id="scrollCompass"></canvas>
+          </div>
+        </div>
         <div class="compass-readout">
           <div class="metric"><span>vx</span><strong id="motionVx">0</strong></div>
           <div class="metric"><span>vy</span><strong id="motionVy">0</strong></div>
           <div class="metric"><span>|v|</span><strong id="motionSpeed">0</strong></div>
+          <div class="metric"><span>sx</span><strong id="scrollVx">0</strong></div>
+          <div class="metric"><span>sy</span><strong id="scrollVy">0</strong></div>
+          <div class="metric"><span>|s|</span><strong id="scrollSpeed">0</strong></div>
         </div>
       </section>
     </section>
@@ -647,9 +691,13 @@
       const imeStateEl = $('#imeState');
       const wheelStateEl = $('#wheelState');
       const motionCompass = $('#motionCompass');
+      const scrollCompass = $('#scrollCompass');
       const motionVxEl = $('#motionVx');
       const motionVyEl = $('#motionVy');
       const motionSpeedEl = $('#motionSpeed');
+      const scrollVxEl = $('#scrollVx');
+      const scrollVyEl = $('#scrollVy');
+      const scrollSpeedEl = $('#scrollSpeed');
 
       const downKeys = new Set();
       const pressedKeysHistory = new Set();
@@ -663,6 +711,7 @@
       let composingText = '';
       let lastPointer = null;
       const motionVel = {x: 0, y: 0};
+      const scrollVel = {x: 0, y: 0};
       let wheelX = 0;
       let wheelY = 0;
       let rafId = 0;
@@ -830,12 +879,17 @@
       }
 
       function sizeMotionCompass() {
-        if (!motionCompass) return;
-        const rect = motionCompass.getBoundingClientRect();
+        sizeCompassCanvas(motionCompass);
+        sizeCompassCanvas(scrollCompass);
+      }
+
+      function sizeCompassCanvas(targetCanvas) {
+        if (!targetCanvas) return;
+        const rect = targetCanvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        motionCompass.width = Math.max(1, Math.floor(rect.width * dpr));
-        motionCompass.height = Math.max(1, Math.floor(rect.height * dpr));
-        const compassCtx = motionCompass.getContext('2d');
+        targetCanvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        targetCanvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        const compassCtx = targetCanvas.getContext('2d');
         compassCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
 
@@ -880,6 +934,8 @@
         if (!captureEnabled) return;
         wheelX += e.deltaX;
         wheelY += e.deltaY;
+        scrollVel.x += e.deltaX;
+        scrollVel.y += -e.deltaY;
         wheelStateEl.textContent = Math.round(wheelX) + ',' + Math.round(wheelY);
       }
 
@@ -920,21 +976,26 @@
         }
       }
 
-      function drawMotionCompass() {
-        if (!motionCompass) return;
-        const compassCtx = motionCompass.getContext('2d');
+      function drawCompass(targetCanvas, vel, readout, options = {}) {
+        if (!targetCanvas) return;
+        const compassCtx = targetCanvas.getContext('2d');
         const dpr = window.devicePixelRatio || 1;
-        const w = motionCompass.width / dpr;
-        const h = motionCompass.height / dpr;
+        const w = targetCanvas.width / dpr;
+        const h = targetCanvas.height / dpr;
         compassCtx.clearRect(0, 0, w, h);
         const cx = w / 2;
         const cy = h / 2;
         const radius = Math.max(20, Math.min(w, h) / 2 - 16);
-        const speed = Math.hypot(motionVel.x, motionVel.y);
-        const scale = Math.min(1, speed / 90);
-        const angle = Math.atan2(motionVel.y, motionVel.x);
-        const vx = Math.cos(angle) * radius * scale;
-        const vy = Math.sin(angle) * radius * scale;
+        const speed = Math.hypot(vel.x, vel.y);
+        const range = options.range || 90;
+        const scale = Math.min(1, speed / range);
+        const angle = Math.atan2(vel.y, vel.x);
+        const vx = speed ? Math.cos(angle) * radius * scale : 0;
+        const vy = speed ? Math.sin(angle) * radius * scale : 0;
+        const lineColor = options.lineColor || 'rgba(83, 207, 255, .94)';
+        const tipColor = options.tipColor || 'rgba(83, 207, 255, .96)';
+        const arcColor = options.arcColor || 'rgba(83, 207, 255, .42)';
+        const dashed = Boolean(options.dashed);
 
         compassCtx.save();
         compassCtx.strokeStyle = 'rgba(38, 56, 68, .20)';
@@ -960,18 +1021,34 @@
         compassCtx.fillText('S', cx, cy + radius + 8);
         compassCtx.fillText('W', cx - radius - 8, cy);
 
-        compassCtx.strokeStyle = 'rgba(83, 207, 255, .94)';
-        compassCtx.lineWidth = 3;
+        compassCtx.beginPath();
+        compassCtx.arc(cx, cy, radius * scale, 0, Math.PI * 2);
+        compassCtx.strokeStyle = arcColor;
+        compassCtx.lineWidth = 2;
+        compassCtx.setLineDash([5, 5]);
+        compassCtx.stroke();
+        compassCtx.setLineDash([]);
+
+        compassCtx.strokeStyle = lineColor;
+        compassCtx.lineWidth = dashed ? 2.5 : 3;
         compassCtx.lineCap = 'round';
+        if (dashed) compassCtx.setLineDash([7, 5]);
         compassCtx.beginPath();
         compassCtx.moveTo(cx, cy);
         compassCtx.lineTo(cx + vx, cy + vy);
         compassCtx.stroke();
+        compassCtx.setLineDash([]);
 
-        compassCtx.fillStyle = 'rgba(83, 207, 255, .96)';
         compassCtx.beginPath();
-        compassCtx.arc(cx + vx, cy + vy, 5, 0, Math.PI * 2);
-        compassCtx.fill();
+        compassCtx.arc(cx + vx, cy + vy, dashed ? 6 : 5, 0, Math.PI * 2);
+        if (dashed) {
+          compassCtx.lineWidth = 2;
+          compassCtx.strokeStyle = tipColor;
+          compassCtx.stroke();
+        } else {
+          compassCtx.fillStyle = tipColor;
+          compassCtx.fill();
+        }
 
         compassCtx.fillStyle = 'rgba(23, 32, 39, .82)';
         compassCtx.beginPath();
@@ -979,9 +1056,28 @@
         compassCtx.fill();
         compassCtx.restore();
 
-        motionVxEl.textContent = Math.round(motionVel.x);
-        motionVyEl.textContent = Math.round(motionVel.y);
-        motionSpeedEl.textContent = Math.round(speed);
+        readout.x.textContent = Math.round(vel.x);
+        readout.y.textContent = Math.round(vel.y);
+        readout.speed.textContent = Math.round(speed);
+      }
+
+      function drawMotionCompass() {
+        drawCompass(motionCompass, motionVel, {x: motionVxEl, y: motionVyEl, speed: motionSpeedEl}, {
+          range: 90,
+          lineColor: 'rgba(83, 207, 255, .94)',
+          tipColor: 'rgba(83, 207, 255, .96)',
+          arcColor: 'rgba(83, 207, 255, .42)'
+        });
+      }
+
+      function drawScrollCompass() {
+        drawCompass(scrollCompass, scrollVel, {x: scrollVxEl, y: scrollVyEl, speed: scrollSpeedEl}, {
+          range: 520,
+          lineColor: 'rgba(11, 126, 164, .82)',
+          tipColor: 'rgba(11, 126, 164, .78)',
+          arcColor: 'rgba(11, 126, 164, .34)',
+          dashed: true
+        });
       }
 
       function animate() {
@@ -992,8 +1088,11 @@
         }
         motionVel.x *= 0.90;
         motionVel.y *= 0.90;
+        scrollVel.x *= 0.88;
+        scrollVel.y *= 0.88;
         drawPointerCanvas();
         drawMotionCompass();
+        drawScrollCompass();
         rafId = requestAnimationFrame(animate);
       }
 
@@ -1005,6 +1104,8 @@
         lastPointer = null;
         motionVel.x = 0;
         motionVel.y = 0;
+        scrollVel.x = 0;
+        scrollVel.y = 0;
         trail.length = 0;
         ripples.length = 0;
         pressedKeysHistory.clear();
@@ -1021,10 +1122,14 @@
         motionVxEl.textContent = '0';
         motionVyEl.textContent = '0';
         motionSpeedEl.textContent = '0';
+        scrollVxEl.textContent = '0';
+        scrollVyEl.textContent = '0';
+        scrollSpeedEl.textContent = '0';
         hiddenInput.value = '';
         renderText();
         drawPointerCanvas();
         drawMotionCompass();
+        drawScrollCompass();
         focusHiddenInput();
       }
 
@@ -1055,7 +1160,10 @@
       function selfTests() {
         const tests = [];
         const ok = (name, pass) => tests.push({name, pass: Boolean(pass)});
-        ok('DOM elements exist', ['pointerCanvas', 'liveText', 'hiddenInput', 'visualKb', 'motionCompass', 'resetBtn'].every((id) => document.getElementById(id)));
+        ok('DOM elements exist', ['pointerCanvas', 'liveText', 'hiddenInput', 'visualKb', 'motionCompass', 'scrollCompass', 'resetBtn'].every((id) => document.getElementById(id)));
+        const digit1 = $('[data-code="Digit1"]');
+        const slash = $('[data-code="Slash"]');
+        ok('dual legends use primary then Shift sublegend', digit1.textContent.trim() === '1!' && slash.textContent.trim() === '/?');
         const keyA = $('[data-code="KeyA"]');
         document.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, code: 'KeyA', key: 'a'}));
         ok('global keydown highlights KeyA', keyA.classList.contains('down'));
@@ -1068,6 +1176,8 @@
         document.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, code: 'ShiftRight', key: 'Shift'}));
         ok('right Shift releases independently', !shiftRight.classList.contains('down') && shiftRight.classList.contains('pressed') && !shiftLeft.classList.contains('pressed'));
         const before = liveText.textContent;
+        document.dispatchEvent(new WheelEvent('wheel', {bubbles: true, deltaX: 12, deltaY: 24}));
+        ok('wheel updates Scroll Compass velocity', Math.round(scrollVel.x) === 12 && Math.round(scrollVel.y) === -24);
         hiddenInput.dispatchEvent(new InputEvent('beforeinput', {bubbles: true, cancelable: true, inputType: 'insertText', data: 'x'}));
         ok('beforeinput updates Live Text', liveText.textContent !== before && liveText.textContent.includes('x'));
         resetAll();
