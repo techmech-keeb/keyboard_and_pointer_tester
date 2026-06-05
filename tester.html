@@ -61,13 +61,13 @@
       width: 100vw;
       padding: 12px;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(340px, .72fr);
-      grid-template-rows: 52px 132px minmax(80px, 1fr) clamp(220px, 30dvh, 300px);
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 52px clamp(220px, 28dvh, 340px) minmax(56px, 1fr) clamp(220px, 30dvh, 300px);
       grid-template-areas:
-        "topbar topbar"
-        "editor status"
-        ". ."
-        "bottom bottom";
+        "topbar"
+        "editor"
+        "."
+        "bottom";
       gap: 10px;
       background: transparent;
       pointer-events: none;
@@ -198,8 +198,10 @@
 
     .editor-panel {
       grid-area: editor;
-      align-self: start;
-      height: 132px;
+      justify-self: center;
+      align-self: stretch;
+      width: min(100%, 1240px);
+      height: clamp(220px, 28dvh, 340px);
       display: grid;
       grid-template-rows: 30px minmax(0, 1fr);
       padding: 10px 14px 12px;
@@ -264,18 +266,40 @@
     }
 
     .live-text .composition {
-      color: var(--accent-2);
-      border-bottom: 2px solid var(--accent-2);
+      display: inline;
+      padding: 0 .12em .06em;
+      border-radius: 6px;
+      color: #074e69;
+      border-bottom: 2px solid rgba(83, 207, 255, .86);
+      background:
+        linear-gradient(90deg,
+          rgba(83, 207, 255, .04),
+          rgba(83, 207, 255, .22),
+          rgba(255, 255, 255, .34),
+          rgba(83, 207, 255, .12));
+      background-size: 240% 100%;
+      box-shadow: 0 0 18px rgba(83, 207, 255, .16);
+      text-shadow: 0 0 10px rgba(83, 207, 255, .30);
+      animation: compositionScan 1.65s linear infinite;
     }
 
     .caret {
       display: inline-block;
       width: .58em;
       color: var(--accent);
-      animation: blink 1s steps(2, start) infinite;
+      text-shadow: 0 0 14px rgba(83, 207, 255, .70);
+      animation: caretPulse 1.05s ease-in-out infinite;
     }
 
-    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes compositionScan {
+      0% { background-position: 120% 0; }
+      100% { background-position: -120% 0; }
+    }
+
+    @keyframes caretPulse {
+      0%, 100% { opacity: .24; filter: drop-shadow(0 0 1px rgba(83, 207, 255, .20)); }
+      45% { opacity: 1; filter: drop-shadow(0 0 8px rgba(83, 207, 255, .70)); }
+    }
 
     #hiddenInput {
       position: fixed;
@@ -471,79 +495,16 @@
       color: rgba(11, 126, 164, .58);
     }
 
-    .status-panel {
-      grid-area: status;
-      align-self: start;
-      height: 132px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      min-height: 0;
-    }
-
-    .status-card {
-      min-width: 0;
-      padding: 10px 14px;
-      overflow: hidden;
-    }
-
-    .status-card h2 {
-      margin: 0 0 8px;
-      font-size: 13px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    .metrics {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .status-panel .metrics {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .metric {
-      min-width: 0;
-      border: 1px solid rgba(255, 255, 255, .78);
-      border-radius: 10px;
-      padding: 7px 9px;
-      background: var(--hud-cell);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
-    }
-
-    .metric span {
-      display: block;
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    .metric strong {
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin-top: 4px;
-      color: var(--accent);
-      text-shadow: 0 8px 24px rgba(83, 207, 255, .24);
-      font: 18px/1.05 ui-monospace, SFMono-Regular, Consolas, monospace;
-    }
-
     @media (max-width: 1100px) {
       body { min-width: 0; }
       .app {
         padding: 8px;
         gap: 8px;
         grid-template-columns: 1fr;
-        grid-template-rows: 50px 124px 104px minmax(56px, 1fr) clamp(210px, 30dvh, 280px);
+        grid-template-rows: 50px clamp(210px, 30dvh, 320px) minmax(48px, 1fr) clamp(210px, 30dvh, 280px);
         grid-template-areas:
           "topbar"
           "editor"
-          "status"
           "."
           "bottom";
       }
@@ -551,10 +512,8 @@
         width: 100%;
         grid-template-columns: minmax(0, 1fr) clamp(150px, 24vw, 190px);
       }
-      .editor-panel,
-      .status-panel { height: auto; }
+      .editor-panel { height: clamp(210px, 30dvh, 320px); }
       .brand small { display: none; }
-      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -622,26 +581,6 @@
       </section>
     </section>
 
-    <section class="status-panel">
-      <div class="panel status-card">
-        <h2>Pointer Status</h2>
-        <div class="metrics">
-          <div class="metric"><span>type</span><strong id="pointerType">-</strong></div>
-          <div class="metric"><span>x,y</span><strong id="pointerXY">-</strong></div>
-          <div class="metric"><span>move</span><strong id="moveXY">0,0</strong></div>
-          <div class="metric"><span>buttons</span><strong id="buttonState">0 0 0</strong></div>
-        </div>
-      </div>
-      <div class="panel status-card">
-        <h2>Input Status</h2>
-        <div class="metrics">
-          <div class="metric"><span>last key</span><strong id="lastKey">-</strong></div>
-          <div class="metric"><span>code</span><strong id="lastCode">-</strong></div>
-          <div class="metric"><span>IME</span><strong id="imeState">idle</strong></div>
-          <div class="metric"><span>wheel</span><strong id="wheelState">0,0</strong></div>
-        </div>
-      </div>
-    </section>
   </main>
 
   <script>
@@ -659,14 +598,16 @@
       const captureToggle = $('#captureToggle');
       const resetBtn = $('#resetBtn');
 
-      const pointerTypeEl = $('#pointerType');
-      const pointerXYEl = $('#pointerXY');
-      const moveXYEl = $('#moveXY');
-      const buttonStateEl = $('#buttonState');
-      const lastKeyEl = $('#lastKey');
-      const lastCodeEl = $('#lastCode');
-      const imeStateEl = $('#imeState');
-      const wheelStateEl = $('#wheelState');
+      const statusState = {
+        pointerType: '-',
+        pointerXY: '-',
+        moveXY: '0,0',
+        buttonState: '0 0 0',
+        lastKey: '-',
+        lastCode: '-',
+        imeState: 'idle',
+        wheelState: '0,0'
+      };
       const motionCompass = $('#motionCompass');
       const pointerVectorEl = $('#pointerVector');
       const scrollVectorEl = $('#scrollVector');
@@ -797,8 +738,8 @@
         downKeys.add(code);
         pressedKeysHistory.add(code);
         highlight(code, true);
-        lastKeyEl.textContent = e.key || '-';
-        lastCodeEl.textContent = code || '-';
+        statusState.lastKey = e.key || '-';
+        statusState.lastCode = code || '-';
 
         if (e.isComposing || composingText) return;
 
@@ -818,14 +759,14 @@
       function onCompositionStart() {
         if (!captureEnabled) return;
         composingText = '';
-        imeStateEl.textContent = 'composing';
+        statusState.imeState = 'composing';
         renderText();
       }
 
       function onCompositionUpdate(e) {
         if (!captureEnabled) return;
         composingText = e.data || '';
-        imeStateEl.textContent = 'composing';
+        statusState.imeState = 'composing';
         renderText();
       }
 
@@ -833,7 +774,7 @@
         if (!captureEnabled) return;
         const text = e.data || composingText;
         composingText = '';
-        imeStateEl.textContent = 'idle';
+        statusState.imeState = 'idle';
         if (text) addText(text);
         else renderText();
         hiddenInput.value = '';
@@ -877,10 +818,10 @@
         lastPointer = {clientX: e.clientX, clientY: e.clientY};
         trail.push({x: point.x, y: point.y, t: performance.now()});
         if (trail.length > maxTrail) trail.splice(0, trail.length - maxTrail);
-        pointerTypeEl.textContent = e.pointerType || 'mouse';
-        pointerXYEl.textContent = Math.round(e.clientX) + ',' + Math.round(e.clientY);
-        moveXYEl.textContent = Math.round(move.x) + ',' + Math.round(move.y);
-        buttonStateEl.textContent = buttonText(e.buttons || 0);
+        statusState.pointerType = e.pointerType || 'mouse';
+        statusState.pointerXY = Math.round(e.clientX) + ',' + Math.round(e.clientY);
+        statusState.moveXY = Math.round(move.x) + ',' + Math.round(move.y);
+        statusState.buttonState = buttonText(e.buttons || 0);
       }
 
       function onPointerDown(e) {
@@ -889,12 +830,12 @@
         const point = viewportToCanvas(e.clientX, e.clientY);
         ripples.push({x: point.x, y: point.y, radius: 0, alpha: 1});
         if (ripples.length > maxRipples) ripples.splice(0, ripples.length - maxRipples);
-        buttonStateEl.textContent = buttonText(e.buttons || 0);
+        statusState.buttonState = buttonText(e.buttons || 0);
       }
 
       function onPointerUp(e) {
         if (!captureEnabled) return;
-        buttonStateEl.textContent = buttonText(e.buttons || 0);
+        statusState.buttonState = buttonText(e.buttons || 0);
       }
 
       function onWheel(e) {
@@ -903,7 +844,7 @@
         wheelY += e.deltaY;
         scrollVel.x += e.deltaX;
         scrollVel.y += -e.deltaY;
-        wheelStateEl.textContent = Math.round(wheelX) + ',' + Math.round(wheelY);
+        statusState.wheelState = Math.round(wheelX) + ',' + Math.round(wheelY);
       }
 
       function drawPointerCanvas() {
@@ -1080,14 +1021,14 @@
         pressedKeysHistory.clear();
         releaseDownKeys();
         $$('#visualKb .k.pressed').forEach((key) => key.classList.remove('pressed'));
-        pointerTypeEl.textContent = '-';
-        pointerXYEl.textContent = '-';
-        moveXYEl.textContent = '0,0';
-        buttonStateEl.textContent = '0 0 0';
-        lastKeyEl.textContent = '-';
-        lastCodeEl.textContent = '-';
-        imeStateEl.textContent = 'idle';
-        wheelStateEl.textContent = '0,0';
+        statusState.pointerType = '-';
+        statusState.pointerXY = '-';
+        statusState.moveXY = '0,0';
+        statusState.buttonState = '0 0 0';
+        statusState.lastKey = '-';
+        statusState.lastCode = '-';
+        statusState.imeState = 'idle';
+        statusState.wheelState = '0,0';
         hiddenInput.value = '';
         renderText();
         drawPointerCanvas();
