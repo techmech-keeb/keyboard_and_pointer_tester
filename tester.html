@@ -412,7 +412,7 @@
       min-height: 0;
       padding: 10px 12px 12px;
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
       gap: 7px;
       overflow: hidden;
     }
@@ -425,7 +425,6 @@
     }
 
     .compass-frame {
-      position: relative;
       min-height: 0;
     }
 
@@ -443,10 +442,6 @@
     }
 
     .compass-mini-readout {
-      position: absolute;
-      left: 10px;
-      right: 10px;
-      bottom: 8px;
       min-height: 18px;
       display: flex;
       align-items: center;
@@ -619,10 +614,10 @@
         <h2>Motion Compass</h2>
         <div class="compass-frame">
           <canvas id="motionCompass"></canvas>
-          <div class="compass-mini-readout" aria-label="Pointer and scroll vector readout">
-            <span><b class="pointer-label">P</b> <span id="pointerVector">0,0</span></span>
-            <span><b class="scroll-label">S</b> <span id="scrollVector">0,0</span></span>
-          </div>
+        </div>
+        <div class="compass-mini-readout" aria-label="Pointer and scroll vector readout">
+          <span><b class="pointer-label">P</b> <span id="pointerVector">0,0</span></span>
+          <span><b class="scroll-label">S</b> <span id="scrollVector">0,0</span></span>
         </div>
       </section>
     </section>
