@@ -943,22 +943,29 @@
           ctx.save();
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
-          for (let i = 1; i < trail.length; i += 2) {
-            const age = i / trail.length;
-            const alpha = (0.10 + age * 0.62).toFixed(3);
-            ctx.strokeStyle = 'rgba(94, 246, 255, ' + alpha + ')';
-            ctx.lineWidth = 1.2 + age * 2.4;
+
+          const drawTrailPath = (lineWidth, strokeStyle) => {
             ctx.beginPath();
-            ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
-            ctx.lineTo(trail[i].x, trail[i].y);
-            ctx.stroke();
-            if (i % 12 === 0) {
-              ctx.fillStyle = 'rgba(157, 255, 106, ' + (0.04 + age * 0.20).toFixed(3) + ')';
-              ctx.beginPath();
-              ctx.arc(trail[i].x, trail[i].y, 1.1 + age * 1.6, 0, Math.PI * 2);
-              ctx.fill();
+            ctx.moveTo(trail[0].x, trail[0].y);
+            for (let i = 1; i < trail.length; i++) {
+              ctx.lineTo(trail[i].x, trail[i].y);
             }
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = strokeStyle;
+            ctx.stroke();
+          };
+
+          drawTrailPath(7, 'rgba(88, 246, 255, .13)');
+          drawTrailPath(2.4, 'rgba(94, 246, 255, .62)');
+
+          for (let i = 12; i < trail.length; i += 12) {
+            const age = i / trail.length;
+            ctx.fillStyle = 'rgba(157, 255, 106, ' + (0.04 + age * 0.20).toFixed(3) + ')';
+            ctx.beginPath();
+            ctx.arc(trail[i].x, trail[i].y, 1.1 + age * 1.6, 0, Math.PI * 2);
+            ctx.fill();
           }
+
           const last = trail[trail.length - 1];
           ctx.strokeStyle = 'rgba(157, 255, 106, .76)';
           ctx.lineWidth = 1.5;
