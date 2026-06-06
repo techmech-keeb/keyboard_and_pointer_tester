@@ -104,7 +104,7 @@
         linear-gradient(145deg, var(--hud-bg-a), var(--hud-bg-b)),
         linear-gradient(90deg, rgba(88, 246, 255, .13) 0 1px, transparent 1px 100%);
       box-shadow: var(--shadow), inset 0 1px 0 rgba(142, 255, 237, .18);
-      backdrop-filter: blur(14px) saturate(1.18);
+      backdrop-filter: blur(4px) saturate(1.06);
       pointer-events: auto;
     }
 
@@ -223,14 +223,12 @@
       display: block;
       pointer-events: none;
       background:
-        radial-gradient(circle at 50% 57%, rgba(157, 255, 106, .13) 0 10%, transparent 28%),
-        repeating-radial-gradient(circle at 50% 57%, rgba(88, 246, 255, .10) 0 1px, transparent 1px 58px),
+        radial-gradient(circle at 50% 57%, rgba(157, 255, 106, .11) 0 9%, transparent 29%),
         linear-gradient(var(--grid) 1px, transparent 1px),
         linear-gradient(90deg, var(--grid) 1px, transparent 1px),
-        conic-gradient(from 18deg at 50% 57%, transparent 0deg, rgba(88, 246, 255, .10) 18deg, transparent 42deg, transparent 100deg, rgba(157, 255, 106, .08) 118deg, transparent 145deg, transparent 360deg),
-        radial-gradient(circle at 76% 8%, rgba(88, 246, 255, .12), transparent 26%),
+        radial-gradient(circle at 76% 8%, rgba(88, 246, 255, .10), transparent 26%),
         linear-gradient(180deg, #070d10 0%, #0b1518 54%, #060a0c 100%);
-      background-size: auto, auto, 34px 34px, 34px 34px, auto, auto, auto;
+      background-size: auto, 34px 34px, 34px 34px, auto, auto;
     }
 
     .editor-panel {
@@ -336,8 +334,8 @@
     }
 
     @keyframes caretPulse {
-      0%, 100% { opacity: .24; filter: drop-shadow(0 0 1px rgba(157, 255, 106, .20)); }
-      45% { opacity: 1; filter: drop-shadow(0 0 8px rgba(157, 255, 106, .70)); }
+      0%, 100% { opacity: .24; }
+      45% { opacity: 1; }
     }
 
     #hiddenInput {
@@ -519,7 +517,6 @@
       font: 10px/1.1 ui-monospace, SFMono-Regular, Consolas, monospace;
       letter-spacing: .03em;
       pointer-events: none;
-      backdrop-filter: blur(7px) saturate(1.02);
     }
 
     .compass-mini-readout b {
@@ -656,13 +653,21 @@
       const pressedKeysHistory = new Set();
       const trail = [];
       const ripples = [];
-      const maxTrail = 700;
-      const maxRipples = 36;
+      const maxTrail = 240;
+      const maxRipples = 18;
+      const maxCanvasDpr = 1.5;
+      const minTrailDistance = 3;
+      const minTrailInterval = 12;
+      const velocityEpsilon = 0.16;
 
       let captureEnabled = true;
       let editorText = '';
       let composingText = '';
       let lastPointer = null;
+      let lastTrailPoint = null;
+      let pointerCanvasDirty = true;
+      let motionCompassDirty = true;
+      let compassSpin = 0;
       const motionVel = {x: 0, y: 0};
       const scrollVel = {x: 0, y: 0};
       let wheelX = 0;
@@ -820,21 +825,51 @@
         hiddenInput.value = '';
       }
 
+      function canvasDpr() {
+        return Math.min(window.devicePixelRatio || 1, maxCanvasDpr);
+      }
+
+      function scheduleAnimation() {
+        if (!rafId) rafId = requestAnimationFrame(animate);
+      }
+
+      function markPointerCanvasDirty() {
+        pointerCanvasDirty = true;
+        scheduleAnimation();
+      }
+
+      function markMotionCompassDirty() {
+        motionCompassDirty = true;
+        scheduleAnimation();
+      }
+
+      function vectorActive(vel, threshold = velocityEpsilon) {
+        return Math.abs(vel.x) > threshold || Math.abs(vel.y) > threshold;
+      }
+
+      function settleVector(vel) {
+        if (Math.abs(vel.x) <= velocityEpsilon) vel.x = 0;
+        if (Math.abs(vel.y) <= velocityEpsilon) vel.y = 0;
+      }
+
       function resizeCanvas() {
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = canvasDpr();
         const width = Math.max(1, window.innerWidth);
         const height = Math.max(1, window.innerHeight);
         canvas.width = Math.floor(width * dpr);
         canvas.height = Math.floor(height * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        pointerCanvasDirty = true;
+        motionCompassDirty = true;
         sizeMotionCompass();
         drawPointerCanvas();
+        drawMotionCompass();
       }
 
       function sizeMotionCompass() {
         if (!motionCompass) return;
         const rect = motionCompass.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = canvasDpr();
         motionCompass.width = Math.max(1, Math.floor(rect.width * dpr));
         motionCompass.height = Math.max(1, Math.floor(rect.height * dpr));
         const compassCtx = motionCompass.getContext('2d');
@@ -853,11 +888,21 @@
         if (!captureEnabled) return;
         const point = viewportToCanvas(e.clientX, e.clientY);
         const move = lastPointer ? {x: e.clientX - lastPointer.clientX, y: e.clientY - lastPointer.clientY} : {x: 0, y: 0};
+        const now = performance.now();
+        const trailDistance = lastTrailPoint ? Math.hypot(point.x - lastTrailPoint.x, point.y - lastTrailPoint.y) : Infinity;
+        const trailElapsed = lastTrailPoint ? now - lastTrailPoint.t : Infinity;
         motionVel.x += move.x;
         motionVel.y += move.y;
         lastPointer = {clientX: e.clientX, clientY: e.clientY};
-        trail.push({x: point.x, y: point.y, t: performance.now()});
-        if (trail.length > maxTrail) trail.splice(0, trail.length - maxTrail);
+
+        if (trailDistance >= minTrailDistance || trailElapsed >= minTrailInterval) {
+          lastTrailPoint = {x: point.x, y: point.y, t: now};
+          trail.push(lastTrailPoint);
+          if (trail.length > maxTrail) trail.splice(0, trail.length - maxTrail);
+          markPointerCanvasDirty();
+        }
+        markMotionCompassDirty();
+
         statusState.pointerType = e.pointerType || 'mouse';
         statusState.pointerXY = Math.round(e.clientX) + ',' + Math.round(e.clientY);
         statusState.moveXY = Math.round(move.x) + ',' + Math.round(move.y);
@@ -871,6 +916,7 @@
         ripples.push({x: point.x, y: point.y, radius: 0, alpha: 1});
         if (ripples.length > maxRipples) ripples.splice(0, ripples.length - maxRipples);
         statusState.buttonState = buttonText(e.buttons || 0);
+        markPointerCanvasDirty();
       }
 
       function onPointerUp(e) {
@@ -885,6 +931,7 @@
         scrollVel.x += e.deltaX;
         scrollVel.y += -e.deltaY;
         statusState.wheelState = Math.round(wheelX) + ',' + Math.round(wheelY);
+        markMotionCompassDirty();
       }
 
       function drawPointerCanvas() {
@@ -896,7 +943,7 @@
           ctx.save();
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
-          for (let i = 1; i < trail.length; i++) {
+          for (let i = 1; i < trail.length; i += 2) {
             const age = i / trail.length;
             const alpha = (0.10 + age * 0.62).toFixed(3);
             ctx.strokeStyle = 'rgba(94, 246, 255, ' + alpha + ')';
@@ -905,7 +952,7 @@
             ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
             ctx.lineTo(trail[i].x, trail[i].y);
             ctx.stroke();
-            if (i % 9 === 0) {
+            if (i % 12 === 0) {
               ctx.fillStyle = 'rgba(157, 255, 106, ' + (0.04 + age * 0.20).toFixed(3) + ')';
               ctx.beginPath();
               ctx.arc(trail[i].x, trail[i].y, 1.1 + age * 1.6, 0, Math.PI * 2);
@@ -1014,10 +1061,10 @@
         }
       }
 
-      function drawMotionCompass() {
+      function drawMotionCompass(spinActive = false) {
         if (!motionCompass) return;
         const compassCtx = motionCompass.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = canvasDpr();
         const w = motionCompass.width / dpr;
         const h = motionCompass.height / dpr;
         compassCtx.clearRect(0, 0, w, h);
@@ -1027,7 +1074,8 @@
 
         compassCtx.save();
         drawCompassBase(compassCtx, cx, cy, radius);
-        const spin = performance.now() / 1200;
+        if (spinActive) compassSpin += 0.045;
+        const spin = compassSpin;
         compassCtx.strokeStyle = 'rgba(157, 255, 106, .22)';
         compassCtx.lineWidth = 2;
         compassCtx.setLineDash([14, 18]);
@@ -1059,18 +1107,38 @@
       }
 
       function animate() {
-        for (let i = ripples.length - 1; i >= 0; i--) {
-          ripples[i].radius += 1.8;
-          ripples[i].alpha *= 0.965;
-          if (ripples[i].alpha < 0.04) ripples.splice(i, 1);
+        rafId = 0;
+
+        if (ripples.length) {
+          for (let i = ripples.length - 1; i >= 0; i--) {
+            ripples[i].radius += 1.8;
+            ripples[i].alpha *= 0.965;
+            if (ripples[i].alpha < 0.04) ripples.splice(i, 1);
+          }
+          pointerCanvasDirty = true;
         }
-        motionVel.x *= 0.90;
-        motionVel.y *= 0.90;
-        scrollVel.x *= 0.88;
-        scrollVel.y *= 0.88;
-        drawPointerCanvas();
-        drawMotionCompass();
-        rafId = requestAnimationFrame(animate);
+
+        const hasMotion = vectorActive(motionVel) || vectorActive(scrollVel);
+        if (hasMotion) {
+          motionVel.x *= 0.90;
+          motionVel.y *= 0.90;
+          scrollVel.x *= 0.88;
+          scrollVel.y *= 0.88;
+          settleVector(motionVel);
+          settleVector(scrollVel);
+          motionCompassDirty = true;
+        }
+
+        if (pointerCanvasDirty) {
+          drawPointerCanvas();
+          pointerCanvasDirty = false;
+        }
+        if (motionCompassDirty) {
+          drawMotionCompass(hasMotion);
+          motionCompassDirty = false;
+        }
+
+        if (ripples.length || vectorActive(motionVel) || vectorActive(scrollVel)) scheduleAnimation();
       }
 
       function resetAll() {
@@ -1079,6 +1147,7 @@
         wheelX = 0;
         wheelY = 0;
         lastPointer = null;
+        lastTrailPoint = null;
         motionVel.x = 0;
         motionVel.y = 0;
         scrollVel.x = 0;
@@ -1098,8 +1167,12 @@
         statusState.wheelState = '0,0';
         hiddenInput.value = '';
         renderText();
+        pointerCanvasDirty = true;
+        motionCompassDirty = true;
         drawPointerCanvas();
         drawMotionCompass();
+        pointerCanvasDirty = false;
+        motionCompassDirty = false;
         focusHiddenInput();
       }
 
@@ -1160,7 +1233,6 @@
       resizeCanvas();
       renderText();
       setCapture(true);
-      rafId = requestAnimationFrame(animate);
       selfTests();
     })();
   </script>
