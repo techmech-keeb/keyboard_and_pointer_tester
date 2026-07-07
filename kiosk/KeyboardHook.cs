@@ -24,7 +24,6 @@ internal sealed class KeyboardHook : IDisposable
     private const int WM_KEYUP = 0x0101;
     private const int WM_SYSKEYDOWN = 0x0104;
     private const int WM_SYSKEYUP = 0x0105;
-    private const uint LLKHF_ALTDOWN = 0x20;
 
     private const int VK_TAB = 0x09;
     private const int VK_ESCAPE = 0x1B;
@@ -58,7 +57,9 @@ internal sealed class KeyboardHook : IDisposable
             var down = msg is WM_KEYDOWN or WM_SYSKEYDOWN;
             var up = msg is WM_KEYUP or WM_SYSKEYUP;
             var vk = (int)data.vkCode;
-            var altHeld = (data.flags & LLKHF_ALTDOWN) != 0;
+            // NOTE: don't use LLKHF_ALTDOWN here — the context code is 0 while
+            // Ctrl+Alt are held together, which broke the exit chord.
+            var altHeld = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
             var ctrlHeld = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
             var shiftHeld = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
 

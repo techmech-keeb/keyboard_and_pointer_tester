@@ -80,8 +80,9 @@ internal sealed class KioskForm : Form
             try
             {
                 using var doc = JsonDocument.Parse(a.WebMessageAsJson);
-                if (doc.RootElement.TryGetProperty("type", out var t) && t.GetString() == "ready")
-                    PostHostHello();
+                var type = doc.RootElement.TryGetProperty("type", out var t) ? t.GetString() : null;
+                if (type == "ready") PostHostHello();
+                else if (type == "exit") BeginInvoke(ExitKiosk); // staff exit from the UI
             }
             catch (JsonException) { /* ignore malformed messages */ }
         };

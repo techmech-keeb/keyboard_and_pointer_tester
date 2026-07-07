@@ -522,6 +522,40 @@ body.kiosk .key.win .keycap .lock { display: block; }
 @keyframes flowDown { to { background-position-y: 24px; } }
 .scroll-nums { grid-column: 2; grid-row: 1 / span 3; }
 
+/* ---------- staff exit menu (logo x5 taps) ---------- */
+#staffMenu {
+  position: fixed; inset: 0;
+  z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(5, 7, 10, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#staffMenu[hidden] { display: none; }
+.staff-box {
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px 36px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.staff-box h3 { font-size: 15px; letter-spacing: .12em; color: var(--dim); margin-bottom: 10px; }
+.staff-box p { font-size: 17px; font-weight: 700; }
+.staff-actions { display: flex; gap: 12px; justify-content: center; margin: 22px 0 14px; }
+.staff-actions button {
+  font-family: inherit; font-size: 15px; font-weight: 700;
+  border-radius: 10px; padding: 12px 30px; cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent; color: var(--txt);
+}
+#staffExitBtn {
+  background: linear-gradient(135deg, var(--red), #ff6a5b);
+  border-color: transparent; color: #fff;
+  box-shadow: 0 2px 16px rgba(255, 59, 48, 0.45);
+}
+.staff-note { font-size: 11.5px !important; font-weight: 500 !important; color: var(--dim); }
+
 /* ---------- attract overlay ---------- */
 #attract {
   position: fixed; inset: 0;

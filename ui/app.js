@@ -156,8 +156,13 @@ document.addEventListener("keydown", (e) => {
   if (!e.repeat) registerKeyDown(e.code, e.key, false);
   else keyVisualDown(e.code); // keep lit while held
 
+  // staff menu: Escape closes it and is consumed
+  const staffOpen = !$("staffMenu").hidden;
+  if (staffOpen) {
+    if (e.code === "Escape" && !e.repeat) $("staffMenu").hidden = true;
+  }
   // typing practice (IME-independent via code fallback)
-  if (!S.freeMode && !e.ctrlKey && !e.altKey && !e.metaKey) {
+  else if (!S.freeMode && !e.ctrlKey && !e.altKey && !e.metaKey) {
     if (e.code === "Escape" && !e.repeat) practiceNext();
     else if (e.code === "Backspace") practiceBackspace();
     else {
@@ -739,6 +744,7 @@ function resetAll(showAttract) {
   setMode(false);
   // missions
   missionsReset();
+  $("staffMenu").hidden = true;
   if (showAttract) attractShow();
 }
 
@@ -755,6 +761,27 @@ document.addEventListener("selectstart", (e) => {
   if (e.target !== hiddenInput) e.preventDefault();
 });
 document.addEventListener("dragstart", (e) => e.preventDefault());
+
+// staff exit hatch: tap/click the logo 5 times within 2.5 seconds
+let brandTaps = [];
+document.querySelector(".brand").addEventListener("pointerdown", () => {
+  const now = performance.now();
+  brandTaps = brandTaps.filter((t) => now - t < 2500);
+  brandTaps.push(now);
+  if (brandTaps.length >= 5) {
+    brandTaps = [];
+    $("staffMenu").hidden = false;
+  }
+});
+$("staffCancelBtn").addEventListener("click", () => { $("staffMenu").hidden = true; });
+$("staffExitBtn").addEventListener("click", () => {
+  if (window.chrome && window.chrome.webview) {
+    window.chrome.webview.postMessage({ type: "exit" });
+  } else {
+    window.close(); // browser mode: best effort
+    $("staffMenu").hidden = true;
+  }
+});
 
 // if the window ever loses focus (browser mode), don't leave keys stuck lit
 window.addEventListener("blur", () => {
