@@ -1,114 +1,112 @@
-# Keyboard & Pointer Tester — Kiosk MVP
+# OLSK60 INPUT LAB
 
-Surface Pro 7 と ThinkPad X9 14インチを想定した、Edge キオスクモード向けのローカル HTML 入力テストツールです。ページがアクティブな状態で、特定の入力欄や描画領域をクリックしなくても、キーボード入力・文字入力・ポインター操作を 1 画面で可視化します。ポインター軌跡は全画面の背景レイヤーに薄い記録紙風の残像として残しつつ、下部の Live Pointer Trace で直近10秒の動きを縮図として確認できます。入力テキストや操作量の数値は、明色の診断紙面風インターフェイスとして表示します。
+トラックポイント搭載自作キーボード **OLSK60** の操作感を、展示会・店頭で来場者に直感的に体験してもらうためのキオスク型テスターです。
 
-![Keyboard & Pointer Tester](./screenshot.png)
+- トラックポイントを動かすと **カーソル軌跡が全画面に流れ**、速度で色が変わる
+- キーを押すと **実機と同じ配列のキーボードが光り**、押した回数でヒートマップ化
+- **タイピング練習**（WPM / 正確率）と **自由入力**（日本語IME対応）
+- 初見でも迷わない **TRY IT! ミッション** とアトラクト画面、無操作で自動リセット
+- ネイティブのキオスクホストが **Winキー / Alt+Tab / Alt+F4 などをブロック**し、来場者が何を押してもテスター画面から離脱しない
 
-## 実行前提
+![OLSK60 INPUT LAB](./docs/screenshot.png)
 
-- **端末**: Surface Pro 7、ThinkPad X9 14インチ
-- **ブラウザ**: Microsoft Edge
-- **起動形態**: Edge キオスクモードでローカルの `tester.html` を表示
-- **ネットワーク**: 不要（外部ライブラリや CDN なし）
-- **保存**: キオスク運用を優先し、設定保存や入力ログ保存には依存しません
+![アトラクト画面](./docs/attract.png)
 
-> 注意: OS や Edge キオスクモードに予約されたキー、ブラウザがブロックするショートカット、別アプリ・別タブの入力は JavaScript から取得できない場合があります。
-
-## 画面構成
-
-### Header / Status / Reset
-
-- 入力キャプチャ状態を `CAPTURE ON / OFF` で表示
-- `Pause / Resume` で入力キャプチャを一時停止・再開
-- `Reset` で文字列、キー履歴、ポインター軌跡、ステータスを初期化
-
-### Full-screen Pointer Canvas / Live Pointer Trace
-
-- 画面全体を背景キャンバスとして使用し、連続したポインター軌跡とクリック / タップ波紋を薄い記録紙風の残像として描画
-- Canvas は `pointer-events: none` とし、UI操作と全画面入力検知を両立
-- 下部の Live Pointer Trace では、直近10秒の軌跡を画面全体の縮図として表示
-- Trace パネルでは、現在位置、移動方向、クリック / タップイベント、古い点から新しい点への濃淡を確認可能
-- ポインター軌跡は一定距離・時間ごとにサンプリングし、上限点数と時間窓を抑えつつ描画
-
-### Paper Diagnostics Console
-
-- 薄いクリーム背景、黒い罫線、モノスペース書体を中心にした診断紙面風レイアウト
-- Live Text、Keyboard Matrix、Pointer & Motion、Motion Compass、Live Pointer Trace を1画面に整理
-- キー押下中は黒塗り、押下履歴は薄いグレーで表示し、Active / Recent / Idle の凡例で状態を確認可能
-- 全画面軌跡は主張を抑えた紙面風残像として残し、Trace パネル側を主表示として扱います
-
-### Live Text
-
-- 表示用ビューとフォーカス維持用の隠し `textarea` を分離
-- Live Textパネルは下部HUDと同じ幅で中央配置し、表示行数を増やすため高さを拡張しています
-- 入力行が増えた場合はパネル内で縦スクロールします
-- 文字入力は隠し `textarea` の `beforeinput` / `input` を優先して反映し、IME入力との二重入力を避けます
-- `Backspace`、`Enter`、`Tab` の最小編集操作に対応
-- IME 入力中の未確定文字はスキャンライン風ハイライトとHUD風カーソルで表示し、確定時に本文へ反映
-
-### Keyboard Matrix
-
-- 既存のフルキーボード表示を継続
-- キーボード表示エリアは省面積化しつつ、キーの主ラベルとサブレジェンドが読み取りやすいサイズで表示されます
-- 数字行や記号キーなど2つのレジェンドを持つキーは、縦積みではなく横並びにしてキー高さを抑えます
-- 数字・記号キーなど2つのレジェンドがある全キーで、通常入力の主レジェンドとShift入力側の副レジェンドをモノクロで表示します
-- 入力検知は `document` レベルで行い、特定の `textarea` フォーカスに依存しません
-- Shift / Ctrl / Alt / Meta は `KeyboardEvent.code` を優先して左右を識別します
-- 押下中のキーは `down`、押下履歴は `pressed` としてハイライト
-
-### Motion Compass / Pointer & Motion
-
-- `document` レベルのポインター移動量と `wheel` / タッチパッドスクロールの `deltaX` / `deltaY` を同じ方位盤上に重ねて表示
-- Pointer & Motion パネルでは、位置、移動量、速度、ボタン状態、スクロール量を数値で表示
-- ポインター移動は実線ベクトル、スクロールは破線ベクトルとして区別
-- 下部左側の方位盤と左右の数値ブロックで、現在の移動方向・スクロール方向・速度感を即時確認できます
-
-## 使い方
-
-1. Edge キオスクモード、または通常の Edge で `tester.html` を開きます。
-2. ページがアクティブな状態でキーを押すと、Live Text に文字が表示され、Keyboard Matrix がハイライトされます。
-3. 画面上でマウス、タッチパッド、タッチ、ペンを動かすと、画面全体の背景レイヤーに軌跡が表示されます。
-4. クリックまたはタップすると全画面背景レイヤーに薄い波紋と十字マーカーが表示され、Live Pointer Trace にはクリック / イベント点として記録されます。
-5. ホイールまたはタッチパッドでスクロールすると、Motion Compass の破線方向ベクトルに反映されます。
-6. テストをやり直す場合は `Reset` を押します。
-
-## MVPで意図的に後回しにした機能
-
-- 音声フィードバック
-- テーマ切り替え
-- 高度な Velocity Graph
-- Settings を使った詳細な表示モード永続化
-- 入力ログ保存・エクスポート
-- 本格的なテキストエディタ機能（任意位置編集、選択範囲、Undo/Redo など）
-
-## 技術仕様
-
-- **単一HTML**: `tester.html` に CSS / JavaScript を内包
-- **Vanilla JavaScript**: フレームワーク不要
-- **HTML5 Canvas**: Full-screen Pointer Canvas の紙面風残像、Live Pointer Trace の直近10秒トレース、Motion Compass のポインター / スクロール重ね合わせベクトル描画
-- **Pointer Events**: mouse / touch / pen を `document` レベルで統合的に検知し、Motion Compassにも移動量を反映
-- **Keyboard Events**: `document` レベルの `keydown` / `keyup` でキーの押下状態を検知し、左右修飾キーは `KeyboardEvent.code` で区別
-- **Wheel Events**: `document` レベルの `wheel` でホイール / タッチパッドスクロール量を検知し、Motion Compassにも反映
-- **Input Events**: 隠し `textarea` の `beforeinput` / `input` で文字列を反映
-- **Composition Events**: IME の未確定・確定入力を処理
-- **高DPI対応**: `devicePixelRatio` に応じて Canvas をリサイズしつつ、キオスク端末での過負荷を避けるため描画DPRを最大 1.5 に制限
-- **描画負荷対策**: アニメーションは入力・波紋・コンパス減衰がある間だけ `requestAnimationFrame` を予約し、アイドル時の全画面再描画を停止
-- **オフライン動作**: 外部通信なし
-
-## ファイル構成
+## 構成
 
 ```text
 keyboard_and_pointer_tester/
-├── tester.html          # Kiosk MVP メインファイル
-├── odometer.html        # 参考実装ファイル
-├── README.md            # このファイル
-└── screenshot.png       # スクリーンショット画像
+├── ui/                        # テスター本体（HTML/CSS/JS、外部依存なし・オフライン動作）
+│   ├── index.html
+│   ├── style.css
+│   ├── app.js
+│   └── layout.js              # OLSK60 v2 実配列データ（公式KLE準拠）
+├── kiosk/                     # Windows用キオスクホスト（C# WinForms + WebView2）
+│   ├── OLSK60Tester.csproj
+│   ├── Program.cs
+│   ├── KioskForm.cs           # フルスクリーン最前面固定・フォーカス奪還・スリープ抑止
+│   └── KeyboardHook.cs        # 低レベルフックで離脱系ショートカットを吸収
+└── .github/workflows/build-kiosk.yml   # exe を自動ビルド
 ```
+
+## 実行方法
+
+### キオスク運用（Surface Pro 7 など）
+
+1. GitHub Actions の **build-kiosk** ワークフローの Artifact `OLSK60Tester-win-x64` をダウンロードして展開
+   （手元でビルドする場合は下記「ビルド」参照）
+2. `OLSK60Tester.exe` を実行するだけ。フルスクリーン・最前面でテスターが起動します
+   - WebView2 ランタイムが必要です（Windows 10/11 には標準搭載）
+3. 終了はスタッフ用の隠しコマンド **`Ctrl + Alt + Shift + F12`**
+
+デザイン確認などでウィンドウ表示したいときは `OLSK60Tester.exe --windowed`（この場合キーブロックは無効）。
+
+### お手軽モード（ブラウザだけで試す）
+
+`ui/index.html` をブラウザで開くだけでも動きます（Edge のキオスクモード起動でも可）。
+ただし **ブラウザだけでは Winキー等の OS ショートカットはブロックできません**。展示ではキオスクホスト経由での起動を推奨します。
+
+## キーブロックの仕組みと限界
+
+`KeyboardHook.cs` が低レベルキーボードフック（`WH_KEYBOARD_LL`）で以下を吸収します。吸収したキーは WebView 経由でテスターに転送されるため、**Winキーを押しても OS には届かず、画面上のキーボードだけが光ります**。
+
+| 操作 | 挙動 |
+|---|---|
+| Win / Win+○○ | ブロック（スタートメニュー・Win+L 等が発動しない） |
+| Alt+Tab / Alt+Esc / Alt+Space | ブロック |
+| Alt+F4 | ブロック（さらにフォーム側でも Close をキャンセル） |
+| Ctrl+Esc | ブロック |
+| タスク切替等でフォーカスが外れた場合 | 1秒以内に自動で最前面へ復帰 |
+| バッテリー運用 | `SetThreadExecutionState` でスリープ・画面消灯を抑止 |
+
+**ブロックできないもの**: `Ctrl+Alt+Del` は Windows のセキュア操作のためアプリからは無効化できません。展示を完全に固めたい場合は併用してください:
+
+- タッチ画面のエッジスワイプ無効化: `HKLM\SOFTWARE\Policies\Microsoft\Windows\EdgeUI` に `AllowEdgeSwipe`(DWORD)=0
+- さらに厳密にするなら Windows の割り当てられたアクセス（Assigned Access / Shell Launcher）で本アプリをシェルとして起動
+
+## ビルド
+
+.NET 8 SDK があれば Windows / macOS / Linux のどこでもビルドできます。
+
+```sh
+dotnet publish kiosk/OLSK60Tester.csproj -c Release -r win-x64 --self-contained \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+```
+
+`publish/` に `OLSK60Tester.exe` と `ui/` フォルダが出力されます。2つセットで配置してください。
+
+## テスターの機能
+
+### KEYBOARD
+
+- OLSK60 v2 の実配列（[公式KLEデータ](https://www.keyboard-layout-editor.com/#/gists/641df3ee125afe1bd4ef41c9a0cded7d)準拠、60キー + 中央トラックポイント）
+- 押下中は赤く点灯、押した回数に応じてキーが「熱を持つ」ヒートマップ表示
+- 押したキーの大型OSD表示、打鍵数・最後のキーの表示
+- Fn1 / Fn2 はレイヤーキー（単体では信号を送らない）として破線表示
+- キオスクモード時は Win キーに 🔒 マーク
+
+### TRACKPOINT
+
+- カーソル軌跡を全画面 HUD として描画（ゆっくり=シアン → 速い=赤）
+- 画面中央のキーボード上のトラックポイントも、カーソルの動きに合わせて傾いて光る
+- クリックは波紋+ラベル（左/中/右/タッチ）、スクロールはシェブロンとメーターで可視化
+- コンパス（移動方向）、速度 px/s、累計移動距離（メートル換算）
+
+### TYPING
+
+- **練習モード**: 短いお題を打つと WPM / 正確率 / クリア数を集計。`KeyboardEvent.code` フォールバックにより IME がオンのままでも動作。Esc でお題スキップ
+- **自由入力**: 日本語IMEの未確定文字（下線表示）・確定を含めて表示
+
+### キオスク向け挙動
+
+- 起動時と 75 秒無操作でアトラクト画面に戻り、全カウンタを自動リセット（次の来場者用）
+- 描画は入力があるときだけ `requestAnimationFrame`、DPR 上限 1.5（バッテリー配慮）
+- 右クリックメニュー・テキスト選択・ズーム・スワイプナビゲーション無効
 
 ## クレジット
 
-- オリジナルプロジェクト: [@mass-work](https://codepen.io/mass-work) - [CodePen](https://codepen.io/mass-work/pen/MYaMKzo)
-- 本プロジェクトは上記オリジナルをベースに、キオスク向けの最小構成へ刷新したものです。
+- OLSK60 / OLSK60 v2: [Techmech keys](https://techmech.booth.pm/)
+- 旧バージョンのテスターは [@mass-work さんの CodePen](https://codepen.io/mass-work/pen/MYaMKzo) をベースにしていました。現バージョンは全面書き直しです
 
 ## ライセンス
 

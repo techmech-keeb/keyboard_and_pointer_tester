@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLSK60 INPUT LAB</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="trailCanvas"></canvas>
+
+<header id="topbar">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <div class="brand-text">
+      <h1>OLSK60 <span>INPUT LAB</span></h1>
+      <p>TRACKPOINT KEYBOARD TESTER</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span id="hostBadge" class="badge">BROWSER</span>
+    <button id="resetBtn" type="button">リセット</button>
+  </div>
+</header>
+
+<main id="layout">
+  <div id="leftCol">
+
+    <section class="panel" id="typePanel">
+      <div class="panel-head">
+        <h2>TYPING <span class="panel-sub">タイピングテスト</span></h2>
+        <div class="tabs" role="tablist">
+          <button id="tabPractice" class="tab active" type="button">練習モード</button>
+          <button id="tabFree" class="tab" type="button">自由入力</button>
+        </div>
+      </div>
+
+      <div id="practiceView">
+        <p class="type-hint" id="practiceHint">下のことばをキーボードでそのまま打ってみよう</p>
+        <div id="phraseLine" aria-live="polite"></div>
+        <div id="practiceStats">
+          <div class="stat"><b id="statWpm">0</b><span>WPM</span></div>
+          <div class="stat"><b id="statAcc">100<i>%</i></b><span>正確率</span></div>
+          <div class="stat"><b id="statClears">0</b><span>クリア</span></div>
+          <p class="stat-note">Esc で次のことばへ</p>
+        </div>
+        <div id="clearFlash">CLEAR!</div>
+      </div>
+
+      <div id="freeView" hidden>
+        <p class="type-hint">好きに入力してみよう（日本語IMEもOK）</p>
+        <div id="freeDisplay"><span id="freeEmpty">ここに入力した文字が表示されます</span></div>
+      </div>
+    </section>
+
+    <section class="panel" id="kbPanel">
+      <div class="panel-head">
+        <h2>KEYBOARD <span class="panel-sub">60キー + トラックポイント</span></h2>
+        <div class="kb-meta">
+          <span class="kb-meta-item">打鍵数 <b id="keyCount">0</b></span>
+          <span class="kb-meta-item">最後のキー <b id="lastKey">—</b></span>
+        </div>
+      </div>
+      <div id="kbWrap">
+        <div id="keyboard"></div>
+        <div id="keyOsd"></div>
+      </div>
+      <p class="kb-caption">押したキーが光ります ・ Fn1 / Fn2 はレイヤーキー（単体では信号を送りません） ・ 中央の赤いスティックがトラックポイント</p>
+    </section>
+
+  </div>
+
+  <aside id="rightCol">
+
+    <section class="panel" id="missionPanel">
+      <div class="panel-head"><h2>TRY IT! <span class="panel-sub">ぜんぶ試してみよう</span></h2></div>
+      <ol id="missions">
+        <li id="m-type"><i>①</i><span>キーを押してみる</span><b class="check">✓</b></li>
+        <li id="m-move"><i>②</i><span>赤いスティックでカーソルを動かす</span><b class="check">✓</b></li>
+        <li id="m-click"><i>③</i><span>クリックしてみる</span><b class="check">✓</b></li>
+        <li id="m-scroll"><i>④</i><span>スクロールしてみる</span><b class="check">✓</b></li>
+      </ol>
+      <div id="missionDone">ALL CLEAR — 完璧！ 🎉</div>
+    </section>
+
+    <section class="panel" id="pointerPanel">
+      <div class="panel-head"><h2>TRACKPOINT <span class="panel-sub">カーソルの動き</span></h2></div>
+      <div class="pointer-grid">
+        <canvas id="compass" width="150" height="150"></canvas>
+        <div class="pointer-nums">
+          <div class="num"><b id="numSpeed">0</b><span>速度 px/s</span></div>
+          <div class="num"><b id="numDist">0.0<i> m</i></b><span>移動距離</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="clickPanel">
+      <div class="panel-head"><h2>CLICK <span class="panel-sub">クリック検知</span></h2></div>
+      <div id="clickPills">
+        <div class="pill" id="pill-L"><span>左</span><b>0</b></div>
+        <div class="pill" id="pill-M"><span>中</span><b>0</b></div>
+        <div class="pill" id="pill-R"><span>右</span><b>0</b></div>
+      </div>
+    </section>
+
+    <section class="panel" id="scrollPanel">
+      <div class="panel-head"><h2>SCROLL <span class="panel-sub">スクロール検知</span></h2></div>
+      <div id="scrollViz">
+        <div class="scroll-arrow" id="scrollUp">▲</div>
+        <div id="scrollBar"><div id="scrollBarFill"></div></div>
+        <div class="scroll-arrow" id="scrollDown">▼</div>
+        <div class="scroll-nums">
+          <div class="num"><b id="numScroll">0</b><span>合計スクロール量</span></div>
+        </div>
+      </div>
+    </section>
+
+  </aside>
+</main>
+
+<div id="attract">
+  <div class="attract-inner">
+    <div class="attract-dot"><span></span></div>
+    <h2>OLSK60 <em>INPUT LAB</em></h2>
+    <p class="attract-lead">さわって、たしかめる。</p>
+    <p class="attract-sub">キーを押すか、まんなかの赤いスティックでカーソルを動かしてスタート</p>
+  </div>
+</div>
+
+<textarea id="hiddenInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-hidden="true"></textarea>
+
+<script src="layout.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
