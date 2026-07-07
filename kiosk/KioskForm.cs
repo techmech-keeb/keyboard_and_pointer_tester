@@ -116,10 +116,46 @@ internal sealed class KioskForm : Form
         var fg = GetForegroundWindow();
         if (fg == IntPtr.Zero) return;
         var root = GetAncestor(fg, GA_ROOT);
-        if (root != Handle)
+        if (root == Handle)
         {
-            Activate();
-            SetForegroundWindow(Handle);
+            if (!TopMost) TopMost = true;
+            return;
+        }
+        if (IsFocusExempt(root))
+        {
+            // rescue UI (e.g. Task Manager) is up: get out of its way,
+            // it would otherwise be hidden behind this topmost window
+            if (TopMost) TopMost = false;
+            return;
+        }
+        if (!TopMost) TopMost = true;
+        Activate();
+        SetForegroundWindow(Handle);
+    }
+
+    /// <summary>
+    /// Never steal focus back from system/rescue UI — otherwise Task Manager
+    /// (reached via Ctrl+Alt+Del) becomes unusable and the kiosk can't be
+    /// killed. Unknown elevated processes can't be inspected, so they are
+    /// treated as exempt too.
+    /// </summary>
+    private static bool IsFocusExempt(IntPtr hwnd)
+    {
+        GetWindowThreadProcessId(hwnd, out var pid);
+        if (pid == 0) return true;
+        var h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+        if (h == IntPtr.Zero) return true; // likely elevated system UI
+        try
+        {
+            var buf = new System.Text.StringBuilder(1024);
+            var cap = buf.Capacity;
+            if (!QueryFullProcessImageName(h, 0, buf, ref cap)) return true;
+            var name = Path.GetFileNameWithoutExtension(buf.ToString()).ToLowerInvariant();
+            return name is "taskmgr" or "logonui" or "consent" or "lockapp";
+        }
+        finally
+        {
+            CloseHandle(h);
         }
     }
 
@@ -146,6 +182,7 @@ internal sealed class KioskForm : Form
     private const uint ES_SYSTEM_REQUIRED = 0x00000001;
     private const uint ES_DISPLAY_REQUIRED = 0x00000002;
     private const uint GA_ROOT = 2;
+    private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
     [DllImport("kernel32.dll")]
     private static extern uint SetThreadExecutionState(uint esFlags);
@@ -159,4 +196,18 @@ internal sealed class KioskForm : Form
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint desiredAccess, bool inheritHandle, uint processId);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool QueryFullProcessImageName(IntPtr hProcess, uint flags, System.Text.StringBuilder exeName, ref int size);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CloseHandle(IntPtr hObject);
 }
