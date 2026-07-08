@@ -10,6 +10,7 @@ internal sealed class KioskForm : Form
     private readonly bool _kioskMode;
     private readonly WebView2 _webView = new();
     private KeyboardHook? _hook;
+    private VialHidBridge? _vialBridge;
     private System.Windows.Forms.Timer? _focusGuard;
     private bool _allowExit;
 
@@ -75,6 +76,7 @@ internal sealed class KioskForm : Form
         s.IsGeneralAutofillEnabled = false;
 
         core.NewWindowRequested += (_, a) => a.Handled = true;
+        _vialBridge = new VialHidBridge(this, core);
         core.WebMessageReceived += (_, a) =>
         {
             try
@@ -83,6 +85,7 @@ internal sealed class KioskForm : Form
                 var type = doc.RootElement.TryGetProperty("type", out var t) ? t.GetString() : null;
                 if (type == "ready") PostHostHello();
                 else if (type == "exit") BeginInvoke(ExitKiosk); // staff exit from the UI
+                else if (type == "vialhid") _vialBridge?.HandleMessage(doc.RootElement.Clone());
             }
             catch (JsonException) { /* ignore malformed messages */ }
         };
@@ -173,6 +176,7 @@ internal sealed class KioskForm : Form
             return;
         }
         _focusGuard?.Stop();
+        _vialBridge?.Dispose();
         _hook?.Dispose();
         if (_kioskMode) SetThreadExecutionState(ES_CONTINUOUS);
         base.OnFormClosing(e);
