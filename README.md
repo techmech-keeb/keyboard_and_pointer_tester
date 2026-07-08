@@ -7,6 +7,7 @@
 - **タイピング練習**（WPM / 正確率）と **自由入力**（日本語IME対応）
 - 初見でも迷わない **TRY IT! ミッション** とアトラクト画面、無操作で自動リセット
 - ネイティブのキオスクホストが **Winキー / Alt+Tab / Alt+F4 などをブロック**し、来場者が何を押してもテスター画面から離脱しない
+- **Vial連携**: Raw HID で実機からキーマップを読み出して刻印に反映、レイヤータブ表示、マトリクステスターで **HID出力のない Fn(MO/LT) キーも点灯**、レイヤー自動追従
 
 ![OLSK60 INPUT LAB](./docs/screenshot.png)
 
@@ -20,12 +21,16 @@ keyboard_and_pointer_tester/
 │   ├── index.html
 │   ├── style.css
 │   ├── app.js
-│   └── layout.js              # OLSK60 v2 実配列データ（公式KLE準拠）
+│   ├── layout.js              # OLSK60 v2 実配列データ（公式KLE準拠）+ マトリクス座標
+│   ├── keycodes.js            # QMKキーコード→刻印変換（Vialプロトコル版数で分岐）
+│   └── vial.js                # Vial/VIAプロトコル実装（キオスクブリッジ / WebHID 両対応）
 ├── kiosk/                     # Windows用キオスクホスト（C# WinForms + WebView2）
 │   ├── OLSK60Tester.csproj
 │   ├── Program.cs
 │   ├── KioskForm.cs           # フルスクリーン最前面固定・フォーカス奪還・スリープ抑止
-│   └── KeyboardHook.cs        # 低レベルフックで離脱系ショートカットを吸収
+│   ├── KeyboardHook.cs        # 低レベルフックで離脱系ショートカットを吸収
+│   ├── RawHidDevice.cs        # Raw HID (usage page 0xFF60) の列挙・読み書き
+│   └── VialHidBridge.cs       # WebView2メッセージ⇔HID中継 + vial.json の XZ 展開
 └── .github/workflows/build-kiosk.yml   # exe を自動ビルド
 ```
 
@@ -105,6 +110,42 @@ dotnet publish kiosk/OLSK60Tester.csproj -c Release -r win-x64 --self-contained 
 - 起動時と 75 秒無操作でアトラクト画面に戻り、全カウンタを自動リセット（次の来場者用）
 - 描画は入力があるときだけ `requestAnimationFrame`、DPR 上限 1.5（バッテリー配慮）
 - 右クリックメニュー・テキスト選択・ズーム・スワイプナビゲーション無効
+
+## Vial連携
+
+接続した OLSK60（vial-qmk）から **Vialプロトコル標準機能のみ**で情報を取得します。ファーム独自パッチには依存しないため、将来の RMK+Vial 移行後もそのまま動く想定です。
+
+### 動作モード（自動フォールバック）
+
+| 環境 | 経路 | できること |
+|---|---|---|
+| キオスクホスト (exe) | C# Raw HID → WebView2 postMessage ブリッジ | フル機能（vial.json 取得含む） |
+| ブラウザ単体 (Chrome/Edge) | WebHID（バッジをクリックして接続） | vial.json 取得以外のフル機能（マトリクス構成は layout.js の値を使用） |
+| キーボード非接続 | — | 従来どおり静的 layout.js の刻印表示 |
+
+### 取得している情報
+
+1. **接続**: usage page `0xFF60` / usage `0x61` の Raw HID インターフェースを列挙し、`vial_get_keyboard_id`（`0xFE 0x00`）に正しく応答した最初のデバイスへ接続
+2. **マトリクス構成**: `vial_get_size` / `vial_get_def`（`0xFE 0x01/0x02`）でファーム内蔵 vial.json（XZ圧縮）を取得し、rows/cols・customKeycodes を自動取得（XZ展開はC#ホスト側。ブラウザ単体時は layout.js のフォールバック値）
+3. **キーマップ**: VIA互換 `dynamic_keymap_get_layer_count`（`0x11`）+ `get_buffer`（`0x12`）で全レイヤーを読み出し、QMKキーコード→刻印変換してキーボード表示へ反映
+   - `KC_TRNS` は下位レイヤーの刻印を淡色で継承表示
+   - キーコード番号体系は Vialプロトコル版数（v6=新QMK / v5以前=旧QMK）で分岐
+4. **ライブ検出**: マトリクステスター（`0x02 0x03` switch_matrix_state）を約30Hzでポーリングし、物理押下でキーを点灯（HID出力のない MO/LT キーも光る）。MO/LT 押下で表示レイヤーを自動切替、TG/TO はエッジ追跡
+
+### unlock（マトリクス検出の有効化）
+
+マトリクステスターは Vial のセキュリティ仕様により **unlock 済みのときだけ**応答します。
+
+- ロック中は「レイヤー刻印表示 + 手動レイヤータブ」の縮退モードで動作
+- スタッフメニュー（ロゴ5連タップ）の **unlockウィザード**で解錠できます。画面上でハイライトされるキー（OLSK60 は Esc + Enter）を数秒間押し続けると完了（`0xFE 0x06/0x07`）
+- 注意: 一度ウィザードを開始すると、完了するまでファームは unlock 進行中状態になり大半のコマンドを受け付けません。中断した場合はキーボードを挿し直すか、再度ウィザードを完了させてください
+- unlock 状態はキーボードの電源が切れるまで維持されます（展示開始時に一度実行すればOK）
+
+### RMK 移行時の再確認事項
+
+- ロック中でもキーマップ読み出しが可能か（vial-qmk は可能）
+- マトリクステスター応答のバイト配置（行ごとの big-endian パック）が同一か
+- Vialプロトコル版数とキーコード番号体系（`ui/keycodes.js` の分岐で吸収）
 
 ## クレジット
 
