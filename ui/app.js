@@ -37,13 +37,43 @@ const S = {
 // =============================================================
 const keyboardEl = $("keyboard");
 const keyEls = new Map();       // code -> [element,...]
+const matrixEls = new Map();    // "row,col" -> element
 const heatCounts = new Map();   // id -> count
+
+// (re)build a keycap face; parts = {label, shift, small, dim} overrides
+// the static legend from layout.js (used by the Vial live keymap).
+function renderCap(el, k, parts) {
+  const label = parts ? parts.label : k.label;
+  const shift = parts ? parts.shift : k.shift;
+  const heat = el.querySelector(".keycap")?.style.getPropertyValue("--heat");
+
+  const cap = document.createElement("div");
+  cap.className = "keycap";
+  if (heat) cap.style.setProperty("--heat", heat);
+  if (shift) {
+    const sub = document.createElement("span");
+    sub.className = "sub";
+    sub.textContent = shift;
+    cap.appendChild(sub);
+  }
+  const main = document.createElement("span");
+  main.textContent = label;
+  cap.appendChild(main);
+  if (k.win) {
+    const lock = document.createElement("span");
+    lock.className = "lock";
+    lock.textContent = "🔒";
+    cap.appendChild(lock);
+  }
+  el.classList.toggle("small", (parts ? !!parts.small : k.label.length > 2));
+  el.querySelector(".keycap")?.remove();
+  el.appendChild(cap);
+}
 
 function buildKeyboard() {
   for (const k of OLSK60.keys) {
     const el = document.createElement("div");
     el.className = "key";
-    if (k.label.length > 2) el.classList.add("small");
     if (k.layer) el.classList.add("layer");
     if (k.win) el.classList.add("win");
     if (k.homing) el.classList.add("homing");
@@ -52,29 +82,13 @@ function buildKeyboard() {
     el.style.width = `calc(var(--u) * ${k.w})`;
     el.style.height = "var(--u)";
     el.dataset.id = k.id || k.code;
-
-    const cap = document.createElement("div");
-    cap.className = "keycap";
-    if (k.shift) {
-      const sub = document.createElement("span");
-      sub.className = "sub";
-      sub.textContent = k.shift;
-      cap.appendChild(sub);
-    }
-    const main = document.createElement("span");
-    main.textContent = k.label;
-    cap.appendChild(main);
-    if (k.win) {
-      const lock = document.createElement("span");
-      lock.className = "lock";
-      lock.textContent = "🔒";
-      cap.appendChild(lock);
-    }
-    el.appendChild(cap);
+    el._key = k;
+    renderCap(el, k);
     keyboardEl.appendChild(el);
 
     if (!keyEls.has(k.code)) keyEls.set(k.code, []);
     keyEls.get(k.code).push(el);
+    if (k.m) matrixEls.set(k.m[0] + "," + k.m[1], el);
   }
 
   // trackpoint dome in the center channel
@@ -745,6 +759,7 @@ function resetAll(showAttract) {
   // missions
   missionsReset();
   $("staffMenu").hidden = true;
+  vialOnIdleReset();
   if (showAttract) attractShow();
 }
 
@@ -791,6 +806,464 @@ window.addEventListener("blur", () => {
 
 window.addEventListener("resize", () => { resizeCanvas(); sizeCompass(); fitKeyboard(); drawCompass(); });
 
+// =============================================================
+// Vial integration
+// Reads the live keymap over Raw HID (kiosk host bridge or WebHID)
+// and paints real legends per layer. When the board is unlocked,
+// the Vial matrix tester is polled (~30 Hz) so every physical key —
+// including MO/LT keys that emit no HID output — lights up, and the
+// displayed layer follows MO/LT/TG/TO presses.
+// While locked: degraded mode = legends + manual layer tabs only.
+// =============================================================
+const VS = {
+  transport: null,
+  dev: null,
+  mode: "none",          // none | kiosk | webhid
+  connected: false,
+  unlocked: false,
+  unlocking: false,
+  rows: OLSK60.matrix.rows,
+  cols: OLSK60.matrix.cols,
+  layers: 0,
+  keymap: null,          // [layer][row][col] -> keycode
+  custom: OLSK60.customKeycodes,
+  viewLayer: 0,
+  // live layer-state approximation (QMK semantics, simplified)
+  defaultLayer: 0,
+  toggleMask: 0,
+  momentary: new Map(),  // "r,c" -> layer held via MO/LT/TT
+  matrixPrev: [],
+  pollTimer: 0,
+  pollErrors: 0,
+  retryTimer: 0,
+  unlockTimer: 0,
+  unlockKeys: [],
+};
+
+const vialBadge = $("vialBadge");
+const layerTabsEl = $("layerTabs");
+const KB_CAPTION_STATIC = $("kbCaption").textContent;
+
+function vialBadgeSet(cls, text) {
+  vialBadge.hidden = false;
+  vialBadge.className = "badge " + (cls || "");
+  vialBadge.textContent = text;
+}
+
+function vialDescribe(kc) {
+  return VialKeycodes.describe(kc, { protocol: VS.dev ? VS.dev.vialProtocol : 6, customKeycodes: VS.custom });
+}
+
+// ---------- legends ----------
+// Display rule: KC_TRNS inherits the legend of the highest lower layer
+// (numeric walk — approximation of QMK's active-layer fallthrough).
+function vialDisplayKeycode(layer, r, c) {
+  for (let l = layer; l >= 0; l--) {
+    const kc = VS.keymap[l][r][c];
+    if (kc !== 0x0001) return { kc, from: l };
+    if (l === 0) return { kc: 0x0001, from: 0 };
+  }
+  return { kc: 0x0000, from: 0 };
+}
+
+function applyLayerView() {
+  if (!VS.connected || !VS.keymap) return;
+  const layer = VS.viewLayer;
+  for (const [pos, el] of matrixEls) {
+    const [r, c] = pos.split(",").map(Number);
+    const { kc, from } = vialDisplayKeycode(layer, r, c);
+    const d = vialDescribe(kc);
+    const label = d.text || (d.kind === "none" ? "" : d.text);
+    renderCap(el, el._key, {
+      label,
+      shift: d.sub || d.shift || "",
+      small: label.length > 2,
+    });
+    el.classList.toggle("vial-inherit", from !== layer && layer > 0);
+    el.classList.toggle("vial-none", d.kind === "none");
+    el.classList.toggle("layer", d.kind === "layer");
+  }
+  for (const b of layerTabsEl.children) {
+    b.classList.toggle("active", Number(b.dataset.layer) === layer);
+  }
+}
+
+function vialRestoreStatic() {
+  for (const [, el] of matrixEls) {
+    renderCap(el, el._key);
+    el.classList.remove("vial-inherit", "vial-none", "unlock-target");
+    el.classList.toggle("layer", !!el._key.layer);
+  }
+  layerTabsEl.hidden = true;
+  layerTabsEl.innerHTML = "";
+  $("kbCaption").textContent = KB_CAPTION_STATIC;
+}
+
+function buildLayerTabs() {
+  layerTabsEl.innerHTML = "";
+  for (let i = 0; i < VS.layers; i++) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tab layer-tab";
+    b.textContent = "L" + i;
+    b.dataset.layer = i;
+    b.addEventListener("click", () => {
+      VS.viewLayer = i;
+      applyLayerView();
+    });
+    layerTabsEl.appendChild(b);
+  }
+  layerTabsEl.hidden = false;
+}
+
+// ---------- live layer state (matrix tester) ----------
+function vialEffectiveLayer() {
+  let mask = 1 | (1 << VS.defaultLayer) | VS.toggleMask;
+  for (const [, l] of VS.momentary) mask |= 1 << l;
+  mask &= (1 << VS.layers) - 1 || 1;
+  return 31 - Math.clz32(mask);
+}
+
+// behavior rule: resolve KC_TRNS through the currently active layer
+// stack, highest active layer first (QMK fallthrough approximation)
+function vialResolveKeycode(r, c) {
+  let mask = 1 | (1 << VS.defaultLayer) | VS.toggleMask;
+  for (const [, l] of VS.momentary) mask |= 1 << l;
+  for (let l = VS.layers - 1; l >= 0; l--) {
+    if (!(mask & (1 << l))) continue;
+    const kc = VS.keymap[l][r][c];
+    if (kc !== 0x0001) return kc;
+  }
+  return 0x0000;
+}
+
+function vialMatrixEdge(r, c, down) {
+  const pos = r + "," + c;
+  const el = matrixEls.get(pos);
+  if (el) el.classList.toggle("down", down);
+
+  if (down) {
+    const d = vialDescribe(vialResolveKeycode(r, c));
+    if (d.kind === "layer" && typeof d.layer === "number") {
+      switch (d.hold) {
+        case "mo": case "lt": case "tt": case "lm":
+          VS.momentary.set(pos, d.layer);
+          break;
+        case "tg":
+          VS.toggleMask ^= 1 << d.layer;
+          break;
+        case "to": // TO(n): all layers off, n on
+          VS.toggleMask = d.layer === 0 ? 0 : 1 << d.layer;
+          VS.momentary.clear();
+          break;
+        case "df":
+          VS.defaultLayer = d.layer;
+          break;
+        // osl: ignored (one-shot state not tracked in this approximation)
+      }
+    }
+  } else {
+    VS.momentary.delete(pos);
+  }
+
+  const eff = vialEffectiveLayer();
+  if (eff !== VS.viewLayer) {
+    VS.viewLayer = eff;
+    applyLayerView();
+  }
+}
+
+function vialHandleMatrix(state) {
+  let any = false;
+  for (let r = 0; r < VS.rows; r++) {
+    const prev = VS.matrixPrev[r] || 0;
+    const cur = state[r];
+    const diff = prev ^ cur;
+    if (!diff) continue;
+    // bit c of the reconstructed row value = matrix column c
+    for (let c = 0; c < VS.cols; c++) {
+      if (diff & (1 << c)) {
+        vialMatrixEdge(r, c, !!(cur & (1 << c)));
+        any = true;
+      }
+    }
+    VS.matrixPrev[r] = cur;
+  }
+  if (any) touchInput();
+}
+
+function vialStartPolling() {
+  clearTimeout(VS.pollTimer);
+  VS.matrixPrev = new Array(VS.rows).fill(0);
+  const tick = async () => {
+    if (!VS.connected || !VS.unlocked || VS.unlocking) return;
+    if (!document.hidden) {
+      try {
+        const state = await VS.dev.readMatrix(VS.rows, VS.cols);
+        vialHandleMatrix(state);
+        VS.pollErrors = 0;
+      } catch (e) {
+        if (++VS.pollErrors > 5) {
+          vialDisconnect("matrix poll failed");
+          return;
+        }
+      }
+    }
+    VS.pollTimer = setTimeout(tick, 33); // ~30 Hz
+  };
+  VS.pollTimer = setTimeout(tick, 33);
+}
+
+// ---------- connection ----------
+async function vialOnConnected() {
+  const dev = VS.dev;
+
+  // firmware-embedded vial.json (XZ) — kiosk host decompresses it.
+  // Browser/WebHID mode has no XZ decoder: fall back to layout.js data.
+  try {
+    const def = await dev.readDefinition();
+    if (def && def.matrix) {
+      VS.rows = def.matrix.rows;
+      VS.cols = def.matrix.cols;
+    }
+    if (def && Array.isArray(def.customKeycodes)) {
+      VS.custom = def.customKeycodes.map((k) => k.shortName || k.name);
+    }
+  } catch (_) { /* definition is optional */ }
+
+  VS.layers = await dev.readLayerCount();
+  VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
+
+  let unlocked = false;
+  try {
+    const st = await dev.readUnlockStatus();
+    unlocked = st.unlocked;
+    VS.unlockKeys = st.keys;
+  } catch (_) { /* older firmware — treat as locked */ }
+
+  VS.connected = true;
+  VS.unlocked = unlocked;
+  VS.viewLayer = 0;
+  VS.defaultLayer = 0;
+  VS.toggleMask = 0;
+  VS.momentary.clear();
+
+  buildLayerTabs();
+  applyLayerView();
+  vialStaffRefresh();
+
+  if (VS.unlocked) {
+    vialBadgeSet("vial-live", "VIAL LIVE");
+    $("kbCaption").textContent =
+      "Vial接続中：実際のキーマップを表示 ・ 物理押下を検出（MO/LTキーも光ります） ・ レイヤーは自動追従します";
+    vialStartPolling();
+  } else {
+    vialBadgeSet("vial-locked", "VIAL 接続（ロック中）");
+    $("kbCaption").textContent =
+      "Vial接続中：実際のキーマップを表示 ・ レイヤーはタブで切替（マトリクス検出はunlock後に有効）";
+  }
+}
+
+function vialDisconnect(reason) {
+  clearTimeout(VS.pollTimer);
+  clearInterval(VS.unlockTimer);
+  if (VS.transport) {
+    try { VS.transport.close(); } catch (_) { /* ignore */ }
+  }
+  VS.transport = null;
+  VS.dev = null;
+  VS.connected = false;
+  VS.unlocked = false;
+  VS.unlocking = false;
+  VS.keymap = null;
+  vialRestoreStatic();
+  vialStaffRefresh();
+  vialBadgeSet("", "VIAL 未接続");
+  vialScheduleRetry();
+}
+
+function vialScheduleRetry() {
+  clearTimeout(VS.retryTimer);
+  VS.retryTimer = setTimeout(() => {
+    if (!VS.connected) vialConnect();
+  }, 3000);
+}
+
+async function vialConnect() {
+  if (VS.connected) return;
+  try {
+    if (VS.mode === "kiosk") {
+      // singleton: the transport registers a webview message listener
+      // that must not accumulate across the 3 s retry loop
+      const t = (VS.kioskTransport ||= new KioskHidTransport());
+      VS.transport = t; // so the catch below cleans up mid-probe failures
+      // probe every raw-HID interface until one speaks Vial
+      const first = await t.open(0);
+      let found = false;
+      for (let i = 0; i < Math.max(first.count, 1); i++) {
+        if (i > 0) await t.open(i);
+        const dev = new VialDevice(t);
+        if (await dev.readVialInfo()) {
+          VS.dev = dev;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        t.close();
+        VS.transport = null;
+        vialScheduleRetry();
+        return;
+      }
+      t.ondisconnect = () => vialDisconnect("device removed");
+    } else if (VS.mode === "webhid") {
+      const t = await WebHidTransport.openGranted();
+      if (!t) { vialScheduleRetry(); return; }
+      VS.transport = t;
+      const dev = new VialDevice(t);
+      if (!(await dev.readVialInfo())) {
+        t.close();
+        VS.transport = null;
+        vialScheduleRetry();
+        return;
+      }
+      t.ondisconnect = () => vialDisconnect("device removed");
+      VS.dev = dev;
+    } else {
+      return;
+    }
+    await vialOnConnected();
+  } catch (e) {
+    if (VS.transport) { try { VS.transport.close(); } catch (_) { /* ignore */ } }
+    VS.transport = null;
+    VS.dev = null;
+    vialScheduleRetry();
+  }
+}
+
+function vialInit() {
+  if (KioskHidTransport.available()) {
+    VS.mode = "kiosk";
+    vialBadgeSet("", "VIAL 未接続");
+    vialConnect();
+  } else if (WebHidTransport.available()) {
+    VS.mode = "webhid";
+    vialBadgeSet("vial-click", "VIAL 接続（クリック）");
+    // WebHID needs a user gesture the first time; afterwards the
+    // permission persists and vialConnect() picks the device up.
+    vialBadge.addEventListener("click", async () => {
+      if (VS.connected) return;
+      try {
+        const t = await WebHidTransport.requestDevice();
+        if (!t) return;
+        const dev = new VialDevice(t);
+        if (!(await dev.readVialInfo())) { t.close(); return; }
+        t.ondisconnect = () => vialDisconnect("device removed");
+        VS.transport = t;
+        VS.dev = dev;
+        await vialOnConnected();
+      } catch (_) { /* user cancelled or device error */ }
+    });
+    vialConnect(); // auto-reconnect to an already-granted device
+  }
+  // neither → badge stays hidden, static layout only
+}
+
+// ---------- staff menu: unlock wizard ----------
+function vialStaffRefresh() {
+  const line = $("staffVialStatus");
+  const btn = $("unlockBtn");
+  if (!VS.connected) {
+    line.textContent = "未接続（静的レイアウト表示中）";
+    btn.hidden = true;
+  } else if (VS.unlocked) {
+    line.textContent = "接続中・unlock済み（マトリクス検出が有効です）";
+    btn.hidden = true;
+  } else {
+    line.textContent = "接続中・ロック中（キーマップ表示のみ）";
+    btn.hidden = false;
+  }
+  $("unlockWizard").hidden = true;
+}
+
+function vialUnlockCleanup() {
+  clearInterval(VS.unlockTimer);
+  VS.unlocking = false;
+  for (const [, el] of matrixEls) el.classList.remove("unlock-target");
+  $("unlockWizard").hidden = true;
+}
+
+async function vialUnlockStart() {
+  if (!VS.connected || VS.unlocked || VS.unlocking) return;
+  try {
+    const st = await VS.dev.readUnlockStatus();
+    VS.unlockKeys = st.keys;
+  } catch (_) { /* keep whatever we had */ }
+
+  // highlight the combo keys on the on-screen keyboard
+  const names = [];
+  for (const [r, c] of VS.unlockKeys) {
+    const el = matrixEls.get(r + "," + c);
+    if (el) {
+      el.classList.add("unlock-target");
+      names.push(el.querySelector(".keycap")?.textContent || `(${r},${c})`);
+    } else {
+      names.push(`(${r},${c})`);
+    }
+  }
+  $("unlockHint").textContent =
+    "光っているキー（" + (names.join(" と ") || "unlockキー") + "）を数秒間、同時に押し続けてください";
+  $("unlockWizard").hidden = false;
+  $("unlockBtn").hidden = true;
+  $("unlockBarFill").style.width = "0%";
+
+  VS.unlocking = true;
+  try {
+    await VS.dev.unlockStart();
+  } catch (_) { vialUnlockCleanup(); vialStaffRefresh(); return; }
+
+  // firmware decrements a 50 -> 0 counter while the combo is held;
+  // unlock_poll must be called repeatedly to drive it.
+  VS.unlockTimer = setInterval(async () => {
+    try {
+      const p = await VS.dev.unlockPoll();
+      const pct = Math.round((1 - p.counter / 50) * 100);
+      $("unlockBarFill").style.width = Math.max(0, Math.min(100, pct)) + "%";
+      if (p.unlocked) {
+        vialUnlockCleanup();
+        VS.unlocked = true;
+        vialStaffRefresh();
+        vialBadgeSet("vial-live", "VIAL LIVE");
+        $("kbCaption").textContent =
+          "Vial接続中：実際のキーマップを表示 ・ 物理押下を検出（MO/LTキーも光ります） ・ レイヤーは自動追従します";
+        vialStartPolling();
+      }
+    } catch (_) { /* keep polling; unplug is caught by ondisconnect */ }
+  }, 150);
+}
+
+$("unlockBtn").addEventListener("click", vialUnlockStart);
+$("unlockCancelBtn").addEventListener("click", () => {
+  // no cancel command exists in the Vial protocol: the firmware stays in
+  // "unlock in progress" (most commands blocked) until the combo is
+  // completed or the board is re-plugged. We just stop driving it.
+  vialUnlockCleanup();
+  vialStaffRefresh();
+  $("staffVialStatus").textContent =
+    "unlock未完了：再開するか、キーボードを挿し直してください";
+});
+
+// idle reset: drop back to the base layer view for the next visitor
+function vialOnIdleReset() {
+  if (!VS.connected) return;
+  VS.toggleMask = 0;
+  VS.momentary.clear();
+  VS.viewLayer = vialEffectiveLayer();
+  applyLayerView();
+  vialUnlockCleanup();
+  vialStaffRefresh();
+}
+
 buildKeyboard();
 fitKeyboard();
 resizeCanvas();
@@ -799,3 +1272,4 @@ drawCompass();
 practiceInit();
 renderFree();
 updatePointerReadouts();
+vialInit();
