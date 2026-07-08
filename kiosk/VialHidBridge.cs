@@ -111,12 +111,27 @@ internal sealed class VialHidBridge : IDisposable
             }
             case "xz":
             {
-                var compressed = ReadBytes(root, int.MaxValue);
+                // The connected device is untrusted input: cap both the
+                // compressed payload and the decompressed output so a
+                // hostile "keyboard" cannot feed us an XZ bomb.
+                const int maxCompressed = 512 * 1024;
+                const int maxDecompressed = 1024 * 1024; // real vial.json is a few KB
+                var compressed = ReadBytes(root, maxCompressed);
                 using var input = new MemoryStream(compressed);
                 using var xz = new XZStream(input);
                 using var output = new MemoryStream();
-                await xz.CopyToAsync(output);
-                Reply(new { type = "vialhid", op = "xz", seq, ok = true, text = Encoding.UTF8.GetString(output.ToArray()) });
+                var chunk = new byte[16 * 1024];
+                var overflow = false;
+                int n;
+                while ((n = await xz.ReadAsync(chunk)) > 0)
+                {
+                    if (output.Length + n > maxDecompressed) { overflow = true; break; }
+                    output.Write(chunk, 0, n);
+                }
+                if (overflow)
+                    Reply(new { type = "vialhid", op = "xz", seq, ok = false, error = "definition too large" });
+                else
+                    Reply(new { type = "vialhid", op = "xz", seq, ok = true, text = Encoding.UTF8.GetString(output.ToArray()) });
                 break;
             }
             case "close":

@@ -1020,18 +1020,22 @@ async function vialOnConnected() {
 
   // firmware-embedded vial.json (XZ) — kiosk host decompresses it.
   // Browser/WebHID mode has no XZ decoder: fall back to layout.js data.
+  // The device is untrusted input: sanity-clamp everything it claims,
+  // otherwise a hostile board could make us allocate/poll absurd sizes.
   try {
     const def = await dev.readDefinition();
-    if (def && def.matrix) {
+    const dim = (v) => Number.isInteger(v) && v >= 1 && v <= 32;
+    if (def && def.matrix && dim(def.matrix.rows) && dim(def.matrix.cols)) {
       VS.rows = def.matrix.rows;
       VS.cols = def.matrix.cols;
     }
     if (def && Array.isArray(def.customKeycodes)) {
-      VS.custom = def.customKeycodes.map((k) => k.shortName || k.name);
+      VS.custom = def.customKeycodes.slice(0, 64)
+        .map((k) => String((k && (k.shortName || k.name)) || ""));
     }
   } catch (_) { /* definition is optional */ }
 
-  VS.layers = await dev.readLayerCount();
+  VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
   VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
 
   let unlocked = false;
