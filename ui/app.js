@@ -838,6 +838,7 @@ const VS = {
   retryTimer: 0,
   unlockTimer: 0,
   unlockKeys: [],
+  lastError: "",   // shown in the staff menu for on-site diagnosis
 };
 
 const vialBadge = $("vialBadge");
@@ -1116,18 +1117,27 @@ async function vialConnect() {
       if (!found) {
         t.close();
         VS.transport = null;
+        VS.lastError = "デバイスは見つかったがVial応答なし（候補" + Math.max(first.count, 1) + "件）";
+        vialStaffRefresh();
         vialScheduleRetry();
         return;
       }
       t.ondisconnect = () => vialDisconnect("device removed");
     } else if (VS.mode === "webhid") {
       const t = await WebHidTransport.openGranted();
-      if (!t) { vialScheduleRetry(); return; }
+      if (!t) {
+        VS.lastError = "許可済みデバイスなし（バッジをクリックして選択）";
+        vialStaffRefresh();
+        vialScheduleRetry();
+        return;
+      }
       VS.transport = t;
       const dev = new VialDevice(t);
       if (!(await dev.readVialInfo())) {
         t.close();
         VS.transport = null;
+        VS.lastError = "選択デバイスからVial応答なし";
+        vialStaffRefresh();
         vialScheduleRetry();
         return;
       }
@@ -1136,11 +1146,14 @@ async function vialConnect() {
     } else {
       return;
     }
+    VS.lastError = "";
     await vialOnConnected();
   } catch (e) {
     if (VS.transport) { try { VS.transport.close(); } catch (_) { /* ignore */ } }
     VS.transport = null;
     VS.dev = null;
+    VS.lastError = (e && e.message) || String(e);
+    vialStaffRefresh();
     vialScheduleRetry();
   }
 }
@@ -1178,7 +1191,8 @@ function vialStaffRefresh() {
   const line = $("staffVialStatus");
   const btn = $("unlockBtn");
   if (!VS.connected) {
-    line.textContent = "未接続（静的レイアウト表示中）";
+    line.textContent = "未接続（静的レイアウト表示中）" +
+      (VS.lastError ? " ／ 直近の失敗: " + VS.lastError : "");
     btn.hidden = true;
   } else if (VS.unlocked) {
     line.textContent = "接続中・unlock済み（マトリクス検出が有効です）";

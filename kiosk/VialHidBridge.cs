@@ -93,7 +93,9 @@ internal sealed class VialHidBridge : IDisposable
                     _dev.Flush(); // drop stale reports; keeps request/response lockstep
                     await _dev.WriteAsync(data, cts.Token);
                     var resp = await _dev.ReadAsync(cts.Token);
-                    Reply(new { type = "vialhid", op = "send", seq, ok = true, data = resp });
+                    // int[] on purpose: System.Text.Json serializes byte[] as a
+                    // Base64 string, but the JS side expects a number array
+                    Reply(new { type = "vialhid", op = "send", seq, ok = true, data = Array.ConvertAll(resp, b => (int)b) });
                 }
                 catch (OperationCanceledException)
                 {
