@@ -1,135 +1,116 @@
-# Keyboard & Pointer Tester
+# OLSK60 INPUT LAB
 
-統合型の入力テストツール。キーボード入力とポインター操作を可視化し、リアルタイムで動作を確認できます。
+トラックポイント搭載自作キーボード **OLSK60** の操作感を、展示会・店頭で来場者に直感的に体験してもらうためのキオスク型テスターです。
 
-![Keyboard & Pointer Tester](./screenshot.png)
+- トラックポイントを動かすと **カーソル軌跡が全画面に流れ**、速度で色が変わる
+- キーを押すと **実機と同じ配列のキーボードが光り**、押した回数でヒートマップ化
+- **タイピング練習**（WPM / 正確率）と **自由入力**（日本語IME対応）
+- 初見でも迷わない **TRY IT! ミッション** とアトラクト画面、無操作で自動リセット
+- ネイティブのキオスクホストが **Winキー / Alt+Tab / Alt+F4 などをブロック**し、来場者が何を押してもテスター画面から離脱しない
 
-## 動作確認
+![OLSK60 INPUT LAB](./docs/screenshot.png)
 
-- 本プロジェクト: [https://codepen.io/techmech-keeb/pen/RNrJKgm](https://codepen.io/techmech-keeb/pen/RNrJKgm)
-- オリジナル: [https://codepen.io/mass-work/pen/MYaMKzo](https://codepen.io/mass-work/pen/MYaMKzo) (by [@mass-work](https://codepen.io/mass-work))
+![アトラクト画面](./docs/attract.png)
 
-## 機能
+## 構成
 
-### Type Field（入力テストエリア）
-- キーボード入力のテスト
-- 日本語IME/英語IME対応
-- 入力内容のクリア機能（🗑ボタン）
-- 下部のInput Matrixで押下キーをリアルタイム表示
-
-### Input Matrix（キーボード可視化）
-- 押下されたキーがリアルタイムでハイライト表示
-- 押下中は`down`状態、離した後は`pressed`状態で表示
-- 標準QWERTY配列のフルキーボードレイアウト
-
-### Path View（マウス軌跡描写エリア）
-- ポインターの軌跡を速度に応じた色で可視化
-- 速度が速いほど明るく表示（色相200→240、明度35→80）
-- 2秒間のフェードアウト効果
-- クリック・ダブルクリック時の波紋エフェクト
-- 座標（client）・移動量（movement）・ボタン状態（L/M/R）のリアルタイム表示
-- 100pxごとの進捗リング表示とチック音
-- 2400×1600pxのスクロール可能なキャンバス領域
-
-### Motion Compass（ポインタ速度コンパス）
-- ポインタの移動方向と速度をコンパス形式で表示
-- スクロール速度も重ねて表示（リング形式）
-- リアルタイムの速度ベクトル表示
-- 最大速度300px/s（ポインタ）、600px/s（スクロール）でスケール
-
-### Velocity Graph（速度・加速度グラフ）
-- 移動速度の時系列グラフ（直近24秒、約120サンプル）
-- 加速度を色で表現（青系=減速、紫系=加速）
-- 積算移動距離の大表示（px単位）
-- 200ms単位のサンプリング
-- 最大速度200px/s以上を基準に自動スケール
-
-### 音声フィードバック
-- 速度に応じた連続ピッチ音（周波数120-2200Hz、速度が速いほど高音）
-- 100px移動ごとのチック音（880Hzの矩形波）
-- **アナログシンセ風クリック音**
-  - 左クリック: 明るいピッ音（1200Hz±200のランダム、正弦波）
-  - 右クリック: 硬めのカチ音（800Hz±100のランダム、矩形波）
-  - 中クリック: 低めのトン音（500Hz±100のランダム、三角波）
-  - ダブルクリック: 2音の和音（800Hz+1000Hz）
-  - クリック位置により左右パン（ステレオ定位）が変化
-  - ASRエンベロープ（10ms Attack、50-80ms Decay）
-- 音声ON/OFF切り替えボタン（🔊/🔇）
-- 移動開始時に自動でAudioContextを初期化
-
-### テーマ機能
-- 4種類のテーマ：Dark（デフォルト）、Light、Pop、Classic
-- テーマ切り替えボタンで即座に変更
-
-### その他の機能
-- フルスクリーン表示（⛶ボタン）
-- 全機能リセット（↺ボタン）
-- オフライン動作（インターネット接続不要）
-- レスポンシブレイアウト（980px以下で1カラム表示）
-- 高DPIディスプレイ対応（devicePixelRatio対応）
-
-## 使い方
-
-1. **キーボード入力の確認**
-   - Type Fieldにテキストを入力
-   - 下部のオンボードキーボードで押下キーがハイライト表示されます
-
-2. **ポインター操作の確認**
-   - Path Viewエリアにマウスを移動
-   - 軌跡が速度に応じた色で描画されます（2秒でフェードアウト）
-   - **クリックでアナログシンセ風の音が鳴ります**（左/右/中ボタンで音が異なる）
-   - ダブルクリックで2音の和音
-   - 波紋エフェクトとクリック音が同期
-   - Motion Compassで速度ベクトルとスクロール速度を確認
-   - Velocity Graphで時系列の速度変化と加速度を確認
-   - 100px移動ごとにリングがフラッシュし、チック音が鳴ります
-
-3. **音声フィードバック**
-   - Path Viewの右上の🔊ボタンで音声ON/OFFを切り替え
-   - 移動速度に応じた連続ピッチ音（120-2200Hz）を聞くことができます
-   - 100px移動ごとに880Hzのチック音が鳴ります
-   - **クリックごとにアナログシンセ風の音**（波形・周波数・パンが動的に変化）
-
-4. **テーマの切り替え**
-   - ヘッダー右上の🖌ボタンでテーマを切り替え（Dark → Light → Pop → Classic → ...）
-
-## 技術仕様
-
-- **HTML5 Canvas**: グラフィックス描画（軌跡、コンパス、速度グラフ）
-- **Web Audio API**: 音声生成（Oscillator、Gain、AudioContext、StereoPanner）
-  - ASRエンベロープ（Attack/Decay）による滑らかな音量制御
-  - 非同期音声再生（クリックごとに動的に生成）
-  - ステレオパンによる左右定位
-- **CSS Grid/Flexbox**: レスポンシブレイアウト
-- **CSS変数**: テーマシステム（4テーマ対応）
-- **Vanilla JavaScript**: フレームワーク不要
-- **ResizeObserver**: テキストエリアとPath Viewの高さ同期
-- **requestAnimationFrame**: スムーズなアニメーション
-- **EMA平滑化**: 速度計算の滑らか化（α=0.3）
-
-## ブラウザ対応
-
-モダンブラウザ対応（以下を推奨）：
-- Chrome/Edge（最新版）
-- Firefox（最新版）
-- Safari（最新版）
-
-## ファイル構成
-
-```
+```text
 keyboard_and_pointer_tester/
-├── tester.html          # メインファイル（全ての機能を含む）
-├── odometer.html        # （別の実装ファイル、参考用）
-├── README.md            # このファイル
-└── screenshot.png       # スクリーンショット画像
+├── ui/                        # テスター本体（HTML/CSS/JS、外部依存なし・オフライン動作）
+│   ├── index.html
+│   ├── style.css
+│   ├── app.js
+│   └── layout.js              # OLSK60 v2 実配列データ（公式KLE準拠）
+├── kiosk/                     # Windows用キオスクホスト（C# WinForms + WebView2）
+│   ├── OLSK60Tester.csproj
+│   ├── Program.cs
+│   ├── KioskForm.cs           # フルスクリーン最前面固定・フォーカス奪還・スリープ抑止
+│   └── KeyboardHook.cs        # 低レベルフックで離脱系ショートカットを吸収
+└── .github/workflows/build-kiosk.yml   # exe を自動ビルド
 ```
+
+## 実行方法
+
+### キオスク運用（Surface Pro 7 など）
+
+1. GitHub Actions の **build-kiosk** ワークフローの Artifact `OLSK60Tester-win-x64` をダウンロードして展開
+   （手元でビルドする場合は下記「ビルド」参照）
+2. `OLSK60Tester.exe` を実行するだけ。フルスクリーン・最前面でテスターが起動します
+   - WebView2 ランタイムが必要です（Windows 10/11 には標準搭載）
+3. 終了はスタッフ用の隠し操作（2通り）
+   - **画面左上のロゴを2.5秒以内に5回タップ/クリック** → 終了メニューが出るので「終了する」
+   - キーボードから **`Ctrl + Alt + Shift + F12`**
+
+デザイン確認などでウィンドウ表示したいときは `OLSK60Tester.exe --windowed`（この場合キーブロックは無効）。
+
+### お手軽モード（ブラウザだけで試す）
+
+`ui/index.html` をブラウザで開くだけでも動きます（Edge のキオスクモード起動でも可）。
+ただし **ブラウザだけでは Winキー等の OS ショートカットはブロックできません**。展示ではキオスクホスト経由での起動を推奨します。
+
+## キーブロックの仕組みと限界
+
+`KeyboardHook.cs` が低レベルキーボードフック（`WH_KEYBOARD_LL`）で以下を吸収します。吸収したキーは WebView 経由でテスターに転送されるため、**Winキーを押しても OS には届かず、画面上のキーボードだけが光ります**。
+
+| 操作 | 挙動 |
+|---|---|
+| Win / Win+○○ | ブロック（スタートメニュー・Win+L 等が発動しない） |
+| Alt+Tab / Alt+Esc / Alt+Space | ブロック |
+| Alt+F4 | ブロック（さらにフォーム側でも Close をキャンセル） |
+| Ctrl+Esc | ブロック |
+| タスク切替等でフォーカスが外れた場合 | 1秒以内に自動で最前面へ復帰 |
+| タスクマネージャー等の救援UI | 例外として奪い返さない（Ctrl+Alt+Del からの強制終了は常に可能） |
+| バッテリー運用 | `SetThreadExecutionState` でスリープ・画面消灯を抑止 |
+
+**ブロックできないもの**: `Ctrl+Alt+Del` は Windows のセキュア操作のためアプリからは無効化できません。展示を完全に固めたい場合は併用してください:
+
+- タッチ画面のエッジスワイプ無効化: `HKLM\SOFTWARE\Policies\Microsoft\Windows\EdgeUI` に `AllowEdgeSwipe`(DWORD)=0
+- さらに厳密にするなら Windows の割り当てられたアクセス（Assigned Access / Shell Launcher）で本アプリをシェルとして起動
+
+## ビルド
+
+.NET 8 SDK があれば Windows / macOS / Linux のどこでもビルドできます。
+
+```sh
+dotnet publish kiosk/OLSK60Tester.csproj -c Release -r win-x64 --self-contained \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+```
+
+`publish/` に `OLSK60Tester.exe` と `ui/` フォルダが出力されます。2つセットで配置してください。
+
+## テスターの機能
+
+### KEYBOARD
+
+- OLSK60 v2 の実配列（[公式KLEデータ](https://www.keyboard-layout-editor.com/#/gists/641df3ee125afe1bd4ef41c9a0cded7d)準拠、60キー + 中央トラックポイント）
+- 押下中は赤く点灯、押した回数に応じてキーが「熱を持つ」ヒートマップ表示
+- 押したキーの大型OSD表示、打鍵数・最後のキーの表示
+- Fn1 / Fn2 はレイヤーキー（単体では信号を送らない）として破線表示
+- キオスクモード時は Win キーに 🔒 マーク
+
+### TRACKPOINT
+
+- カーソル軌跡を全画面 HUD として描画（ゆっくり=シアン → 速い=赤）
+- 画面中央のキーボード上のトラックポイントも、カーソルの動きに合わせて傾いて光る
+- クリックは波紋+ラベル（左/中/右/タッチ）、スクロールはシェブロンとメーターで可視化
+- コンパス（移動方向）、速度 px/s、累計移動距離（メートル換算）
+
+### TYPING
+
+- **練習モード**: 短いお題を打つと WPM / 正確率 / クリア数を集計。`KeyboardEvent.code` フォールバックにより IME がオンのままでも動作。Esc でお題スキップ
+- **自由入力**: 日本語IMEの未確定文字（下線表示）・確定を含めて表示
+
+### キオスク向け挙動
+
+- 起動時と 75 秒無操作でアトラクト画面に戻り、全カウンタを自動リセット（次の来場者用）
+- 描画は入力があるときだけ `requestAnimationFrame`、DPR 上限 1.5（バッテリー配慮）
+- 右クリックメニュー・テキスト選択・ズーム・スワイプナビゲーション無効
 
 ## クレジット
 
-- オリジナルプロジェクト: [@mass-work](https://codepen.io/mass-work) - [CodePen](https://codepen.io/mass-work/pen/MYaMKzo)
-- 本プロジェクトは上記オリジナルをベースに機能拡張・改良したものです
+- OLSK60 / OLSK60 v2: [Techmech keys](https://techmech.booth.pm/)
+- 旧バージョンのテスターは [@mass-work さんの CodePen](https://codepen.io/mass-work/pen/MYaMKzo) をベースにしていました。現バージョンは全面書き直しです
 
 ## ライセンス
 
 このプロジェクトは個人利用・学習目的で自由に使用できます。
-

@@ -1,0 +1,34 @@
+name: build-kiosk
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+    paths:
+      - "kiosk/**"
+      - "ui/**"
+      - ".github/workflows/build-kiosk.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish (self-contained win-x64)
+        run: >
+          dotnet publish kiosk/OLSK60Tester.csproj
+          -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OLSK60Tester-win-x64
+          path: publish/
+          if-no-files-found: error
