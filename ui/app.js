@@ -220,11 +220,14 @@ if (window.chrome && window.chrome.webview) {
     const d = ev.data;
     if (!d) return;
     if (d.type === "host") {
-      S.kiosk = true;
-      document.body.classList.add("kiosk");
-      const b = $("hostBadge");
-      b.textContent = "KIOSK MODE";
-      b.classList.add("kiosk");
+      S.kiosk = !!d.kiosk;
+      if (d.version) setAppVersion(d.version);
+      if (d.kiosk) {
+        document.body.classList.add("kiosk");
+        const b = $("hostBadge");
+        b.textContent = "KIOSK MODE";
+        b.classList.add("kiosk");
+      }
     } else if (d.type === "key") {
       touchInput();
       if (d.down) registerKeyDown(d.code, d.key, !!d.repeat);
@@ -1320,6 +1323,18 @@ function vialOnIdleReset() {
   vialStaffRefresh();
 }
 
+// =============================================================
+// App version (shown small in the staff menu for on-site support).
+// The kiosk host sends the exe version via the host hello; browser /
+// dev builds fall back to "dev".
+// =============================================================
+let appVersion = "";
+function setAppVersion(v) {
+  appVersion = v || "";
+  const el = $("appVersion");
+  if (el) el.textContent = "OLSK60 INPUT LAB " + (appVersion || "dev");
+}
+
 buildKeyboard();
 fitKeyboard();
 resizeCanvas();
@@ -1329,4 +1344,5 @@ practiceInit();
 renderFree();
 updatePointerReadouts();
 applyJpInput();
+setAppVersion(""); // browser/dev fallback; kiosk host overrides via host hello
 vialInit();
