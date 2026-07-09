@@ -1,0 +1,67 @@
+name: release
+
+# Cut a release by pushing a SemVer tag:  git tag v1.2.3 && git push origin v1.2.3
+# The tag is the single source of truth for the version — it is stamped into
+# the exe (-p:Version) and used as the GitHub Release name. workflow_dispatch
+# is a manual fallback that creates the tag from the chosen commit.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without the leading v (e.g. 1.2.3)"
+        required: true
+
+permissions:
+  contents: write   # required to create the GitHub Release + tag
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # full history so --generate-notes can diff tags
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve version and tag
+        id: ver
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            TAG="v${VERSION}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            VERSION="${TAG#v}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish (self-contained win-x64, version-stamped)
+        run: >
+          dotnet publish kiosk/OLSK60Tester.csproj
+          -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${{ steps.ver.outputs.version }}
+          -o publish
+
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path publish/* -DestinationPath "OLSK60Tester-${{ steps.ver.outputs.tag }}-win-x64.zip"
+
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            "OLSK60Tester-${{ steps.ver.outputs.tag }}-win-x64.zip" \
+            --target "${GITHUB_SHA}" \
+            --title "OLSK60 INPUT LAB ${{ steps.ver.outputs.tag }}" \
+            --generate-notes

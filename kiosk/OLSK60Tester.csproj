@@ -8,6 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>OLSK60Tester</AssemblyName>
     <RootNamespace>Olsk60Tester</RootNamespace>
+    <!-- Default dev version. The single source of truth for releases is the
+         git tag vX.Y.Z: CI overrides this via -p:Version=<tag> (see
+         .github/workflows/release.yml). Local/dev builds show this value. -->
+    <Version>0.1.0-dev</Version>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <!-- allow building on non-Windows CI/dev machines -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

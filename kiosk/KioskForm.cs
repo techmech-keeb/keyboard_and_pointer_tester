@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;
@@ -97,10 +98,24 @@ internal sealed class KioskForm : Form
         core.Navigate("https://olsk60.app/index.html");
     }
 
+    /// <summary>App version stamped at build time (git tag via CI, else the
+    /// csproj dev default). Shown in the UI staff menu for on-site support.</summary>
+    private static string AppVersion()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrEmpty(info))
+        {
+            var plus = info.IndexOf('+'); // strip +<commit> source-link metadata
+            return plus >= 0 ? info[..plus] : info;
+        }
+        return asm.GetName().Version?.ToString() ?? "0.0.0";
+    }
+
     private void PostHostHello()
     {
-        if (_kioskMode)
-            _webView.CoreWebView2?.PostWebMessageAsJson("""{"type":"host","kiosk":true}""");
+        var json = JsonSerializer.Serialize(new { type = "host", kiosk = _kioskMode, version = AppVersion() });
+        _webView.CoreWebView2?.PostWebMessageAsJson(json);
     }
 
     private void OnBlockedKey(KeyboardHook.KeyInfo k)
