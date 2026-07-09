@@ -17,9 +17,14 @@
   マトリクス次元・レイヤー数・customKeycodes のレンジクランプ。
 - **CIアクション更新**（PR #8, merged）: checkout/setup-dotnet v5・
   upload-artifact v6。Node.js 20 非推奨警告 Annotation を解消（0件確認済み）。
-- **日本語入力トグル**（PR #9, ※要確認）: 日本語IME依存を自由入力タブ1枚に
+- **日本語入力トグル**（PR #9, merged）: 日本語IME依存を自由入力タブ1枚に
   集約し、スタッフメニューから ON/OFF（localStorage 保存・再ビルド不要）。
   **既定オフ**（`app.js` の `JP_INPUT_DEFAULT`）。
+- **例文コンテンツ拡充**（PR #9, merged）: 練習例文を 10→40（PDパングラム＋
+  自作＋ローマ字ことわざ）。ライセンス安全・全文字が物理キー対応を検証済み。
+- **バージョン管理＋リリース**: SemVer、単一ソース＝git タグ `vX.Y.Z`（CIが
+  `-p:Version` で刻印）。スタッフメニューに版表示。タグ push で
+  `release.yml` が GitHub Release を自動作成（win-x64 zip＋自動ノート）。
 
 ## 残課題：実機検証（実機がある側でのみ可能）
 

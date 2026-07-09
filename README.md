@@ -83,6 +83,33 @@ dotnet publish kiosk/OLSK60Tester.csproj -c Release -r win-x64 --self-contained 
 
 `publish/` に `OLSK60Tester.exe` と `ui/` フォルダが出力されます。2つセットで配置してください。
 
+## バージョン管理とリリース
+
+バージョンは **SemVer**、**単一のソースは git タグ `vX.Y.Z`** です。csproj の
+`<Version>` はローカル/開発用の既定（`0.1.0-dev`）で、CI がタグから
+`-p:Version=<タグ>` で上書きしてビルドに刻みます。手で csproj を書き換える
+必要はありません。
+
+- **アプリ内表示**: スタッフメニュー（ロゴ5連打）下部に `OLSK60 INPUT LAB
+  vX.Y.Z` を表示（キオスクホストが exe のバージョンを UI へ通知）。ブラウザ/
+  開発ビルドでは `dev` と表示。展示機がどの版かを現地で確認できます。
+- **リリースの作り方**: タグを push するだけ。
+
+  ```sh
+  git tag v1.2.3
+  git push origin v1.2.3
+  ```
+
+  `.github/workflows/release.yml` が発火し、win-x64 単一ファイルを
+  バージョン刻印付きでビルド → `OLSK60Tester-v1.2.3-win-x64.zip` を添付した
+  **GitHub Release を自動作成**（リリースノートは自動生成）。Actions の
+  一時成果物と違い、リリースは消えずにバージョン付きで残ります。
+- **手動リリース**: Actions の `release` を workflow_dispatch で実行し、
+  バージョン（例 `1.2.3`）を入力すると、その時点のコミットにタグを作って
+  リリースします。
+- 日常の CI ビルド（`build-kiosk.yml`）はブランチ push で従来どおり動きます。
+  配布はタグ＝リリース、と役割を分けています。
+
 ## テスターの機能
 
 ### KEYBOARD
