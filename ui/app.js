@@ -16,6 +16,12 @@ const IDLE_RESET_MS = 75000;    // auto reset for the next visitor
 const MAX_DPR = 1.5;            // battery-friendly rendering
 const FREE_TEXT_MAX = 3000;
 
+// Japanese (IME) free-input tab. Ships OFF so an exhibition machine has
+// zero IME/candidate-window risk out of the box; the whole IME surface is
+// confined to this one tab. Staff can flip it per-machine from the staff
+// menu (persisted in localStorage) with no rebuild — see jp-input below.
+const JP_INPUT_DEFAULT = false;
+
 // ---------- state ----------
 const S = {
   keyCount: 0,
@@ -660,6 +666,7 @@ function renderFree() {
 
 // ---------- mode tabs ----------
 function setMode(free) {
+  if (free && !jpInputEnabled()) free = false; // guard: no free tab when JP off
   S.freeMode = free;
   $("tabFree").classList.toggle("active", free);
   $("tabPractice").classList.toggle("active", !free);
@@ -670,6 +677,37 @@ function setMode(free) {
 }
 $("tabPractice").addEventListener("click", () => setMode(false));
 $("tabFree").addEventListener("click", () => setMode(true));
+
+// ---------- Japanese (IME) free-input toggle ----------
+// The entire IME/candidate-window surface lives in the free-input tab.
+// Turning this off hides the tab and never focuses the textarea, so the
+// kiosk has no editable field for the OS IME to attach to — the risk is
+// removed structurally, and practice mode (IME-inert) is untouched.
+const JP_INPUT_KEY = "olsk60.jpInput";
+
+function jpInputEnabled() {
+  try {
+    const v = localStorage.getItem(JP_INPUT_KEY);
+    if (v === "1") return true;
+    if (v === "0") return false;
+  } catch (_) { /* localStorage blocked (e.g. file://) — fall through */ }
+  return JP_INPUT_DEFAULT;
+}
+
+function applyJpInput() {
+  const on = jpInputEnabled();
+  $("tabFree").hidden = !on;
+  if (!on && S.freeMode) setMode(false); // leave free view if it was open
+  const btn = $("jpToggleBtn");
+  if (btn) btn.textContent = "日本語入力: " + (on ? "オン" : "オフ");
+}
+
+function setJpInput(on) {
+  try { localStorage.setItem(JP_INPUT_KEY, on ? "1" : "0"); } catch (_) { /* ignore */ }
+  applyJpInput();
+}
+
+$("jpToggleBtn").addEventListener("click", () => setJpInput(!jpInputEnabled()));
 
 // clicking anywhere in free mode keeps the textarea focused
 document.addEventListener("pointerup", () => {
@@ -1290,4 +1328,5 @@ drawCompass();
 practiceInit();
 renderFree();
 updatePointerReadouts();
+applyJpInput();
 vialInit();
