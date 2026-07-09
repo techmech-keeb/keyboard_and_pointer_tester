@@ -1,17 +1,29 @@
 name: release
 
-# Cut a release by pushing a SemVer tag:  git tag v1.2.3 && git push origin v1.2.3
-# The tag is the single source of truth for the version — it is stamped into
-# the exe (-p:Version) and used as the GitHub Release name. workflow_dispatch
-# is a manual fallback that creates the tag from the chosen commit.
+# Two ways to cut a release:
+#  1. Push a SemVer tag:  git tag v1.2.3 && git push origin v1.2.3
+#  2. Run this workflow manually (Actions -> release -> Run workflow) and either
+#     - type an explicit version (e.g. 1.2.3), or
+#     - pick a bump level; "auto" derives the next version from the commits
+#       since the last release using Conventional Commits:
+#         feat!: / any type! / "BREAKING CHANGE" -> major
+#         feat:                                   -> minor
+#         everything else (fix:, chore:, docs...) -> patch
+# The resolved tag is the single source of truth: it is stamped into the exe
+# (-p:Version) and used as the GitHub Release name.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
+      bump:
+        description: "Auto-bump level (ignored if 'version' is set)"
+        type: choice
+        options: [auto, patch, minor, major]
+        default: auto
       version:
-        description: "Version without the leading v (e.g. 1.2.3)"
-        required: true
+        description: "Explicit version without leading v (e.g. 1.2.3). Overrides bump."
+        required: false
 
 permissions:
   contents: write   # required to create the GitHub Release + tag
@@ -22,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0   # full history so --generate-notes can diff tags
+          fetch-depth: 0   # full history + tags so auto-bump can inspect commits
 
       - uses: actions/setup-dotnet@v5
         with:
@@ -32,15 +44,49 @@ jobs:
         id: ver
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-            TAG="v${VERSION}"
-          else
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # tag push: the tag is authoritative
             TAG="${GITHUB_REF_NAME}"
             VERSION="${TAG#v}"
+          else
+            EXPLICIT="${{ github.event.inputs.version }}"
+            if [ -n "${EXPLICIT}" ]; then
+              VERSION="${EXPLICIT#v}"
+            else
+              LAST="$(git tag --list 'v*' --sort=-v:refname | head -n1 || true)"
+              if [ -z "${LAST}" ]; then BASE="0.0.0"; RANGE=""; else BASE="${LAST#v}"; RANGE="${LAST}..HEAD"; fi
+              BASE="${BASE%%-*}"; BASE="${BASE%%+*}"   # normalize any prerelease/build metadata
+              IFS=. read -r MA MI PA <<< "${BASE}"
+              MA=${MA:-0}; MI=${MI:-0}; PA=${PA:-0}
+              LEVEL="${{ github.event.inputs.bump }}"
+              if [ "${LEVEL}" = "auto" ]; then
+                LOG="$(git log --format='%B' ${RANGE})"
+                if echo "${LOG}" | grep -qE 'BREAKING CHANGE' || echo "${LOG}" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
+                  LEVEL=major
+                elif echo "${LOG}" | grep -qE '^feat(\([^)]*\))?:'; then
+                  LEVEL=minor
+                else
+                  LEVEL=patch
+                fi
+              fi
+              case "${LEVEL}" in
+                major) MA=$((MA+1)); MI=0; PA=0;;
+                minor) MI=$((MI+1)); PA=0;;
+                patch) PA=$((PA+1));;
+                *) echo "::error::unknown bump level ${LEVEL}"; exit 1;;
+              esac
+              VERSION="${MA}.${MI}.${PA}"
+              echo "Auto-resolved: base=${BASE:-0.0.0} level=${LEVEL} -> ${VERSION}"
+            fi
+            TAG="v${VERSION}"
+            if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+              echo "::error::tag ${TAG} already exists — choose a different version"; exit 1
+            fi
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Release version=${VERSION} tag=${TAG}"
 
       - name: Publish (self-contained win-x64, version-stamped)
         run: >

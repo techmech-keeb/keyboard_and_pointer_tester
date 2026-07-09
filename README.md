@@ -104,9 +104,22 @@ dotnet publish kiosk/OLSK60Tester.csproj -c Release -r win-x64 --self-contained 
   バージョン刻印付きでビルド → `OLSK60Tester-v1.2.3-win-x64.zip` を添付した
   **GitHub Release を自動作成**（リリースノートは自動生成）。Actions の
   一時成果物と違い、リリースは消えずにバージョン付きで残ります。
-- **手動リリース**: Actions の `release` を workflow_dispatch で実行し、
-  バージョン（例 `1.2.3`）を入力すると、その時点のコミットにタグを作って
-  リリースします。
+- **手動リリース**: Actions の `release` を「Run workflow」で実行。次の2通り。
+  - **バージョンを直接入力**（`version` に例 `1.2.3`）→ その値でリリース（`bump` は無視）。
+  - **`bump` を選ぶ**（`version` は空のまま）→ 前回リリースのタグを基点に自動附番:
+    - `auto`: **前回リリース以降のコミット**を Conventional Commits で判定して
+      major/minor/patch を自動決定
+    - `patch` / `minor` / `major`: コミット内容を見ずに指定の位置を +1
+  - いずれも、その時点のコミットにタグ（`vX.Y.Z`）を作ってリリースします。
+- **auto の判定ルール**（コミットメッセージ規約に依存）:
+  | コミット | 上げる位置 |
+  |---|---|
+  | `feat!:` / 任意の `type!:` / 本文に `BREAKING CHANGE` | major |
+  | `feat:` | minor |
+  | それ以外（`fix:` / `chore:` / `docs:` など、規約外も含む） | patch |
+
+  規約に沿わないメッセージは patch 扱いになります。minor/major を自動で
+  出したいときは `feat:` / `feat!:` を使うか、`bump` で明示指定してください。
 - 日常の CI ビルド（`build-kiosk.yml`）はブランチ push で従来どおり動きます。
   配布はタグ＝リリース、と役割を分けています。
 
