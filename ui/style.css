@@ -15,6 +15,27 @@
   --cyan: #3fd9ff;
   --amber: #ffb454;
   --green: #3ddc84;
+  --red-soft: #ff6a5b;
+  --red-bright: #ff8a80;
+  --red-cap: #ff9d94;
+  --red-cap-deep: #8e1b14;
+  --red-key-border: #ff8a7e;
+  --red-cap-shadow: #7e150e;
+  --blur-panel: 12px;
+  --blur-attract: 10px;
+  --blur-osd: 3px;
+  --blur-menu: 8px;
+  --radius-panel: 16px;
+  --radius-key: calc(var(--u) * 0.12);
+  --radius-control: 9px;
+  --fx-btn-l: #3fd9ff;
+  --fx-btn-m: #ffb454;
+  --fx-btn-r: #ff3b30;
+  --fx-scroll-rgb: 63, 217, 255;
+  --fx-halo-rgb: 255, 80, 66;
+  --fx-trail-hue-start: 195;
+  --fx-trail-hue-end: 0;
+  --fx-trail-fixed-rgb: ;
   --mono: "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace;
   --sans: "Segoe UI Variable Text", "Segoe UI", "Yu Gothic UI", "Hiragino Sans", system-ui, sans-serif;
   --u: 60px; /* key unit, set by JS to fit */
@@ -63,7 +84,7 @@ body {
 
 .brand-dot {
   width: 18px; height: 18px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ff8a80, var(--red) 55%, #8e1b14);
+  background: radial-gradient(circle at 35% 30%, var(--red-bright), var(--red) 55%, var(--red-cap-deep));
   box-shadow: 0 0 14px rgba(255, 59, 48, 0.8), 0 0 40px rgba(255, 59, 48, 0.35);
   animation: dotPulse 2.6s ease-in-out infinite;
 }
@@ -83,7 +104,7 @@ body {
 .badge {
   font-family: var(--mono);
   font-size: 11px; letter-spacing: 0.14em;
-  padding: 5px 12px; border-radius: 999px;
+  padding: 5px 12px; border-radius: calc(var(--radius-control) * 111);
   border: 1px solid var(--line); color: var(--dim);
 }
 .badge.kiosk {
@@ -97,7 +118,7 @@ body {
   color: var(--txt);
   background: transparent;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-control);
   padding: 8px 18px;
   cursor: pointer;
   transition: border-color .15s, background .15s, transform .05s;
@@ -121,10 +142,10 @@ body {
 /* ---------- panels ---------- */
 .panel {
   background: var(--panel);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--blur-panel));
+  -webkit-backdrop-filter: blur(var(--blur-panel));
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-panel);
   padding: 14px 18px 16px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
   min-height: 0;
@@ -140,7 +161,7 @@ body {
 }
 .panel-head h2::before {
   content: ""; display: inline-block;
-  width: 8px; height: 8px; border-radius: 2px;
+  width: 8px; height: 8px; border-radius: calc(var(--radius-control) - 7px);
   background: var(--red); margin-right: 8px;
   vertical-align: 1px;
 }
@@ -155,14 +176,14 @@ body {
   color: var(--dim);
   background: transparent;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: calc(var(--radius-control) * 111);
   padding: 6px 16px;
   cursor: pointer;
   transition: all .15s;
 }
 .tab.active {
   color: #fff; border-color: transparent;
-  background: linear-gradient(135deg, var(--red), #ff6a5b);
+  background: linear-gradient(135deg, var(--red), var(--red-soft));
   box-shadow: 0 2px 14px rgba(255, 59, 48, 0.4);
 }
 
@@ -183,13 +204,13 @@ body {
   padding: 4px 10px;
   min-height: 0;
 }
-#phraseLine span { position: relative; color: rgba(139, 149, 168, 0.55); padding: 0 1px; border-radius: 3px; transition: color .08s; white-space: pre; }
+#phraseLine span { position: relative; color: rgba(139, 149, 168, 0.55); padding: 0 1px; border-radius: calc(var(--radius-control) - 6px); transition: color .08s; white-space: pre; }
 #phraseLine span.ok { color: var(--txt); }
 #phraseLine span.ok.was-ng { color: var(--amber); }
 #phraseLine span.cur { color: #c3ccdc; }
 #phraseLine span.cur::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 2px;
-  height: 3px; border-radius: 2px;
+  height: 3px; border-radius: calc(var(--radius-control) - 7px);
   background: var(--red);
   box-shadow: 0 0 10px var(--red);
   animation: caretBlink 1s steps(2) infinite;
@@ -240,7 +261,7 @@ body {
   overflow-y: auto;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: calc(var(--radius-control) + 3px);
   background: rgba(0, 0, 0, 0.25);
   min-height: 0;
 }
@@ -250,7 +271,7 @@ body {
 }
 #freeDisplay .caret {
   display: inline-block; width: 3px; height: 1.15em;
-  background: var(--red); border-radius: 2px;
+  background: var(--red); border-radius: calc(var(--radius-control) - 7px);
   vertical-align: -0.18em;
   box-shadow: 0 0 8px var(--red);
   animation: caretBlink 1s steps(2) infinite;
@@ -287,7 +308,7 @@ body {
 }
 .keycap {
   width: 100%; height: 100%;
-  border-radius: calc(var(--u) * 0.12);
+  border-radius: var(--radius-key);
   background: linear-gradient(180deg, #242c3b 0%, #1a212e 90%);
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-top-color: rgba(255, 255, 255, 0.18);
@@ -308,7 +329,7 @@ body {
 }
 .key.homing .keycap::after {
   content: ""; position: absolute; bottom: calc(var(--u) * 0.12); left: 50%;
-  width: calc(var(--u) * 0.28); height: 2px; border-radius: 2px;
+  width: calc(var(--u) * 0.28); height: 2px; border-radius: calc(var(--radius-control) - 7px);
   transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.35);
 }
@@ -323,8 +344,8 @@ body {
 .keycap > * { position: relative; }
 
 .key.down .keycap {
-  background: linear-gradient(180deg, #ff6a5b, var(--red-deep));
-  border-color: #ff8a7e;
+  background: linear-gradient(180deg, var(--red-soft), var(--red-deep));
+  border-color: var(--red-key-border);
   color: #fff;
   box-shadow: 0 0 4px rgba(0,0,0,.4), 0 0 22px rgba(255, 59, 48, 0.75);
   transform: translateY(2px);
@@ -361,7 +382,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
 }
 .pointing { position: absolute; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; }
 .pointing.pad {
-  border-radius: calc(var(--u) * 0.12);
+  border-radius: var(--radius-key);
   background: linear-gradient(180deg, #303b4e, #1a212e);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
@@ -382,7 +403,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
 #tpCap {
   position: absolute; inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 34% 28%, #ff9d94, var(--red) 52%, #7e150e 100%);
+  background: radial-gradient(circle at 34% 28%, var(--red-cap), var(--red) 52%, var(--red-cap-shadow) 100%);
   box-shadow: 0 0 calc(6px + var(--tp-glow, 0) * 26px) rgba(255, 59, 48, calc(0.55 + var(--tp-glow, 0) * 0.45)),
               0 3px 8px rgba(0, 0, 0, 0.6);
   animation: dotPulse 3s ease-in-out infinite;
@@ -427,7 +448,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
   font-size: 13.5px; font-weight: 600;
   color: var(--dim);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: calc(var(--radius-control) + 1px);
   padding: 8px 12px;
   transition: all .25s;
 }
@@ -460,7 +481,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
   font-size: 17px; font-weight: 800; letter-spacing: .04em;
   color: var(--green);
   background: rgba(7, 9, 13, 0.72);
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(var(--blur-osd));
   opacity: 0; pointer-events: none;
   transition: opacity .3s;
 }
@@ -479,7 +500,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
   flex: 1;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: calc(var(--radius-control) + 3px);
   padding: 10px 6px 8px;
   transition: all .12s;
 }
@@ -511,7 +532,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
 #scrollBar {
   width: 30px; height: 44px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: calc(var(--radius-control) - 1px);
   overflow: hidden;
   position: relative;
   justify-self: center;
@@ -546,7 +567,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
   min-width: 0;
   padding: 6px 9px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: calc(var(--radius-control) - 1px);
   background: rgba(255, 255, 255, 0.025);
   font-size: 12px;
   font-weight: 700;
@@ -581,14 +602,14 @@ body.kiosk .key.win .keycap .lock { display: block; }
   z-index: 20;
   display: flex; align-items: center; justify-content: center;
   background: rgba(5, 7, 10, 0.8);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-menu));
+  -webkit-backdrop-filter: blur(var(--blur-menu));
 }
 #staffMenu[hidden] { display: none; }
 .staff-box {
   background: var(--panel-solid);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-panel);
   padding: 28px 36px;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
@@ -598,12 +619,12 @@ body.kiosk .key.win .keycap .lock { display: block; }
 .staff-actions { display: flex; gap: 12px; justify-content: center; margin: 22px 0 14px; }
 .staff-actions button {
   font-family: inherit; font-size: 15px; font-weight: 700;
-  border-radius: 10px; padding: 12px 30px; cursor: pointer;
+  border-radius: calc(var(--radius-control) + 1px); padding: 12px 30px; cursor: pointer;
   border: 1px solid var(--line);
   background: transparent; color: var(--txt);
 }
 #staffExitBtn {
-  background: linear-gradient(135deg, var(--red), #ff6a5b);
+  background: linear-gradient(135deg, var(--red), var(--red-soft));
   border-color: transparent; color: #fff;
   box-shadow: 0 2px 16px rgba(255, 59, 48, 0.45);
 }
@@ -615,8 +636,8 @@ body.kiosk .key.win .keycap .lock { display: block; }
   z-index: 10;
   display: flex; align-items: center; justify-content: center;
   background: rgba(5, 7, 10, 0.82);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-attract));
+  -webkit-backdrop-filter: blur(var(--blur-attract));
   opacity: 1;
   transition: opacity .45s;
 }
@@ -631,7 +652,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
 .attract-dot span {
   position: absolute; inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 34% 28%, #ff9d94, var(--red) 52%, #7e150e 100%);
+  background: radial-gradient(circle at 34% 28%, var(--red-cap), var(--red) 52%, var(--red-cap-shadow) 100%);
   box-shadow: 0 0 30px rgba(255, 59, 48, 0.8);
   animation: dotPulse 2s ease-in-out infinite;
 }
@@ -697,7 +718,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
   margin: 4px 0 18px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: calc(var(--radius-control) + 3px);
   text-align: left;
 }
 #staffVial h4, #staffOptions h4 { font-size: 11px; letter-spacing: .16em; color: var(--dim); margin-bottom: 6px; }
@@ -705,22 +726,22 @@ body.kiosk .key.win .keycap .lock { display: block; }
 #jpToggleBtn {
   font-family: inherit; font-size: 13px; font-weight: 700;
   margin-top: 6px; padding: 8px 16px;
-  border-radius: 9px; cursor: pointer;
+  border-radius: var(--radius-control); cursor: pointer;
   border: 1px solid var(--line);
   background: transparent; color: var(--txt);
 }
-#defaultBoardSelect {
+#defaultBoardSelect, #themeSelect {
   display: block; width: 100%;
   font-family: inherit; font-size: 13px; font-weight: 700;
   margin-top: 6px; padding: 8px;
-  border-radius: 9px; border: 1px solid var(--line);
+  border-radius: var(--radius-control); border: 1px solid var(--line);
   background: var(--panel-solid); color: var(--txt);
 }
 #staffOptions label { display: block; font-size: 13px; font-weight: 700; }
 #unlockBtn, #unlockCancelBtn {
   font-family: inherit; font-size: 13px; font-weight: 700;
   margin-top: 10px; padding: 8px 16px;
-  border-radius: 9px; cursor: pointer;
+  border-radius: var(--radius-control); cursor: pointer;
   border: 1px solid rgba(63, 217, 255, 0.5);
   background: rgba(63, 217, 255, 0.1); color: var(--cyan);
 }
@@ -728,13 +749,13 @@ body.kiosk .key.win .keycap .lock { display: block; }
 #unlockWizard { margin-top: 10px; }
 #unlockHint { color: var(--cyan) !important; }
 #unlockBar {
-  margin-top: 10px; height: 8px; border-radius: 999px;
+  margin-top: 10px; height: 8px; border-radius: calc(var(--radius-control) * 111);
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
 }
 #unlockBarFill {
   display: block; height: 100%; width: 0;
-  border-radius: 999px;
+  border-radius: calc(var(--radius-control) * 111);
   background: linear-gradient(90deg, var(--cyan), #7ae7ff);
   transition: width .15s linear;
 }

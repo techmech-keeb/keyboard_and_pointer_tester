@@ -29,6 +29,20 @@ const FX_PALETTE = {
   rippleLabelFont: (size) => `700 ${size}px 'Segoe UI', 'Yu Gothic UI', sans-serif`,
 };
 
+function refreshFxPalette() {
+  const css = getComputedStyle(document.documentElement);
+  const read = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+  FX_PALETTE.buttons.L = read("--fx-btn-l", "#3fd9ff");
+  FX_PALETTE.buttons.M = read("--fx-btn-m", "#ffb454");
+  FX_PALETTE.buttons.R = read("--fx-btn-r", "#ff3b30");
+  FX_PALETTE.chevron = read("--fx-scroll-rgb", "63,217,255");
+  FX_PALETTE.cursorHalo = read("--fx-halo-rgb", "255,80,66");
+  FX_PALETTE.trail.hueStart = Number(read("--fx-trail-hue-start", "195"));
+  FX_PALETTE.trail.hueEnd = Number(read("--fx-trail-hue-end", "0"));
+  FX_PALETTE.trail.fixedRgb = css.getPropertyValue("--fx-trail-fixed-rgb").trim();
+  for (const button of BTN) button.color = FX_PALETTE.buttons[button.name];
+}
+
 // Japanese (IME) free-input tab. Ships OFF so an exhibition machine has
 // zero IME/candidate-window risk out of the box; the whole IME surface is
 // confined to this one tab. Staff can flip it per-machine from the staff
@@ -367,13 +381,16 @@ function frame(now) {
     const v = Math.hypot(b.x - a.x, b.y - a.y) / dt; // px/ms
     const hue = FX_PALETTE.trail.hueStart - Math.min(v / 2.2, 1) *
       (FX_PALETTE.trail.hueStart - FX_PALETTE.trail.hueEnd); // cyan -> red
+    const fixedRgb = FX_PALETTE.trail.fixedRgb;
     const w = 2 + Math.min(v * 1.5, 4);
     // soft glow pass + core pass
     ctx.lineCap = "round";
-    ctx.strokeStyle = `hsla(${hue}, ${FX_PALETTE.trail.glow}, ${(alpha * 0.16).toFixed(3)})`;
+    ctx.strokeStyle = fixedRgb ? `rgba(${fixedRgb}, ${(alpha * 0.16).toFixed(3)})` :
+      `hsla(${hue}, ${FX_PALETTE.trail.glow}, ${(alpha * 0.16).toFixed(3)})`;
     ctx.lineWidth = w * 3.2;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-    ctx.strokeStyle = `hsla(${hue}, ${FX_PALETTE.trail.core}, ${(alpha * 0.85).toFixed(3)})`;
+    ctx.strokeStyle = fixedRgb ? `rgba(${fixedRgb}, ${(alpha * 0.85).toFixed(3)})` :
+      `hsla(${hue}, ${FX_PALETTE.trail.core}, ${(alpha * 0.85).toFixed(3)})`;
     ctx.lineWidth = w;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   }
@@ -1458,6 +1475,7 @@ function setAppVersion(v) {
   if (el) el.textContent = "Techmech keys INPUT LAB " + (appVersion || "dev");
 }
 
+refreshFxPalette();
 applyDefaultBoardSelect();
 const initialBoard = savedDefaultBoard();
 BOARD = null;
