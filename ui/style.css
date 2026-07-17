@@ -116,7 +116,7 @@ body {
 }
 
 #leftCol { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-#rightCol { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+#rightCol { display: flex; flex-direction: column; align-items: stretch; gap: 14px; min-width: 0; }
 
 /* ---------- panels ---------- */
 .panel {
@@ -471,11 +471,10 @@ body.kiosk .key.win .keycap .lock { display: block; }
 #compass { flex: 0 0 auto; }
 .pointer-nums, .scroll-nums { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 
-/* ---------- click panel ---------- */
-#clickPanel, #scrollPanel { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; }
-#clickPanel #clickPills, #scrollPanel #scrollViz { flex: 1; }
+/* ---------- input monitor panel ---------- */
+#inputMonitorPanel { flex: 1 1 0; display: flex; flex-direction: column; overflow: hidden; }
+.input-monitor-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 #clickPills { display: flex; gap: 10px; align-items: center; }
-#clickPills .pill { align-self: center; }
 .pill {
   flex: 1;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -495,7 +494,6 @@ body.kiosk .key.win .keycap .lock { display: block; }
 #pill-R.active { background: rgba(255, 59, 48, 0.22); box-shadow: 0 0 18px rgba(255,59,48,.5); }
 #pill-L b { color: var(--cyan); } #pill-M b { color: var(--amber); } #pill-R b { color: var(--red); }
 
-/* ---------- scroll panel ---------- */
 #scrollViz {
   display: grid;
   grid-template-columns: 30px 1fr;
@@ -530,6 +528,52 @@ body.kiosk .key.win .keycap .lock { display: block; }
 @keyframes flowUp { to { background-position-y: -24px; } }
 @keyframes flowDown { to { background-position-y: 24px; } }
 .scroll-nums { grid-column: 2; grid-row: 1 / span 3; }
+
+#inputFeed {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+}
+.input-feed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 12px;
+  font-weight: 700;
+}
+.input-feed-item b { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.input-feed-item.click-L { color: var(--cyan); }
+.input-feed-item.click-M { color: var(--amber); }
+.input-feed-item.click-R { color: var(--red); }
+.input-feed-item.scroll-up, .input-feed-item.scroll-down { color: var(--cyan); }
+
+@media (max-width: 1100px) {
+  #layout {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: calc(100vh - 58px);
+  }
+  #rightCol {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  #inputMonitorPanel { min-height: 260px; }
+}
+
+@media (min-width: 1800px) {
+  #layout { grid-template-columns: minmax(0, 1fr) 400px; }
+}
 
 /* ---------- staff exit menu (logo x5 taps) ---------- */
 #staffMenu {
