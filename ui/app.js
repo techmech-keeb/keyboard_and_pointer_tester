@@ -22,6 +22,7 @@ const FREE_TEXT_MAX = 3000;
 // confined to this one tab. Staff can flip it per-machine from the staff
 // menu (persisted in localStorage) with no rebuild — see jp-input below.
 const JP_INPUT_DEFAULT = false;
+const DEFAULT_BOARD_KEY = "olsk60.defaultBoard";
 
 // ---------- state ----------
 const S = {
@@ -98,21 +99,25 @@ function buildKeyboard() {
     if (k.m) matrixEls.set(k.m[0] + "," + k.m[1], el);
   }
 
-  const pointing = BOARD.pointing;
-  if (!pointing) return;
-  const tp = document.createElement("div");
-  tp.id = "trackpoint";
-  tp.style.left = `calc(var(--u) * ${pointing.x})`;
-  tp.style.top = `calc(var(--u) * ${pointing.y})`;
-  if (pointing.image) {
-    const image = document.createElement("img");
-    image.src = pointing.image;
-    image.alt = pointing.type || "pointing device";
-    tp.appendChild(image);
-  } else {
-    tp.innerHTML = `<div id="tpRing"></div><div id="tpCap"></div>`;
+  const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
+  for (const [i, pointing] of pointings.entries()) {
+    const tp = document.createElement("div");
+    tp.id = i === 0 ? "trackpoint" : "trackpoint-" + i;
+    tp.className = "pointing" + (pointing.shape === "pad" ? " pad" : "");
+    tp.style.left = `calc(var(--u) * ${pointing.x})`;
+    tp.style.top = `calc(var(--u) * ${pointing.y})`;
+    tp.style.width = `calc(var(--u) * ${pointing.w || 0.72})`;
+    tp.style.height = `calc(var(--u) * ${pointing.h || 0.72})`;
+    if (pointing.image) {
+      const image = document.createElement("img");
+      image.src = pointing.image;
+      image.alt = pointing.type || "pointing device";
+      tp.appendChild(image);
+    } else if (pointing.shape !== "pad") {
+      tp.innerHTML = `<div id="tpRing"></div><div id="tpCap"></div>`;
+    }
+    keyboardEl.appendChild(tp);
   }
-  keyboardEl.appendChild(tp);
 }
 
 function fitKeyboard() {
@@ -129,15 +134,19 @@ function applyBoard(profile) {
   matrixEls.clear();
   buildKeyboard();
   buildCodeChars();
+  keyboardEl.style.width = `calc(var(--u) * ${BOARD.unitsWide})`;
+  keyboardEl.style.height = `calc(var(--u) * ${BOARD.unitsHigh})`;
   fitKeyboard();
-  const pointingType = BOARD.pointing && BOARD.pointing.type;
-  const pointingLabel = pointingType ? " + " +
-    (pointingType === "trackpoint" ? "トラックポイント" : pointingType) : "";
+  const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
+  const pointingLabel = pointings.length ? " + " + pointings.map((pointing) =>
+    pointing.type === "trackpoint" ? "トラックポイント" : pointing.type || "ポインティング").join("・") : "";
   $("kbProfileLabel").textContent = BOARD.keys.length + "キー" + pointingLabel;
   practiceInit();
-  VS.rows = BOARD.matrix.rows;
-  VS.cols = BOARD.matrix.cols;
-  VS.custom = BOARD.customKeycodes;
+  if (VS) {
+    VS.rows = BOARD.matrix ? BOARD.matrix.rows : 0;
+    VS.cols = BOARD.matrix ? BOARD.matrix.cols : 0;
+    VS.custom = BOARD.customKeycodes || [];
+  }
 }
 
 // =============================================================
@@ -744,6 +753,32 @@ function setJpInput(on) {
 
 $("jpToggleBtn").addEventListener("click", () => setJpInput(!jpInputEnabled()));
 
+function savedDefaultBoard() {
+  try {
+    const id = localStorage.getItem(DEFAULT_BOARD_KEY);
+    return BOARDS.find((profile) => profile.id === id) || DEFAULT_BOARD;
+  } catch (_) { return DEFAULT_BOARD; }
+}
+
+function applyDefaultBoardSelect() {
+  const select = $("defaultBoardSelect");
+  select.innerHTML = "";
+  for (const profile of BOARDS) {
+    const option = document.createElement("option");
+    option.value = profile.id;
+    option.textContent = profile.name;
+    select.appendChild(option);
+  }
+  select.value = savedDefaultBoard().id;
+}
+
+$("defaultBoardSelect").addEventListener("change", (event) => {
+  const profile = BOARDS.find((board) => board.id === event.target.value);
+  if (!profile) return;
+  try { localStorage.setItem(DEFAULT_BOARD_KEY, profile.id); } catch (_) { /* ignore */ }
+  applyBoard(profile);
+});
+
 // clicking anywhere in free mode keeps the textarea focused
 document.addEventListener("pointerup", () => {
   if (S.freeMode) setTimeout(() => hiddenInput.focus({ preventScroll: true }), 0);
@@ -888,7 +923,7 @@ window.addEventListener("resize", () => { resizeCanvas(); sizeCompass(); fitKeyb
 // displayed layer follows MO/LT/TG/TO presses.
 // While locked: degraded mode = legends + manual layer tabs only.
 // =============================================================
-const VS = {
+let VS = {
   transport: null,
   dev: null,
   mode: "none",          // none | kiosk | webhid
@@ -1369,8 +1404,10 @@ function setAppVersion(v) {
   if (el) el.textContent = "Techmech keys INPUT LAB " + (appVersion || "dev");
 }
 
-buildKeyboard();
-fitKeyboard();
+applyDefaultBoardSelect();
+const initialBoard = savedDefaultBoard();
+BOARD = null;
+applyBoard(initialBoard);
 resizeCanvas();
 sizeCompass();
 drawCompass();
