@@ -1,0 +1,82 @@
+// =============================================================
+// Generic ANSI 60% board profile
+// =============================================================
+"use strict";
+
+const ANSI60_PROFILE = {
+  id: "ansi60",
+  name: "ANSI 60%",
+  match: null,
+  unitsWide: 15,
+  unitsHigh: 5,
+  keys: [
+    // ---- Row 0 -------------------------------------------------
+    { code: "Escape",      x: 0,  y: 0, w: 1, label: "Esc" },
+    { code: "Digit1",      x: 1,  y: 0, w: 1, label: "1", shift: "!" },
+    { code: "Digit2",      x: 2,  y: 0, w: 1, label: "2", shift: "@" },
+    { code: "Digit3",      x: 3,  y: 0, w: 1, label: "3", shift: "#" },
+    { code: "Digit4",      x: 4,  y: 0, w: 1, label: "4", shift: "$" },
+    { code: "Digit5",      x: 5,  y: 0, w: 1, label: "5", shift: "%" },
+    { code: "Digit6",      x: 6,  y: 0, w: 1, label: "6", shift: "^" },
+    { code: "Digit7",      x: 7,  y: 0, w: 1, label: "7", shift: "&" },
+    { code: "Digit8",      x: 8,  y: 0, w: 1, label: "8", shift: "*" },
+    { code: "Digit9",      x: 9,  y: 0, w: 1, label: "9", shift: "(" },
+    { code: "Digit0",      x: 10, y: 0, w: 1, label: "0", shift: ")" },
+    { code: "Minus",       x: 11, y: 0, w: 1, label: "-", shift: "_" },
+    { code: "Equal",       x: 12, y: 0, w: 1, label: "=", shift: "+" },
+    { code: "Backspace",   x: 13, y: 0, w: 2, label: "Backspace" },
+    // ---- Row 1 -------------------------------------------------
+    { code: "Tab",          x: 0,   y: 1, w: 1.5, label: "Tab" },
+    { code: "KeyQ",         x: 1.5, y: 1, w: 1, label: "Q" },
+    { code: "KeyW",         x: 2.5, y: 1, w: 1, label: "W" },
+    { code: "KeyE",         x: 3.5, y: 1, w: 1, label: "E" },
+    { code: "KeyR",         x: 4.5, y: 1, w: 1, label: "R" },
+    { code: "KeyT",         x: 5.5, y: 1, w: 1, label: "T" },
+    { code: "KeyY",         x: 6.5, y: 1, w: 1, label: "Y" },
+    { code: "KeyU",         x: 7.5, y: 1, w: 1, label: "U" },
+    { code: "KeyI",         x: 8.5, y: 1, w: 1, label: "I" },
+    { code: "KeyO",         x: 9.5, y: 1, w: 1, label: "O" },
+    { code: "KeyP",         x: 10.5, y: 1, w: 1, label: "P" },
+    { code: "BracketLeft",  x: 11.5, y: 1, w: 1, label: "[", shift: "{" },
+    { code: "BracketRight", x: 12.5, y: 1, w: 1, label: "]", shift: "}" },
+    { code: "Backslash",    x: 13.5, y: 1, w: 1.5, label: "\\", shift: "|" },
+    // ---- Row 2 -------------------------------------------------
+    { code: "CapsLock",     x: 0,    y: 2, w: 1.75, label: "Caps" },
+    { code: "KeyA",         x: 1.75, y: 2, w: 1, label: "A" },
+    { code: "KeyS",         x: 2.75, y: 2, w: 1, label: "S" },
+    { code: "KeyD",         x: 3.75, y: 2, w: 1, label: "D" },
+    { code: "KeyF",         x: 4.75, y: 2, w: 1, label: "F", homing: true },
+    { code: "KeyG",         x: 5.75, y: 2, w: 1, label: "G" },
+    { code: "KeyH",         x: 6.75, y: 2, w: 1, label: "H" },
+    { code: "KeyJ",         x: 7.75, y: 2, w: 1, label: "J", homing: true },
+    { code: "KeyK",         x: 8.75, y: 2, w: 1, label: "K" },
+    { code: "KeyL",         x: 9.75, y: 2, w: 1, label: "L" },
+    { code: "Semicolon",    x: 10.75, y: 2, w: 1, label: ";", shift: ":" },
+    { code: "Quote",        x: 11.75, y: 2, w: 1, label: "'", shift: "\"" },
+    { code: "Enter",        x: 12.75, y: 2, w: 2.25, label: "Enter" },
+    // ---- Row 3 -------------------------------------------------
+    { code: "ShiftLeft",    x: 0,     y: 3, w: 2.25, label: "Shift" },
+    { code: "KeyZ",         x: 2.25,  y: 3, w: 1, label: "Z" },
+    { code: "KeyX",         x: 3.25,  y: 3, w: 1, label: "X" },
+    { code: "KeyC",         x: 4.25,  y: 3, w: 1, label: "C" },
+    { code: "KeyV",         x: 5.25,  y: 3, w: 1, label: "V" },
+    { code: "KeyB",         x: 6.25,  y: 3, w: 1, label: "B" },
+    { code: "KeyN",         x: 7.25,  y: 3, w: 1, label: "N" },
+    { code: "KeyM",         x: 8.25,  y: 3, w: 1, label: "M" },
+    { code: "Comma",        x: 9.25,  y: 3, w: 1, label: ",", shift: "<" },
+    { code: "Period",       x: 10.25, y: 3, w: 1, label: ".", shift: ">" },
+    { code: "Slash",        x: 11.25, y: 3, w: 1, label: "/", shift: "?" },
+    { code: "ShiftRight",   x: 12.25, y: 3, w: 2.75, label: "Shift" },
+    // ---- Row 4 -------------------------------------------------
+    { code: "ControlLeft",  x: 0,     y: 4, w: 1.25, label: "Ctrl" },
+    { code: "MetaLeft",     x: 1.25,  y: 4, w: 1.25, label: "Win", win: true },
+    { code: "AltLeft",      x: 2.5,   y: 4, w: 1.25, label: "Alt" },
+    { code: "Space",        x: 3.75,  y: 4, w: 6.25, label: "Space" },
+    { code: "AltRight",     x: 10,    y: 4, w: 1.25, label: "Alt" },
+    { code: "MetaRight",    x: 11.25, y: 4, w: 1.25, label: "Win", win: true },
+    { code: "ContextMenu",  x: 12.5,  y: 4, w: 1.25, label: "Menu" },
+    { code: "ControlRight", x: 13.75, y: 4, w: 1.25, label: "Ctrl" },
+  ],
+};
+
+registerBoard(ANSI60_PROFILE);
