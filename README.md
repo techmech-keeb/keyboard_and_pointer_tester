@@ -83,6 +83,14 @@ dotnet publish kiosk/OLSK60Tester.csproj -c Release -r win-x64 --self-contained 
 
 `publish/` に `OLSK60Tester.exe` と `ui/` フォルダが出力されます。2つセットで配置してください。
 
+## UI ビジュアルチェック
+
+`ui/`、`tools/visual-check.js`、または visual-check ワークフローへの push では、CI の
+`visual-check` が 3 画面サイズ × 4 場面のスクリーンショットを撮影します。結果は Actions の
+Artifact `visual-check-screenshots` として 14 日間保存されます。ローカルでは
+`node tools/visual-check.js` を実行できます（`playwright` のインストール環境、または
+`playwright-core` とブラウザを指す `CHROMIUM_PATH` が必要です）。
+
 ## バージョン管理とリリース
 
 バージョンは **SemVer**、**単一のソースは git タグ `vX.Y.Z`** です。csproj の
