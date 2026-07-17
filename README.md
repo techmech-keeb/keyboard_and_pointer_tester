@@ -1,4 +1,4 @@
-# OLSK60 INPUT LAB
+# Techmech keys INPUT LAB
 
 トラックポイント搭載自作キーボード **OLSK60** の操作感を、展示会・店頭で来場者に直感的に体験してもらうためのキオスク型テスターです。
 
@@ -9,7 +9,7 @@
 - ネイティブのキオスクホストが **Winキー / Alt+Tab / Alt+F4 などをブロック**し、来場者が何を押してもテスター画面から離脱しない
 - **Vial連携**: Raw HID で実機からキーマップを読み出して刻印に反映、レイヤータブ表示、マトリクステスターで **HID出力のない Fn(MO/LT) キーも点灯**、レイヤー自動追従
 
-![OLSK60 INPUT LAB](./docs/screenshot.png)
+![Techmech keys INPUT LAB](./docs/screenshot.png)
 
 ![アトラクト画面](./docs/attract.png)
 
@@ -90,7 +90,7 @@ dotnet publish kiosk/OLSK60Tester.csproj -c Release -r win-x64 --self-contained 
 `-p:Version=<タグ>` で上書きしてビルドに刻みます。手で csproj を書き換える
 必要はありません。
 
-- **アプリ内表示**: スタッフメニュー（ロゴ5連打）下部に `OLSK60 INPUT LAB
+- **アプリ内表示**: スタッフメニュー（ロゴ5連打）下部に `Techmech keys INPUT LAB
   vX.Y.Z` を表示（キオスクホストが exe のバージョンを UI へ通知）。ブラウザ/
   開発ビルドでは `dev` と表示。展示機がどの版かを現地で確認できます。
 - **リリースの作り方**: タグを push するだけ。
