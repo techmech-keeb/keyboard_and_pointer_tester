@@ -73,6 +73,8 @@ class KioskHidTransport {
   // probes it with vial_get_keyboard_id and advances index if needed.
   async open(index) {
     const r = await this._post({ op: "open", index: index || 0 }, 3000);
+    this.vendorId = r.vendorId;
+    this.productId = r.productId;
     return { product: r.product || "", count: r.count || 0 };
   }
 
@@ -142,6 +144,8 @@ class WebHidTransport {
   }
 
   get product() { return this._dev.productName || ""; }
+  get vendorId() { return this._dev.vendorId; }
+  get productId() { return this._dev.productId; }
 
   send(bytes) {
     if (this._waiter) return Promise.reject(new Error("hid busy"));

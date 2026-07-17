@@ -76,7 +76,7 @@ internal sealed class VialHidBridge : IDisposable
                     return;
                 }
                 _dev = dev;
-                Reply(new { type = "vialhid", op = "open", seq, ok = true, product = dev.Product, count = paths.Count });
+                Reply(new { type = "vialhid", op = "open", seq, ok = true, product = dev.Product, vendorId = dev.VendorId, productId = dev.ProductId, count = paths.Count });
                 break;
             }
             case "send":

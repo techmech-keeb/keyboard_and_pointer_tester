@@ -7,6 +7,7 @@
 "use strict";
 
 const $ = (id) => document.getElementById(id);
+let BOARD = DEFAULT_BOARD;
 
 // ---------- tunables ----------
 const TRAIL_MS = 2800;          // trail fade time
@@ -77,7 +78,7 @@ function renderCap(el, k, parts) {
 }
 
 function buildKeyboard() {
-  for (const k of OLSK60.keys) {
+  for (const k of BOARD.keys) {
     const el = document.createElement("div");
     el.className = "key";
     if (k.layer) el.classList.add("layer");
@@ -97,19 +98,46 @@ function buildKeyboard() {
     if (k.m) matrixEls.set(k.m[0] + "," + k.m[1], el);
   }
 
-  // trackpoint dome in the center channel
+  const pointing = BOARD.pointing;
+  if (!pointing) return;
   const tp = document.createElement("div");
   tp.id = "trackpoint";
-  tp.style.left = `calc(var(--u) * ${OLSK60.trackpoint.x})`;
-  tp.style.top = `calc(var(--u) * ${OLSK60.trackpoint.y})`;
-  tp.innerHTML = `<div id="tpRing"></div><div id="tpCap"></div>`;
+  tp.style.left = `calc(var(--u) * ${pointing.x})`;
+  tp.style.top = `calc(var(--u) * ${pointing.y})`;
+  if (pointing.image) {
+    const image = document.createElement("img");
+    image.src = pointing.image;
+    image.alt = pointing.type || "pointing device";
+    tp.appendChild(image);
+  } else {
+    tp.innerHTML = `<div id="tpRing"></div><div id="tpCap"></div>`;
+  }
   keyboardEl.appendChild(tp);
 }
 
 function fitKeyboard() {
   const wrap = $("kbWrap");
-  const u = Math.min(64, Math.floor(wrap.clientWidth / OLSK60.unitsWide));
+  const u = Math.min(64, Math.floor(wrap.clientWidth / BOARD.unitsWide));
   document.documentElement.style.setProperty("--u", u + "px");
+}
+
+function applyBoard(profile) {
+  if (!profile || profile === BOARD) return;
+  BOARD = profile;
+  keyboardEl.innerHTML = "";
+  keyEls.clear();
+  matrixEls.clear();
+  buildKeyboard();
+  buildCodeChars();
+  fitKeyboard();
+  const pointingType = BOARD.pointing && BOARD.pointing.type;
+  const pointingLabel = pointingType ? " + " +
+    (pointingType === "trackpoint" ? "トラックポイント" : pointingType) : "";
+  $("kbProfileLabel").textContent = BOARD.keys.length + "キー" + pointingLabel;
+  practiceInit();
+  VS.rows = BOARD.matrix.rows;
+  VS.cols = BOARD.matrix.cols;
+  VS.custom = BOARD.customKeycodes;
 }
 
 // =============================================================
@@ -125,10 +153,14 @@ const OSD_LABEL = {
 
 // code -> char, for practice matching while a Japanese IME is active
 const CODE_CHAR = {};
-for (const k of OLSK60.keys) {
-  if (k.label.length === 1) CODE_CHAR[k.code] = k.label.toLowerCase();
+function buildCodeChars() {
+  for (const code of Object.keys(CODE_CHAR)) delete CODE_CHAR[code];
+  for (const k of BOARD.keys) {
+    if (k.label.length === 1) CODE_CHAR[k.code] = k.label.toLowerCase();
+  }
+  CODE_CHAR.Space = " ";
 }
-CODE_CHAR.Space = " ";
+buildCodeChars();
 
 const osdEl = $("keyOsd");
 let osdTimer = 0;
@@ -209,7 +241,7 @@ document.addEventListener("keyup", (e) => {
 }, true);
 
 function shiftedChar(code, base) {
-  const k = OLSK60.keys.find((k) => k.code === code);
+  const k = BOARD.keys.find((k) => k.code === code);
   if (k && k.shift) return k.shift;
   return base.toUpperCase();
 }
@@ -537,7 +569,7 @@ function shuffle(a) {
 }
 
 function practiceInit() {
-  phrases = shuffle(PRACTICE_PHRASES.slice());
+  phrases = shuffle(PRACTICE_PHRASES.concat(BOARD.phrases || []));
   phraseIdx = -1;
   correctTotal = 0; errorTotal = 0; clears = 0;
   $("statClears").textContent = "0";
@@ -863,11 +895,11 @@ const VS = {
   connected: false,
   unlocked: false,
   unlocking: false,
-  rows: OLSK60.matrix.rows,
-  cols: OLSK60.matrix.cols,
+  rows: BOARD.matrix.rows,
+  cols: BOARD.matrix.cols,
   layers: 0,
   keymap: null,          // [layer][row][col] -> keycode
-  custom: OLSK60.customKeycodes,
+  custom: BOARD.customKeycodes,
   viewLayer: 0,
   // live layer-state approximation (QMK semantics, simplified)
   defaultLayer: 0,
@@ -1059,6 +1091,8 @@ function vialStartPolling() {
 // ---------- connection ----------
 async function vialOnConnected() {
   const dev = VS.dev;
+  const profile = findBoard(dev.uid, VS.transport.vendorId, VS.transport.productId);
+  if (profile && profile !== BOARD) applyBoard(profile);
 
   // firmware-embedded vial.json (XZ) — kiosk host decompresses it.
   // Browser/WebHID mode has no XZ decoder: fall back to layout.js data.

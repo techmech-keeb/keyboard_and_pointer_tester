@@ -18,13 +18,17 @@ internal sealed class RawHidDevice : IDisposable
     private readonly FileStream _stream;
 
     public string Product { get; }
+    public ushort VendorId { get; }
+    public ushort ProductId { get; }
     public int InputReportLength { get; }   // includes report-id byte
     public int OutputReportLength { get; }
 
-    private RawHidDevice(SafeFileHandle handle, string product, int inLen, int outLen)
+    private RawHidDevice(SafeFileHandle handle, string product, ushort vendorId, ushort productId, int inLen, int outLen)
     {
         _handle = handle;
         Product = product;
+        VendorId = vendorId;
+        ProductId = productId;
         InputReportLength = inLen;
         OutputReportLength = outLen;
         // bufferSize 1 = unbuffered: each 33-byte report maps to one ReadFile/WriteFile
@@ -126,7 +130,15 @@ internal sealed class RawHidDevice : IDisposable
             product = nul >= 0 ? s[..nul] : s;
         }
 
-        return new RawHidDevice(h, product, caps.InputReportByteLength, caps.OutputReportByteLength);
+        var attributes = new HIDD_ATTRIBUTES { Size = Marshal.SizeOf<HIDD_ATTRIBUTES>() };
+        if (!HidD_GetAttributes(h, ref attributes))
+        {
+            h.Dispose();
+            return null;
+        }
+
+        return new RawHidDevice(h, product, attributes.VendorID, attributes.ProductID,
+            caps.InputReportByteLength, caps.OutputReportByteLength);
     }
 
     /// <summary>Drop any stale input reports so request/response stays in lockstep.</summary>
@@ -178,6 +190,15 @@ internal sealed class RawHidDevice : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    private struct HIDD_ATTRIBUTES
+    {
+        public int Size;
+        public ushort VendorID;
+        public ushort ProductID;
+        public ushort VersionNumber;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     private struct HIDP_CAPS
     {
         public ushort Usage;
@@ -212,6 +233,10 @@ internal sealed class RawHidDevice : IDisposable
 
     [DllImport("hid.dll")]
     private static extern int HidP_GetCaps(IntPtr preparsedData, out HIDP_CAPS caps);
+
+    [DllImport("hid.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool HidD_GetAttributes(SafeFileHandle hidDeviceObject, ref HIDD_ATTRIBUTES attributes);
 
     [DllImport("hid.dll", CharSet = CharSet.Unicode)]
     [return: MarshalAs(UnmanagedType.Bool)]
