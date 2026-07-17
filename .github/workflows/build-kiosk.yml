@@ -2,7 +2,7 @@ name: build-kiosk
 
 on:
   push:
-    branches: ["main", "claude/**"]
+    branches: ["main", "claude/**", "codex/**"]
     paths:
       - "kiosk/**"
       - "ui/**"
