@@ -1,0 +1,30 @@
+name: visual-check
+
+on:
+  push:
+    branches: ["main", "claude/**", "codex/**"]
+    paths:
+      - "ui/**"
+      - "tools/visual-check.js"
+      - ".github/workflows/visual-check.yml"
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-audit --no-fund playwright
+          npx playwright install --with-deps chromium
+
+      - name: Capture screenshots
+        run: node tools/visual-check.js screenshots
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: visual-check-screenshots
+          path: screenshots/
+          retention-days: 14
