@@ -19,7 +19,7 @@ internal sealed class KioskForm : Form
     {
         _kioskMode = kioskMode;
 
-        Text = "OLSK60 INPUT LAB";
+        Text = "Techmech keys INPUT LAB";
         BackColor = Color.Black;
         StartPosition = FormStartPosition.Manual;
 

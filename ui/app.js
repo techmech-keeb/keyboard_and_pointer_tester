@@ -1,5 +1,5 @@
 // =============================================================
-// OLSK60 INPUT LAB — main logic
+// Techmech keys INPUT LAB — main logic
 // Offline, framework-free. Runs standalone in a browser or
 // inside the kiosk host (WebView2), which forwards blocked keys
 // (Win, Alt+Tab, ...) via window.chrome.webview messages.
@@ -1332,7 +1332,7 @@ let appVersion = "";
 function setAppVersion(v) {
   appVersion = v || "";
   const el = $("appVersion");
-  if (el) el.textContent = "OLSK60 INPUT LAB " + (appVersion || "dev");
+  if (el) el.textContent = "Techmech keys INPUT LAB " + (appVersion || "dev");
 }
 
 buildKeyboard();
