@@ -16,6 +16,18 @@ const CHEVRON_MS = 620;
 const IDLE_RESET_MS = 75000;    // auto reset for the next visitor
 const MAX_DPR = 1.5;            // battery-friendly rendering
 const FREE_TEXT_MAX = 3000;
+const FX_PALETTE = {
+  buttons: { L: "#3fd9ff", M: "#ffb454", R: "#ff3b30" },
+  chevron: "63,217,255",
+  cursorHalo: "255,80,66",
+  trail: {
+    hueStart: 195,
+    hueEnd: 0,
+    glow: "95%, 62%",
+    core: "95%, 65%",
+  },
+  rippleLabelFont: (size) => `700 ${size}px 'Segoe UI', 'Yu Gothic UI', sans-serif`,
+};
 
 // Japanese (IME) free-input tab. Ships OFF so an exhibition machine has
 // zero IME/candidate-window risk out of the box; the whole IME surface is
@@ -291,9 +303,9 @@ const ripples = [];  // {x,y,t,color,label}
 const chevrons = []; // {x,y,t,dir}
 
 const BTN = [
-  { name: "L", label: "左クリック", color: "#3fd9ff" },
-  { name: "M", label: "中クリック", color: "#ffb454" },
-  { name: "R", label: "右クリック", color: "#ff3b30" },
+  { name: "L", label: "左クリック", color: FX_PALETTE.buttons.L },
+  { name: "M", label: "中クリック", color: FX_PALETTE.buttons.M },
+  { name: "R", label: "右クリック", color: FX_PALETTE.buttons.R },
 ];
 
 let rafId = 0, rafOn = false;
@@ -313,14 +325,15 @@ function frame(now) {
     const alpha = Math.max(0, 1 - age);
     const dt = Math.max(b.t - a.t, 1);
     const v = Math.hypot(b.x - a.x, b.y - a.y) / dt; // px/ms
-    const hue = 195 - Math.min(v / 2.2, 1) * 195;    // cyan -> red
+    const hue = FX_PALETTE.trail.hueStart - Math.min(v / 2.2, 1) *
+      (FX_PALETTE.trail.hueStart - FX_PALETTE.trail.hueEnd); // cyan -> red
     const w = 2 + Math.min(v * 1.5, 4);
     // soft glow pass + core pass
     ctx.lineCap = "round";
-    ctx.strokeStyle = `hsla(${hue}, 95%, 62%, ${(alpha * 0.16).toFixed(3)})`;
+    ctx.strokeStyle = `hsla(${hue}, ${FX_PALETTE.trail.glow}, ${(alpha * 0.16).toFixed(3)})`;
     ctx.lineWidth = w * 3.2;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-    ctx.strokeStyle = `hsla(${hue}, 95%, 65%, ${(alpha * 0.85).toFixed(3)})`;
+    ctx.strokeStyle = `hsla(${hue}, ${FX_PALETTE.trail.core}, ${(alpha * 0.85).toFixed(3)})`;
     ctx.lineWidth = w;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   }
@@ -330,24 +343,28 @@ function frame(now) {
     const p = S.lastPointer;
     const a = 1 - (now - p.t) / 1600;
     const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 26);
-    g.addColorStop(0, `rgba(255,80,66,${0.5 * a})`);
-    g.addColorStop(1, "rgba(255,80,66,0)");
+    g.addColorStop(0, `rgba(${FX_PALETTE.cursorHalo},${0.5 * a})`);
+    g.addColorStop(1, `rgba(${FX_PALETTE.cursorHalo},0)`);
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(p.x, p.y, 26, 0, Math.PI * 2); ctx.fill();
   }
 
   // ---- click ripples ----
+  const rippleMaxRadius = Math.max(70, 0.08 * Math.min(cw, ch));
+  const fxScale = rippleMaxRadius / 70;
   for (let i = ripples.length - 1; i >= 0; i--) {
     const r = ripples[i];
     const k = (now - r.t) / RIPPLE_MS;
     if (k >= 1) { ripples.splice(i, 1); continue; }
-    const rad = 12 + k * 58;
+    const rad = 12 + k * (rippleMaxRadius - 12);
+    ctx.fillStyle = hexA(r.color, (1 - k) * 0.18);
+    ctx.beginPath(); ctx.arc(r.x, r.y, rad, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = hexA(r.color, (1 - k) * 0.9);
-    ctx.lineWidth = 2.5 * (1 - k) + 0.5;
+    ctx.lineWidth = (2.5 * (1 - k) + 0.5) * fxScale;
     ctx.beginPath(); ctx.arc(r.x, r.y, rad, 0, Math.PI * 2); ctx.stroke();
     if (k < 0.8) {
       ctx.fillStyle = hexA(r.color, (1 - k / 0.8) * 0.95);
-      ctx.font = "700 13px 'Segoe UI', 'Yu Gothic UI', sans-serif";
+      ctx.font = FX_PALETTE.rippleLabelFont(13 * fxScale);
       ctx.textAlign = "center";
       ctx.fillText(r.label, r.x, r.y - rad - 8);
     }
@@ -358,14 +375,14 @@ function frame(now) {
     const c = chevrons[i];
     const k = (now - c.t) / CHEVRON_MS;
     if (k >= 1) { chevrons.splice(i, 1); continue; }
-    const y = c.y + c.dir * k * 46;
-    ctx.strokeStyle = `rgba(63,217,255,${(1 - k) * 0.95})`;
-    ctx.lineWidth = 3;
+    const y = c.y + c.dir * k * 46 * fxScale;
+    ctx.strokeStyle = `rgba(${FX_PALETTE.chevron},${(1 - k) * 0.95})`;
+    ctx.lineWidth = 3 * fxScale;
     ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.moveTo(c.x - 9, y + c.dir * 7);
+    ctx.moveTo(c.x - 9 * fxScale, y + c.dir * 7 * fxScale);
     ctx.lineTo(c.x, y);
-    ctx.lineTo(c.x + 9, y + c.dir * 7);
+    ctx.lineTo(c.x + 9 * fxScale, y + c.dir * 7 * fxScale);
     ctx.stroke();
   }
 
@@ -460,10 +477,13 @@ document.addEventListener("wheel", (e) => {
     fill.classList.remove("up", "down");
     void fill.offsetWidth;
     fill.classList.add(dir < 0 ? "up" : "down");
-    if (S.lastPointer) {
-      const n = performance.now();
-      for (let i = 0; i < 3; i++) chevrons.push({ x: S.lastPointer.x, y: S.lastPointer.y - 20 - i * 14 * -dir, t: n + i * 70, dir });
+    const n = performance.now();
+    const rippleMaxRadius = Math.max(70, 0.08 * Math.min(cw, ch));
+    const fxScale = rippleMaxRadius / 70;
+    for (let i = 0; i < 3; i++) {
+      chevrons.push({ x: e.clientX, y: e.clientY - 20 + i * 12 * fxScale * dir, t: n, dir });
     }
+    while (chevrons.length > 60) chevrons.shift();
     const ring = $("tpRing");
     ring.classList.remove("pulse");
     void ring.offsetWidth;
