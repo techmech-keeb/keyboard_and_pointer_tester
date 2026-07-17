@@ -317,6 +317,37 @@ const BTN = [
   { name: "R", label: "右クリック", color: FX_PALETTE.buttons.R },
 ];
 
+const INPUT_FEED_MAX = 30;
+const INPUT_FEED_GROUP_MS = 400;
+let lastInputFeed = null;
+
+function addInputFeed(type, label) {
+  const now = performance.now();
+  const feed = $("inputFeed");
+  if (lastInputFeed && lastInputFeed.type === type && now - lastInputFeed.time <= INPUT_FEED_GROUP_MS) {
+    lastInputFeed.count++;
+    lastInputFeed.el.querySelector("b").textContent = "×" + lastInputFeed.count;
+    lastInputFeed.time = now;
+    return;
+  }
+
+  const item = document.createElement("div");
+  item.className = "input-feed-item " + type;
+  const name = document.createElement("span");
+  const count = document.createElement("b");
+  name.textContent = label;
+  count.textContent = "×1";
+  item.append(name, count);
+  feed.prepend(item);
+  while (feed.children.length > INPUT_FEED_MAX) feed.lastElementChild.remove();
+  lastInputFeed = { type, time: now, count: 1, el: item };
+}
+
+function clearInputFeed() {
+  $("inputFeed").replaceChildren();
+  lastInputFeed = null;
+}
+
 let rafId = 0, rafOn = false;
 function wake() {
   if (!rafOn) { rafOn = true; rafId = requestAnimationFrame(frame); }
@@ -460,6 +491,7 @@ document.addEventListener("pointerdown", (e) => {
   const pill = $("pill-" + b.name);
   pill.querySelector("b").textContent = S.clicks[b.name];
   pill.classList.add("active");
+  addInputFeed("click-" + b.name, b.label);
   ripples.push({ x: e.clientX, y: e.clientY, t: performance.now(), color: b.color, label: e.pointerType === "touch" ? "タッチ" : b.label });
   missionDone("click");
   wake();
@@ -497,6 +529,7 @@ document.addEventListener("wheel", (e) => {
     ring.classList.remove("pulse");
     void ring.offsetWidth;
     ring.classList.add("pulse");
+    addInputFeed(dir < 0 ? "scroll-up" : "scroll-down", dir < 0 ? "スクロール ↑" : "スクロール ↓");
   }
   clearTimeout(scrollTimer);
   scrollTimer = setTimeout(() => {
@@ -865,6 +898,7 @@ function resetAll(showAttract) {
   $("keyCount").textContent = "0";
   $("lastKey").textContent = "—";
   $("numScroll").textContent = "0";
+  clearInputFeed();
   updatePointerReadouts();
   for (const n of ["L", "M", "R"]) {
     const pill = $("pill-" + n);
