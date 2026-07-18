@@ -58,6 +58,13 @@
   --mission-flash-rgb: 61, 220, 132;
   --mono: "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace;
   --sans: "Segoe UI Variable Text", "Segoe UI", "Yu Gothic UI", "Hiragino Sans", system-ui, sans-serif;
+
+  --tour-scrim-bg: color-mix(in srgb, var(--bg) 72%, transparent);
+  --tour-spot-bg: color-mix(in srgb, var(--txt) 10%, transparent);
+  --tour-spot-ring: var(--red-key-border);
+  --tour-spot-ring-strong: var(--red-bright);
+  --tour-spot-shadow: color-mix(in srgb, var(--red) 58%, transparent);
+  --tour-spot-shadow-strong: color-mix(in srgb, var(--red) 88%, transparent);
   --u: 60px; /* key unit, set by JS to fit */
 }
 
@@ -812,7 +819,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
 .tour-modal {
   position: fixed; inset: 0; z-index: 30;
   display: grid; place-items: center;
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  background: var(--tour-scrim-bg);
   backdrop-filter: blur(var(--blur-menu));
   -webkit-backdrop-filter: blur(var(--blur-menu));
 }
@@ -841,7 +848,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
 #tourOverlay[hidden] { display: none; }
 .tour-scrim {
   position: absolute; inset: 0;
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  background: var(--tour-scrim-bg);
   backdrop-filter: blur(var(--blur-osd));
   -webkit-backdrop-filter: blur(var(--blur-osd));
 }
@@ -851,17 +858,17 @@ body.kiosk .key.win .keycap .lock { display: block; }
   filter: brightness(1.55);
 }
 .key.tour-target .keycap {
-  background: color-mix(in srgb, var(--txt) 10%, transparent), var(--keycap-bg);
-  border-color: var(--red-key-border);
+  background: var(--tour-spot-bg), var(--keycap-bg);
+  border-color: var(--tour-spot-ring);
   box-shadow:
-    0 0 0 3px var(--red-key-border),
-    0 0 24px color-mix(in srgb, var(--red) 58%, transparent),
+    0 0 0 3px var(--tour-spot-ring),
+    0 0 24px var(--tour-spot-shadow),
     var(--keycap-shadow);
   animation: tourPulse 1s ease-in-out infinite;
 }
 @keyframes tourPulse {
-  0%, 100% { box-shadow: 0 0 0 3px var(--red-key-border), 0 0 20px color-mix(in srgb, var(--red) 58%, transparent), var(--keycap-shadow); }
-  50% { box-shadow: 0 0 0 6px var(--red-bright), 0 0 36px color-mix(in srgb, var(--red) 88%, transparent), var(--keycap-shadow); }
+  0%, 100% { box-shadow: 0 0 0 3px var(--tour-spot-ring), 0 0 20px var(--tour-spot-shadow), var(--keycap-shadow); }
+  50% { box-shadow: 0 0 0 6px var(--tour-spot-ring-strong), 0 0 36px var(--tour-spot-shadow-strong), var(--keycap-shadow); }
 }
 .tour-card {
   position: fixed;
@@ -871,6 +878,10 @@ body.kiosk .key.win .keycap .lock { display: block; }
   width: min(680px, calc(100vw - 44px));
   pointer-events: auto;
   text-align: center;
+}
+.tour-card.top {
+  top: 74px;
+  bottom: auto;
 }
 .tour-card h2 { font-size: 20px; margin: 6px 0 8px; letter-spacing: .02em; }
 .tour-card p { color: var(--txt); font-size: 15px; line-height: 1.7; }

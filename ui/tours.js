@@ -177,6 +177,8 @@ const tourEngine = (() => {
 
   function showStep() {
     const step = state.resolvedSteps[state.stepIndex];
+    const card = document.querySelector(".tour-card");
+    if (card) card.classList.remove("top");
     els.title.textContent = step.title || state.tour.title;
     els.body.textContent = step.body || "";
     els.dots.replaceChildren();
@@ -194,6 +196,9 @@ const tourEngine = (() => {
       if (el) {
         state.targetEl = el;
         el.classList.add("tour-target");
+        const rect = el.getBoundingClientRect();
+        const centerY = rect.top + rect.height / 2;
+        if (card) card.classList.toggle("top", centerY > window.innerHeight / 2);
       }
     }
   }
