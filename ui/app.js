@@ -20,6 +20,12 @@ const FX_PALETTE = {
   buttons: { L: "#3fd9ff", M: "#ffb454", R: "#ff3b30" },
   chevron: "63,217,255",
   cursorHalo: "255,80,66",
+  compass: {
+    ring: "255,255,255",
+    needleStart: "255,59,48",
+    needle: "#ff5a4c",
+    hub: "#ff3b30",
+  },
   trail: {
     hueStart: 195,
     hueEnd: 0,
@@ -40,6 +46,10 @@ function refreshFxPalette() {
   FX_PALETTE.trail.hueStart = Number(read("--fx-trail-hue-start", "195"));
   FX_PALETTE.trail.hueEnd = Number(read("--fx-trail-hue-end", "0"));
   FX_PALETTE.trail.fixedRgb = css.getPropertyValue("--fx-trail-fixed-rgb").trim();
+  FX_PALETTE.compass.ring = read("--fx-compass-rgb", "255,255,255");
+  FX_PALETTE.compass.needleStart = read("--fx-compass-needle-start-rgb", "255,59,48");
+  FX_PALETTE.compass.needle = read("--fx-compass-needle", "#ff5a4c");
+  FX_PALETTE.compass.hub = read("--fx-compass-hub", "#ff3b30");
   for (const button of BTN) button.color = FX_PALETTE.buttons[button.name];
 }
 
@@ -590,7 +600,7 @@ function drawCompass() {
   const w = 150, cx = w / 2, cy = w / 2;
   cctx.clearRect(0, 0, w, w);
   // rings + ticks
-  cctx.strokeStyle = "rgba(255,255,255,0.12)";
+  cctx.strokeStyle = `rgba(${FX_PALETTE.compass.ring},0.12)`;
   cctx.lineWidth = 1;
   for (const r of [24, 44, 64]) {
     cctx.beginPath(); cctx.arc(cx, cy, r, 0, Math.PI * 2); cctx.stroke();
@@ -607,8 +617,8 @@ function drawCompass() {
     const ang = Math.atan2(S.vy, S.vx);
     const len = 12 + Math.min(S.speed / 2400, 1) * 50;
     const g = cctx.createLinearGradient(cx, cy, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
-    g.addColorStop(0, "rgba(255,59,48,0.15)");
-    g.addColorStop(1, "#ff5a4c");
+    g.addColorStop(0, `rgba(${FX_PALETTE.compass.needleStart},0.15)`);
+    g.addColorStop(1, FX_PALETTE.compass.needle);
     cctx.strokeStyle = g;
     cctx.lineWidth = 4;
     cctx.lineCap = "round";
@@ -617,7 +627,7 @@ function drawCompass() {
     cctx.lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
     cctx.stroke();
     // arrow head
-    cctx.fillStyle = "#ff5a4c";
+    cctx.fillStyle = FX_PALETTE.compass.needle;
     cctx.save();
     cctx.translate(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
     cctx.rotate(ang);
@@ -627,7 +637,7 @@ function drawCompass() {
     cctx.restore();
   }
   // hub
-  cctx.fillStyle = "#ff3b30";
+  cctx.fillStyle = FX_PALETTE.compass.hub;
   cctx.beginPath(); cctx.arc(cx, cy, 4.5, 0, Math.PI * 2); cctx.fill();
 }
 
