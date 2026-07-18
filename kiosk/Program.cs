@@ -8,11 +8,13 @@ internal static class Program
         using var mutex = new Mutex(true, "OLSK60Tester_SingleInstance", out var createdNew);
         if (!createdNew) return;
 
-        // --windowed: development mode (no fullscreen lock, no key blocking)
-        var windowed = args.Any(a => a.Equals("--windowed", StringComparison.OrdinalIgnoreCase));
+        // Default: app mode (normal resizable window).
+        // --kiosk: exhibition mode (fullscreen lock, key blocking).
+        // --windowed remains a backwards-compatible alias for app mode.
+        var kiosk = args.Any(a => a.Equals("--kiosk", StringComparison.OrdinalIgnoreCase));
 
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new KioskForm(kioskMode: !windowed));
+        Application.Run(new KioskForm(kioskMode: kiosk));
     }
 }

@@ -14,7 +14,8 @@ const TRAIL_MS = 2800;          // trail fade time
 const RIPPLE_MS = 750;
 const CHEVRON_MS = 620;
 const IDLE_RESET_MS = 75000;    // auto reset for the next visitor
-const MAX_DPR = 1.5;            // battery-friendly rendering
+const MAX_DPR = 1.5;            // battery-friendly rendering in kiosk display
+const URL_KIOSK_DISPLAY = new URLSearchParams(window.location.search).get("kiosk") === "1";
 const FREE_TEXT_MAX = 3000;
 const FX_PALETTE = {
   buttons: { L: "#3fd9ff", M: "#ffb454", R: "#ff3b30" },
@@ -72,11 +73,23 @@ const S = {
   vx: 0, vy: 0,                 // smoothed velocity px/ms
   lastPointer: null,            // {x,y,t}
   lastInput: performance.now(),
-  attract: true,
+  attract: URL_KIOSK_DISPLAY,
   attractMove: 0,
   freeMode: false,
-  kiosk: false,
+  kiosk: URL_KIOSK_DISPLAY,
+  hostCanResize: false,
 };
+
+function kioskDisplayEnabled() {
+  return S.kiosk || URL_KIOSK_DISPLAY;
+}
+
+function applyKioskDisplay(enabled) {
+  document.body.classList.toggle("kiosk", enabled);
+  if (enabled) attractShow();
+  else attractHide();
+}
+
 
 // =============================================================
 // Keyboard rendering
@@ -308,12 +321,17 @@ if (window.chrome && window.chrome.webview) {
     if (!d) return;
     if (d.type === "host") {
       S.kiosk = !!d.kiosk;
+      S.hostCanResize = !!d.canResize;
       if (d.version) setAppVersion(d.version);
+      applyKioskDisplay(kioskDisplayEnabled());
+      applyWindowSizeControls();
+      const b = $("hostBadge");
       if (d.kiosk) {
-        document.body.classList.add("kiosk");
-        const b = $("hostBadge");
         b.textContent = "KIOSK MODE";
         b.classList.add("kiosk");
+      } else {
+        b.textContent = "APP MODE";
+        b.classList.remove("kiosk");
       }
     } else if (d.type === "key") {
       touchInput();
@@ -333,7 +351,7 @@ const ctx = canvas.getContext("2d");
 let cw = 0, ch = 0, dpr = 1;
 
 function resizeCanvas() {
-  dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+  dpr = kioskDisplayEnabled() ? Math.min(window.devicePixelRatio || 1, MAX_DPR) : (window.devicePixelRatio || 1);
   cw = window.innerWidth;
   ch = window.innerHeight;
   canvas.width = Math.round(cw * dpr);
@@ -971,16 +989,14 @@ function missionsReset() {
 // =============================================================
 // Attract / idle / reset
 // =============================================================
-const attractEl = $("attract");
-
 function attractShow() {
   S.attract = true;
   S.attractMove = 0;
-  attractEl.classList.remove("hidden");
+  $("attract").classList.remove("hidden");
 }
 function attractHide() {
   S.attract = false;
-  attractEl.classList.add("hidden");
+  $("attract").classList.add("hidden");
 }
 
 function touchInput() {
@@ -989,7 +1005,7 @@ function touchInput() {
 }
 
 setInterval(() => {
-  if (!S.attract && !(window.tourEngine && tourEngine.isRunning()) && performance.now() - S.lastInput > IDLE_RESET_MS) {
+  if (kioskDisplayEnabled() && !S.attract && !(window.tourEngine && tourEngine.isRunning()) && performance.now() - S.lastInput > IDLE_RESET_MS) {
     resetAll(true);
   }
 }, 5000);
@@ -1026,12 +1042,13 @@ function resetAll(showAttract) {
   missionsReset();
   $("staffMenu").hidden = true;
   vialOnIdleReset();
-  if (showAttract) attractShow();
+  if (showAttract && kioskDisplayEnabled()) attractShow();
+  else attractHide();
 }
 
 $("resetBtn").addEventListener("click", (e) => {
   e.stopPropagation();
-  resetAll(true);
+  resetAll(kioskDisplayEnabled());
 });
 
 // =============================================================
@@ -1053,6 +1070,19 @@ document.querySelector(".brand").addEventListener("pointerdown", () => {
     brandTaps = [];
     $("staffMenu").hidden = false;
   }
+});
+
+function applyWindowSizeControls() {
+  const group = $("windowSizeControls");
+  if (group) group.hidden = !S.hostCanResize || kioskDisplayEnabled();
+}
+
+document.querySelectorAll("[data-window-size]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (!S.hostCanResize || kioskDisplayEnabled() || !(window.chrome && window.chrome.webview)) return;
+    const [w, h] = btn.dataset.windowSize.split("x").map((v) => Number(v));
+    window.chrome.webview.postMessage({ op: "resize", w, h });
+  });
 });
 $("staffCancelBtn").addEventListener("click", () => { $("staffMenu").hidden = true; });
 $("staffExitBtn").addEventListener("click", () => {
@@ -1643,6 +1673,7 @@ function setAppVersion(v) {
   if (el) el.textContent = "Techmech keys INPUT LAB " + (appVersion || "dev");
 }
 
+applyKioskDisplay(kioskDisplayEnabled());
 refreshFxPalette();
 applyDefaultBoardSelect();
 const initialBoard = savedDefaultBoard();

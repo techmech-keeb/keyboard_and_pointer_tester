@@ -15,6 +15,12 @@ internal sealed class KioskForm : Form
     private System.Windows.Forms.Timer? _focusGuard;
     private bool _allowExit;
 
+    private static readonly Size AppDefaultSize = new(1368, 912);
+    private static readonly Size AppMinimumSize = new(980, 660);
+    private static readonly string SettingsDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OLSK60Tester");
+    private static readonly string WindowSettingsPath = Path.Combine(SettingsDir, "window-settings.json");
+
     public KioskForm(bool kioskMode)
     {
         _kioskMode = kioskMode;
@@ -33,7 +39,10 @@ internal sealed class KioskForm : Form
         else
         {
             FormBorderStyle = FormBorderStyle.Sizable;
-            Bounds = new Rectangle(80, 60, 1400, 950);
+            TopMost = false;
+            ShowInTaskbar = true;
+            MinimumSize = AppMinimumSize;
+            Bounds = LoadAppWindowBounds();
         }
 
         _webView.Dock = DockStyle.Fill;
@@ -84,9 +93,11 @@ internal sealed class KioskForm : Form
             {
                 using var doc = JsonDocument.Parse(a.WebMessageAsJson);
                 var type = doc.RootElement.TryGetProperty("type", out var t) ? t.GetString() : null;
+                var op = doc.RootElement.TryGetProperty("op", out var o) ? o.GetString() : null;
                 if (type == "ready") PostHostHello();
                 else if (type == "exit") BeginInvoke(ExitKiosk); // staff exit from the UI
                 else if (type == "vialhid") _vialBridge?.HandleMessage(doc.RootElement.Clone());
+                else if (!_kioskMode && op == "resize") ResizeAppWindow(doc.RootElement);
             }
             catch (JsonException) { /* ignore malformed messages */ }
         };
@@ -114,7 +125,7 @@ internal sealed class KioskForm : Form
 
     private void PostHostHello()
     {
-        var json = JsonSerializer.Serialize(new { type = "host", kiosk = _kioskMode, version = AppVersion() });
+        var json = JsonSerializer.Serialize(new { type = "host", kiosk = _kioskMode, canResize = !_kioskMode, version = AppVersion() });
         _webView.CoreWebView2?.PostWebMessageAsJson(json);
     }
 
@@ -190,12 +201,81 @@ internal sealed class KioskForm : Form
             e.Cancel = true; // ignore Alt+F4 & friends
             return;
         }
+        if (!_kioskMode) SaveAppWindowBounds();
         _focusGuard?.Stop();
         _vialBridge?.Dispose();
         _hook?.Dispose();
         if (_kioskMode) SetThreadExecutionState(ES_CONTINUOUS);
         base.OnFormClosing(e);
     }
+
+    private static Rectangle LoadAppWindowBounds()
+    {
+        try
+        {
+            if (File.Exists(WindowSettingsPath))
+            {
+                var settings = JsonSerializer.Deserialize<WindowSettings>(File.ReadAllText(WindowSettingsPath));
+                if (settings is not null)
+                {
+                    var bounds = new Rectangle(
+                        settings.X,
+                        settings.Y,
+                        Math.Max(settings.Width, AppMinimumSize.Width),
+                        Math.Max(settings.Height, AppMinimumSize.Height));
+                    if (IsVisibleOnAnyScreen(bounds)) return bounds;
+                }
+            }
+        }
+        catch (IOException) { /* ignore and use default */ }
+        catch (UnauthorizedAccessException) { /* ignore and use default */ }
+        catch (JsonException) { /* ignore and use default */ }
+
+        return DefaultAppBounds();
+    }
+
+    private static Rectangle DefaultAppBounds()
+    {
+        var area = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, AppDefaultSize.Width, AppDefaultSize.Height);
+        var width = Math.Min(AppDefaultSize.Width, area.Width);
+        var height = Math.Min(AppDefaultSize.Height, area.Height);
+        return new Rectangle(
+            area.Left + Math.Max(0, (area.Width - width) / 2),
+            area.Top + Math.Max(0, (area.Height - height) / 2),
+            width,
+            height);
+    }
+
+    private static bool IsVisibleOnAnyScreen(Rectangle bounds)
+    {
+        return Screen.AllScreens.Any((screen) => Rectangle.Intersect(screen.WorkingArea, bounds).Width >= 120
+            && Rectangle.Intersect(screen.WorkingArea, bounds).Height >= 80);
+    }
+
+    private void SaveAppWindowBounds()
+    {
+        try
+        {
+            Directory.CreateDirectory(SettingsDir);
+            var bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+            var settings = new WindowSettings(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+            File.WriteAllText(WindowSettingsPath, JsonSerializer.Serialize(settings));
+        }
+        catch (IOException) { /* best effort */ }
+        catch (UnauthorizedAccessException) { /* best effort */ }
+    }
+
+    private void ResizeAppWindow(JsonElement message)
+    {
+        if (!message.TryGetProperty("w", out var wProp) || !message.TryGetProperty("h", out var hProp)) return;
+        if (!wProp.TryGetInt32(out var requestedWidth) || !hProp.TryGetInt32(out var requestedHeight)) return;
+        var width = Math.Max(AppMinimumSize.Width, requestedWidth);
+        var height = Math.Max(AppMinimumSize.Height, requestedHeight);
+        if (WindowState != FormWindowState.Normal) WindowState = FormWindowState.Normal;
+        Size = new Size(width, height);
+    }
+
+    private sealed record WindowSettings(int X, int Y, int Width, int Height);
 
     private const uint ES_CONTINUOUS = 0x80000000;
     private const uint ES_SYSTEM_REQUIRED = 0x00000001;

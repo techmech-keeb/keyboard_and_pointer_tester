@@ -142,6 +142,14 @@
       <label for="themeSelect">デザイン</label>
       <select id="themeSelect"></select>
       <button id="jpToggleBtn" type="button">日本語入力: オフ</button>
+      <div id="windowSizeControls" hidden>
+        <label>ウィンドウサイズ</label>
+        <div class="window-size-buttons">
+          <button type="button" data-window-size="1100x760">コンパクト 1100×760</button>
+          <button type="button" data-window-size="1368x912">標準 1368×912</button>
+          <button type="button" data-window-size="1760x1100">大 1760×1100</button>
+        </div>
+      </div>
       <p class="staff-note">自由入力タブ（日本語IME）の表示を切り替えます。設定はこの端末に保存されます</p>
       <button id="autoLayerSimToggleBtn" type="button">オートレイヤー表示シミュレーション: オン</button>
       <label for="autoLayerSimDelaySelect">復帰ディレイ</label>
@@ -184,7 +192,7 @@
   </section>
 </div>
 
-<div id="attract">
+<div id="attract" class="hidden">
   <div class="attract-inner">
     <div class="attract-dot"><span></span></div>
     <h2>Techmech keys <em>INPUT LAB</em></h2>
