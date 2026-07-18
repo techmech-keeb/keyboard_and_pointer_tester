@@ -22,6 +22,7 @@
   <div class="topbar-right">
     <span id="vialBadge" class="badge" hidden>VIAL</span>
     <span id="hostBadge" class="badge">BROWSER</span>
+    <button id="guideBtn" type="button" hidden>ガイド</button>
     <button id="resetBtn" type="button">リセット</button>
   </div>
 </header>
@@ -153,6 +154,29 @@
   </div>
 </div>
 
+<div id="tourMenu" class="tour-modal" hidden>
+  <div class="panel tour-modal-box" role="dialog" aria-modal="true" aria-labelledby="tourMenuTitle">
+    <div class="panel-head">
+      <h2 id="tourMenuTitle">GUIDE <span class="panel-sub">体験ガイド</span></h2>
+    </div>
+    <div id="tourList" class="tour-list"></div>
+    <button id="tourCloseBtn" type="button">閉じる</button>
+  </div>
+</div>
+
+<div id="tourOverlay" hidden>
+  <div class="tour-scrim"></div>
+  <section class="panel tour-card" aria-live="polite">
+    <div id="tourDots" class="tour-dots"></div>
+    <h2 id="tourStepTitle"></h2>
+    <p id="tourStepBody"></p>
+    <div class="tour-actions">
+      <button id="tourStopBtn" type="button">やめる</button>
+      <button id="tourNextBtn" type="button">次へ</button>
+    </div>
+  </section>
+</div>
+
 <div id="attract">
   <div class="attract-inner">
     <div class="attract-dot"><span></span></div>
@@ -172,6 +196,8 @@
 <script src="keycodes.js"></script>
 <script src="vial.js"></script>
 <script src="app.js"></script>
+<script src="tours.js"></script>
+<script src="layouts/olsk60.tours.js"></script>
 <script src="themes.js"></script>
 </body>
 </html>
