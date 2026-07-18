@@ -22,6 +22,7 @@ const tourEngine = (() => {
     prevPressed: new Set(),
     anyCount: 0,
     idleTimer: 0,
+    scrimRaf: 0,
   };
 
   const els = {};
@@ -51,6 +52,7 @@ const tourEngine = (() => {
     els.list = $("tourList");
     els.close = $("tourCloseBtn");
     els.overlay = $("tourOverlay");
+    els.scrims = Array.from(document.querySelectorAll(".tour-scrim"));
     els.title = $("tourStepTitle");
     els.body = $("tourStepBody");
     els.dots = $("tourDots");
@@ -62,6 +64,13 @@ const tourEngine = (() => {
     els.menu.addEventListener("click", (e) => { if (e.target === els.menu) closeMenu(); });
     els.next.addEventListener("click", nextStep);
     els.stop.addEventListener("click", () => stop("manual"));
+    window.addEventListener("resize", () => {
+      if (!state.running || state.scrimRaf) return;
+      state.scrimRaf = requestAnimationFrame(() => {
+        state.scrimRaf = 0;
+        layoutScrims();
+      });
+    });
     updateGuideButton();
   }
 
@@ -175,8 +184,42 @@ const tourEngine = (() => {
     bumpIdle();
   }
 
+  function setScrimRect(scrim, left, top, width, height) {
+    const visible = width > 0 && height > 0;
+    scrim.hidden = !visible;
+    if (!visible) return;
+    scrim.style.left = Math.round(left) + "px";
+    scrim.style.top = Math.round(top) + "px";
+    scrim.style.width = Math.round(width) + "px";
+    scrim.style.height = Math.round(height) + "px";
+  }
+
+  function layoutScrims() {
+    const scrims = els.scrims || [];
+    if (!scrims.length) return;
+    const kbPanel = $("kbPanel");
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (!kbPanel) {
+      setScrimRect(scrims[0], 0, 0, vw, vh);
+      for (let i = 1; i < scrims.length; i++) scrims[i].hidden = true;
+      return;
+    }
+    const pad = 8;
+    const rect = kbPanel.getBoundingClientRect();
+    const left = Math.max(0, rect.left - pad);
+    const top = Math.max(0, rect.top - pad);
+    const right = Math.min(vw, rect.right + pad);
+    const bottom = Math.min(vh, rect.bottom + pad);
+    setScrimRect(scrims[0], 0, 0, vw, top);
+    setScrimRect(scrims[1], 0, bottom, vw, vh - bottom);
+    setScrimRect(scrims[2], 0, top, left, bottom - top);
+    setScrimRect(scrims[3], right, top, vw - right, bottom - top);
+  }
+
   function showStep() {
     const step = state.resolvedSteps[state.stepIndex];
+    layoutScrims();
     const card = document.querySelector(".tour-card");
     if (card) card.classList.remove("top");
     els.title.textContent = step.title || state.tour.title;
