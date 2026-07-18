@@ -752,7 +752,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
 }
 #staffVial h4, #staffOptions h4 { font-size: 11px; letter-spacing: .16em; color: var(--dim); margin-bottom: 6px; }
 #staffVial p, #staffOptions p { font-size: 13px !important; font-weight: 600 !important; }
-#jpToggleBtn {
+#jpToggleBtn, #windowSizeControls button {
   font-family: inherit; font-size: 13px; font-weight: 700;
   margin-top: 6px; padding: 8px 16px;
   border-radius: var(--radius-control); cursor: pointer;
@@ -767,6 +767,9 @@ body.kiosk .key.win .keycap .lock { display: block; }
   background: var(--panel-solid); color: var(--txt);
 }
 #staffOptions label { display: block; font-size: 13px; font-weight: 700; }
+#windowSizeControls { margin-top: 10px; }
+.window-size-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+#windowSizeControls button { margin-top: 0; padding: 7px 10px; font-size: 12px; }
 #unlockBtn, #unlockCancelBtn {
   font-family: inherit; font-size: 13px; font-weight: 700;
   margin-top: 10px; padding: 8px 16px;

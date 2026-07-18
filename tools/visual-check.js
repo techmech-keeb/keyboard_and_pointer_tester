@@ -26,12 +26,13 @@ const THEMES = [
   const outDir = process.argv[2] || "screenshots";
   fs.mkdirSync(outDir, { recursive: true });
   const uiPath = path.resolve(__dirname, "..", "ui", "index.html");
+  const uiUrl = "file://" + uiPath + "?kiosk=1";
   const launchOpts = {};
   if (process.env.CHROMIUM_PATH) launchOpts.executablePath = process.env.CHROMIUM_PATH;
   const browser = await pw.chromium.launch(launchOpts);
   for (const s of SIZES) {
     const page = await browser.newPage({ viewport: { width: s.width, height: s.height } });
-    await page.goto("file://" + uiPath);
+    await page.goto(uiUrl);
     await page.waitForTimeout(600);
     const shot = (name) => page.screenshot({ path: path.join(outDir, `${s.tag}-${name}.png`) });
     await shot("attract");
@@ -53,7 +54,7 @@ const THEMES = [
     if (theme.id === "default") continue;
     const page = await browser.newPage({ viewport: { width: mainSize.width, height: mainSize.height } });
     await page.addInitScript((id) => localStorage.setItem("olsk60.theme", id), theme.id);
-    await page.goto("file://" + uiPath);
+    await page.goto(uiUrl);
     await page.waitForTimeout(600);
     await page.keyboard.press("KeyA");
     await page.waitForTimeout(400);
