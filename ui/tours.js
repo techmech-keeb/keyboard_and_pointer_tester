@@ -60,11 +60,16 @@ const tourEngine = (() => {
     els.next = $("tourNextBtn");
     els.stop = $("tourStopBtn");
     if (!els.button) return;
+    els.hint = document.createElement("p");
+    els.hint.className = "tour-key-hint";
+    const actions = document.querySelector(".tour-actions");
+    if (actions) actions.insertAdjacentElement("beforebegin", els.hint);
     els.button.addEventListener("click", openMenu);
     els.close.addEventListener("click", closeMenu);
     els.menu.addEventListener("click", (e) => { if (e.target === els.menu) closeMenu(); });
     els.next.addEventListener("click", nextStep);
     els.stop.addEventListener("click", () => stop("manual"));
+    document.addEventListener("keydown", onDocumentKeydown, { capture: true });
     window.addEventListener("resize", () => {
       if (!state.running || state.scrimRaf) return;
       state.scrimRaf = requestAnimationFrame(() => {
@@ -177,6 +182,25 @@ const tourEngine = (() => {
     if (state.running) state.idleTimer = setTimeout(() => stop("idle"), TOUR_IDLE_MS);
   }
 
+  function stepAllowsEnter(step) {
+    const cond = step && (step.cond || { type: "next" });
+    return !!(cond && (cond.type === "next" || cond.type === "pointerSpeed"));
+  }
+
+  function onDocumentKeydown(e) {
+    if (e.key === "Escape" || e.key === "Esc") {
+      if (!state.running && !state.menuOpen) return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (state.running) stop("keyboard");
+      else closeMenu();
+      return;
+    }
+    if (!state.running) return;
+    if (e.key !== "Enter") return;
+    if (stepAllowsEnter(state.resolvedSteps[state.stepIndex])) nextStep();
+  }
+
   function nextStep() {
     if (!state.running) return;
     clearHighlight();
@@ -238,6 +262,7 @@ const tourEngine = (() => {
     if (card) card.classList.remove("top");
     els.title.textContent = step.title || state.tour.title;
     els.body.textContent = body || "";
+    if (els.hint) els.hint.textContent = stepAllowsEnter(step) ? "Enter: 次へ ・ Esc: やめる" : "Esc: やめる";
     els.dots.replaceChildren();
     for (let i = 0; i < state.resolvedSteps.length; i++) {
       const dot = document.createElement("i");
