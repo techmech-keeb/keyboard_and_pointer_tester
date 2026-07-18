@@ -847,11 +847,12 @@ body.kiosk .key.win .keycap .lock { display: block; }
 }
 #tourOverlay[hidden] { display: none; }
 .tour-scrim {
-  position: absolute; inset: 0;
+  position: absolute;
   background: var(--tour-scrim-bg);
   backdrop-filter: blur(var(--blur-osd));
   -webkit-backdrop-filter: blur(var(--blur-osd));
 }
+.tour-scrim[hidden] { display: none; }
 .key.tour-target {
   position: absolute;
   z-index: 28;
