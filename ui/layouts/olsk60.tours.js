@@ -16,6 +16,7 @@ tourEngine.registerTours("olsk60v2", [
       },
       {
         title: "2. Fn2 のまま 1 を押します",
+        preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
         body: "1 は Precision（低速・精密）です。LED が青く2回光ったら成功です。光っているキーだけを押してね。",
         target: { custom: "Precision" },
         cond: { type: "press", while: { mo: 2 } },
@@ -27,6 +28,7 @@ tourEngine.registerTours("olsk60v2", [
       },
       {
         title: "4. Fn2 + 3 で戻します",
+        preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
         body: "3 は Fast（高速・デフォルト）です。LED が赤く2回光ります。光っているキーだけを押してね。",
         target: { custom: "Fast" },
         cond: { type: "press", while: { mo: 2 } },
@@ -51,6 +53,7 @@ tourEngine.registerTours("olsk60v2", [
       },
       {
         title: "2. Fn2 + Z で音を ON にします",
+        preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
         body: "Z は全音声 ON/OFF です。光っているキーだけを押してね。",
         target: { custom: "Snd" },
         cond: { type: "press", while: { mo: 2 } },
@@ -62,6 +65,7 @@ tourEngine.registerTours("olsk60v2", [
       },
       {
         title: "4. Fn2 + X でモード切替です",
+        preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
         body: "X はサウンドモード切替です。ランダム ↔ ピアノが切り替わります。もう一度打って違いを確認します。光っているキーだけを押してね。",
         target: { custom: "SndMode" },
         cond: { type: "press", while: { mo: 2 } },
