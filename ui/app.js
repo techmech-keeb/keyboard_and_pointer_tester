@@ -114,7 +114,7 @@ function buildKeyboard() {
     el.style.left = `calc(var(--u) * ${k.x})`;
     el.style.top = `calc(var(--u) * ${k.y})`;
     el.style.width = `calc(var(--u) * ${k.w})`;
-    el.style.height = "var(--u)";
+    el.style.height = `calc(var(--u) * ${k.h || 1})`;
     el.dataset.id = k.id || k.code;
     el._key = k;
     renderCap(el, k);
@@ -148,7 +148,11 @@ function buildKeyboard() {
 
 function fitKeyboard() {
   const wrap = $("kbWrap");
-  const u = Math.min(64, Math.floor(wrap.clientWidth / BOARD.unitsWide));
+  const u = Math.min(
+    64,
+    Math.floor(wrap.clientWidth / BOARD.unitsWide),
+    Math.floor(window.innerHeight * 0.48 / BOARD.unitsHigh),
+  );
   document.documentElement.style.setProperty("--u", u + "px");
 }
 
