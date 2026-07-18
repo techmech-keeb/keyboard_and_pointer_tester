@@ -15,6 +15,7 @@ const OLSK60_PROFILE = {
   unitsHigh: 5,
   // Trackpoint stick sits in the 0.75u center channel at home-row height.
   pointing: { type: "trackpoint", x: 7.125, y: 2.5, image: null },
+  autoLayerSim: { layer: 3, delays: [150, 400, 800], defaultDelay: 800 },
   // Electrical matrix (qmk-config techmechkeys/olsk60 keyboard.json).
   // Used as the fallback when the vial.json definition cannot be pulled
   // from the device (browser WebHID mode has no XZ decoder).

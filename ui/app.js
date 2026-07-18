@@ -59,6 +59,8 @@ function refreshFxPalette() {
 // menu (persisted in localStorage) with no rebuild — see jp-input below.
 const JP_INPUT_DEFAULT = false;
 const DEFAULT_BOARD_KEY = "olsk60.defaultBoard";
+const AUTO_LAYER_SIM_KEY = "olsk60.autoLayerSim";
+const AUTO_LAYER_SIM_DEFAULT = { on: true, delay: 800 };
 
 // ---------- state ----------
 const S = {
@@ -168,6 +170,7 @@ function fitKeyboard() {
 
 function applyBoard(profile) {
   if (!profile || profile === BOARD) return;
+  autoLayerSimCancel();
   BOARD = profile;
   keyboardEl.innerHTML = "";
   keyEls.clear();
@@ -188,6 +191,7 @@ function applyBoard(profile) {
     VS.custom = BOARD.customKeycodes || [];
   }
   if (window.tourEngine) tourEngine.updateGuideButton();
+  applyAutoLayerSimControls();
 }
 
 // =============================================================
@@ -504,6 +508,7 @@ document.addEventListener("pointermove", (e) => {
     S.lastPointer = cur;
   }
   if (moved > 0) {
+    autoLayerSimPointerInput();
     S.distPx += moved;
     if (S.attract) {
       S.attractMove += moved;
@@ -519,6 +524,7 @@ document.addEventListener("pointermove", (e) => {
 
 document.addEventListener("pointerdown", (e) => {
   touchInput();
+  autoLayerSimPointerInput();
   const idx = e.button === 1 ? 1 : e.button === 2 ? 2 : 0;
   const b = BTN[idx];
   S.clicks[b.name]++;
@@ -540,6 +546,7 @@ let scrollTimer = 0;
 document.addEventListener("wheel", (e) => {
   e.preventDefault();
   touchInput();
+  autoLayerSimPointerInput();
   const amt = Math.abs(e.deltaY) + Math.abs(e.deltaX);
   S.scrollTotal += amt;
   $("numScroll").textContent = Math.round(S.scrollTotal).toLocaleString();
@@ -840,6 +847,69 @@ function setJpInput(on) {
 
 $("jpToggleBtn").addEventListener("click", () => setJpInput(!jpInputEnabled()));
 
+function autoLayerSimProfile() {
+  if (!BOARD || !BOARD.autoLayerSim) return null;
+  const sim = BOARD.autoLayerSim;
+  if (!Number.isInteger(sim.layer) || !Array.isArray(sim.delays) || !sim.delays.length) return null;
+  return sim;
+}
+
+function autoLayerSimSaved() {
+  const profile = autoLayerSimProfile();
+  const fallbackDelay = profile ? profile.defaultDelay : AUTO_LAYER_SIM_DEFAULT.delay;
+  const fallback = { on: AUTO_LAYER_SIM_DEFAULT.on, delay: fallbackDelay };
+  try {
+    const raw = localStorage.getItem(AUTO_LAYER_SIM_KEY);
+    if (!raw) return fallback;
+    const saved = JSON.parse(raw);
+    const delay = profile && profile.delays.includes(saved.delay) ? saved.delay : fallback.delay;
+    return { on: saved.on !== false, delay };
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function setAutoLayerSimConfig(next) {
+  const profile = autoLayerSimProfile();
+  const current = autoLayerSimSaved();
+  const delay = profile && profile.delays.includes(next.delay) ? next.delay : current.delay;
+  const config = { on: next.on !== false, delay };
+  try { localStorage.setItem(AUTO_LAYER_SIM_KEY, JSON.stringify(config)); } catch (_) { /* ignore */ }
+  applyAutoLayerSimControls();
+  if (!config.on) autoLayerSimCancel();
+}
+
+function applyAutoLayerSimControls() {
+  const profile = autoLayerSimProfile();
+  const config = autoLayerSimSaved();
+  const toggle = $("autoLayerSimToggleBtn");
+  const select = $("autoLayerSimDelaySelect");
+  if (!toggle || !select) return;
+  const enabled = !!profile;
+  toggle.disabled = !enabled;
+  select.disabled = !enabled;
+  toggle.textContent = "オートレイヤー表示シミュレーション: " + (enabled && config.on ? "オン" : "オフ");
+  select.innerHTML = "";
+  const delays = profile ? profile.delays : [AUTO_LAYER_SIM_DEFAULT.delay];
+  for (const delay of delays) {
+    const option = document.createElement("option");
+    option.value = String(delay);
+    option.textContent = delay + "ms";
+    select.appendChild(option);
+  }
+  select.value = String(config.delay);
+}
+
+$("autoLayerSimToggleBtn").addEventListener("click", () => {
+  const config = autoLayerSimSaved();
+  setAutoLayerSimConfig({ on: !config.on, delay: config.delay });
+});
+
+$("autoLayerSimDelaySelect").addEventListener("change", (event) => {
+  const config = autoLayerSimSaved();
+  setAutoLayerSimConfig({ on: config.on, delay: Number(event.target.value) });
+});
+
 function savedDefaultBoard() {
   try {
     const id = localStorage.getItem(DEFAULT_BOARD_KEY);
@@ -1085,6 +1155,74 @@ function applyLayerView() {
   }
 }
 
+const AUTO_LAYER_SIM = {
+  active: false,
+  baseLayer: 0,
+  deadline: 0,
+  timer: 0,
+};
+
+function autoLayerSimBlocked() {
+  return VS.momentary.size > 0 || (window.tourEngine && tourEngine.isRunning());
+}
+
+function autoLayerSimAvailable() {
+  const profile = autoLayerSimProfile();
+  if (!profile || !VS.connected || !VS.keymap) return false;
+  const config = autoLayerSimSaved();
+  return config.on && profile.layer < VS.layers;
+}
+
+function autoLayerSimCancel() {
+  clearTimeout(AUTO_LAYER_SIM.timer);
+  AUTO_LAYER_SIM.timer = 0;
+  AUTO_LAYER_SIM.deadline = 0;
+  AUTO_LAYER_SIM.active = false;
+}
+
+function autoLayerSimSchedule() {
+  clearTimeout(AUTO_LAYER_SIM.timer);
+  const wait = Math.max(0, AUTO_LAYER_SIM.deadline - performance.now());
+  AUTO_LAYER_SIM.timer = setTimeout(autoLayerSimExpire, wait);
+}
+
+function autoLayerSimExpire() {
+  AUTO_LAYER_SIM.timer = 0;
+  if (!AUTO_LAYER_SIM.active) return;
+  if (!autoLayerSimAvailable()) {
+    autoLayerSimCancel();
+    return;
+  }
+  if (autoLayerSimBlocked()) {
+    AUTO_LAYER_SIM.deadline = performance.now() + 50;
+    autoLayerSimSchedule();
+    return;
+  }
+  if (performance.now() < AUTO_LAYER_SIM.deadline) {
+    autoLayerSimSchedule();
+    return;
+  }
+  VS.viewLayer = Math.max(0, Math.min(AUTO_LAYER_SIM.baseLayer, VS.layers - 1));
+  autoLayerSimCancel();
+  applyLayerView();
+}
+
+function autoLayerSimPointerInput() {
+  if (!autoLayerSimAvailable() || autoLayerSimBlocked()) return;
+  const profile = autoLayerSimProfile();
+  const config = autoLayerSimSaved();
+  if (!AUTO_LAYER_SIM.active) {
+    AUTO_LAYER_SIM.active = true;
+    AUTO_LAYER_SIM.baseLayer = VS.viewLayer;
+    if (VS.viewLayer !== profile.layer) {
+      VS.viewLayer = profile.layer;
+      applyLayerView();
+    }
+  }
+  AUTO_LAYER_SIM.deadline = performance.now() + config.delay;
+  autoLayerSimSchedule();
+}
+
 function vialRestoreStatic() {
   for (const [, el] of matrixEls) {
     renderCap(el, el._key);
@@ -1105,6 +1243,7 @@ function buildLayerTabs() {
     b.textContent = "L" + i;
     b.dataset.layer = i;
     b.addEventListener("click", () => {
+      autoLayerSimCancel();
       VS.viewLayer = i;
       applyLayerView();
     });
@@ -1144,6 +1283,7 @@ function vialMatrixEdge(r, c, down) {
     if (d.kind === "layer" && typeof d.layer === "number") {
       switch (d.hold) {
         case "mo": case "lt": case "tt": case "lm":
+          autoLayerSimCancel();
           VS.momentary.set(pos, d.layer);
           break;
         case "tg":
@@ -1255,6 +1395,7 @@ async function vialOnConnected() {
   VS.defaultLayer = 0;
   VS.toggleMask = 0;
   VS.momentary.clear();
+  autoLayerSimCancel();
 
   buildLayerTabs();
   applyLayerView();
@@ -1276,6 +1417,7 @@ async function vialOnConnected() {
 function vialDisconnect(reason) {
   clearTimeout(VS.pollTimer);
   clearInterval(VS.unlockTimer);
+  autoLayerSimCancel();
   if (VS.transport) {
     try { VS.transport.close(); } catch (_) { /* ignore */ }
   }
@@ -1480,6 +1622,7 @@ $("unlockCancelBtn").addEventListener("click", () => {
 // idle reset: drop back to the base layer view for the next visitor
 function vialOnIdleReset() {
   if (!VS.connected) return;
+  autoLayerSimCancel();
   VS.toggleMask = 0;
   VS.momentary.clear();
   VS.viewLayer = vialEffectiveLayer();
