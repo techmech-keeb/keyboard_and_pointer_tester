@@ -187,6 +187,7 @@ function applyBoard(profile) {
     VS.cols = BOARD.matrix ? BOARD.matrix.cols : 0;
     VS.custom = BOARD.customKeycodes || [];
   }
+  if (window.tourEngine) tourEngine.updateGuideButton();
 }
 
 // =============================================================
@@ -256,6 +257,7 @@ document.addEventListener("keydown", (e) => {
   touchInput();
   if (!e.repeat) registerKeyDown(e.code, e.key, false);
   else keyVisualDown(e.code); // keep lit while held
+  if (!e.repeat && window.tourEngine) tourEngine.onAnyKey();
 
   // staff menu: Escape closes it and is consumed
   const staffOpen = !$("staffMenu").hidden;
@@ -462,6 +464,7 @@ function frame(now) {
   S.speed = Math.hypot(S.vx, S.vy) * 1000;
   if (S.speed < 8) { S.speed = 0; S.vx = 0; S.vy = 0; }
   updatePointerReadouts();
+  if (window.tourEngine) tourEngine.onPointerSpeed(S.speed);
   drawCompass();
   updateTrackpointTilt();
 
@@ -916,7 +919,7 @@ function touchInput() {
 }
 
 setInterval(() => {
-  if (!S.attract && performance.now() - S.lastInput > IDLE_RESET_MS) {
+  if (!S.attract && !(window.tourEngine && tourEngine.isRunning()) && performance.now() - S.lastInput > IDLE_RESET_MS) {
     resetAll(true);
   }
 }, 5000);
@@ -1169,9 +1172,13 @@ function vialMatrixEdge(r, c, down) {
 
 function vialHandleMatrix(state) {
   let any = false;
+  const pressedKeys = [];
   for (let r = 0; r < VS.rows; r++) {
     const prev = VS.matrixPrev[r] || 0;
     const cur = state[r];
+    for (let c = 0; c < VS.cols; c++) {
+      if (cur & (1 << c)) pressedKeys.push([r, c]);
+    }
     const diff = prev ^ cur;
     if (!diff) continue;
     // bit c of the reconstructed row value = matrix column c
@@ -1183,6 +1190,7 @@ function vialHandleMatrix(state) {
     }
     VS.matrixPrev[r] = cur;
   }
+  if (window.tourEngine) tourEngine.onMatrixState(pressedKeys, vialEffectiveLayer());
   if (any) touchInput();
 }
 
@@ -1251,6 +1259,7 @@ async function vialOnConnected() {
   buildLayerTabs();
   applyLayerView();
   vialStaffRefresh();
+  if (window.tourEngine) tourEngine.updateGuideButton();
 
   if (VS.unlocked) {
     vialBadgeSet("vial-live", "VIAL LIVE");
@@ -1278,6 +1287,7 @@ function vialDisconnect(reason) {
   VS.keymap = null;
   vialRestoreStatic();
   vialStaffRefresh();
+  if (window.tourEngine) tourEngine.updateGuideButton();
   vialBadgeSet("", "VIAL 未接続");
   vialScheduleRetry();
 }
@@ -1450,6 +1460,7 @@ async function vialUnlockStart() {
         $("kbCaption").textContent =
           "Vial接続中：実際のキーマップを表示 ・ 物理押下を検出（MO/LTキーも光ります） ・ レイヤーは自動追従します";
         vialStartPolling();
+        if (window.tourEngine) tourEngine.updateGuideButton();
       }
     } catch (_) { /* keep polling; unplug is caught by ondisconnect */ }
   }, 150);

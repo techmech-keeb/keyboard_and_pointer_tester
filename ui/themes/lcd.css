@@ -53,6 +53,12 @@ html[data-theme="lcd"] {
   --mission-done-border: #4d7045;
   --mission-done-bg: #dce5d4;
   --mission-flash-rgb: 77, 112, 69;
+  --tour-scrim-bg: color-mix(in srgb, var(--txt) 64%, transparent);
+  --tour-spot-bg: color-mix(in srgb, var(--panel) 18%, transparent);
+  --tour-spot-ring: var(--red-key-border);
+  --tour-spot-ring-strong: var(--red);
+  --tour-spot-shadow: color-mix(in srgb, var(--txt) 48%, transparent);
+  --tour-spot-shadow-strong: color-mix(in srgb, var(--txt) 70%, transparent);
 }
 
 html[data-theme="lcd"] body {
