@@ -23,6 +23,7 @@ const tourEngine = (() => {
     anyCount: 0,
     idleTimer: 0,
     scrimRaf: 0,
+    stepPhase: null,
   };
 
   const els = {};
@@ -150,6 +151,7 @@ const tourEngine = (() => {
     state.pressed = new Set();
     state.prevPressed = new Set();
     state.anyCount = 0;
+    state.stepPhase = null;
     els.overlay.hidden = false;
     nextStep();
   }
@@ -159,6 +161,7 @@ const tourEngine = (() => {
     state.tour = null;
     state.stepIndex = -1;
     state.resolvedSteps = [];
+    state.stepPhase = null;
     clearTimeout(state.idleTimer);
     clearHighlight();
     if (els.overlay) els.overlay.hidden = true;
@@ -179,6 +182,7 @@ const tourEngine = (() => {
     clearHighlight();
     state.stepIndex++;
     state.anyCount = 0;
+    state.stepPhase = null;
     if (state.stepIndex >= state.resolvedSteps.length) { stop("done"); return; }
     showStep();
     bumpIdle();
@@ -217,25 +221,35 @@ const tourEngine = (() => {
     setScrimRect(scrims[3], right, top, vw - right, bottom - top);
   }
 
+  function stepWhilePhase(step) {
+    if (!step || !step.preBody || !step.cond || !step.cond.while) return "main";
+    return isPressed(step.cond.while) ? "main" : "pre";
+  }
+
   function showStep() {
     const step = state.resolvedSteps[state.stepIndex];
+    const phase = stepWhilePhase(step);
+    const displayTarget = phase === "pre" ? resolveTarget(step.cond.while) : step.resolvedTarget;
+    const body = phase === "pre" ? step.preBody : step.body;
+    state.stepPhase = phase;
+    clearHighlight();
     layoutScrims();
     const card = document.querySelector(".tour-card");
     if (card) card.classList.remove("top");
     els.title.textContent = step.title || state.tour.title;
-    els.body.textContent = step.body || "";
+    els.body.textContent = body || "";
     els.dots.replaceChildren();
     for (let i = 0; i < state.resolvedSteps.length; i++) {
       const dot = document.createElement("i");
       dot.className = i === state.stepIndex ? "active" : "";
       els.dots.appendChild(dot);
     }
-    if (step.resolvedTarget) {
-      if (VS.viewLayer !== step.resolvedTarget.layer) {
-        VS.viewLayer = step.resolvedTarget.layer;
+    if (displayTarget) {
+      if (VS.viewLayer !== displayTarget.layer) {
+        VS.viewLayer = displayTarget.layer;
         if (typeof applyLayerView === "function") applyLayerView();
       }
-      const el = typeof matrixEls !== "undefined" && matrixEls.get(step.resolvedTarget.key);
+      const el = typeof matrixEls !== "undefined" && matrixEls.get(displayTarget.key);
       if (el) {
         state.targetEl = el;
         el.classList.add("tour-target");
@@ -256,6 +270,12 @@ const tourEngine = (() => {
     return !!(resolved && state.pressed.has(resolved.key));
   }
 
+  function updateWhilePhase() {
+    const step = state.resolvedSteps[state.stepIndex];
+    const phase = stepWhilePhase(step);
+    if (phase !== state.stepPhase) showStep();
+  }
+
   function checkCurrent(edgeKey) {
     if (!state.running) return;
     bumpIdle();
@@ -273,6 +293,7 @@ const tourEngine = (() => {
     if (!state.running) return;
     state.prevPressed = state.pressed;
     state.pressed = new Set((pressedKeys || []).map((k) => Array.isArray(k) ? k[0] + "," + k[1] : String(k)));
+    updateWhilePhase();
     for (const key of state.pressed) {
       if (!state.prevPressed.has(key)) checkCurrent(key);
     }
