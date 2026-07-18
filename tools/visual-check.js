@@ -17,6 +17,11 @@ const SIZES = [
   { tag: "1024x768", width: 1024, height: 768 },   // small browser window
 ];
 
+const THEMES = [
+  { id: "default" },
+  { id: "lcd" },
+];
+
 (async () => {
   const outDir = process.argv[2] || "screenshots";
   fs.mkdirSync(outDir, { recursive: true });
@@ -41,6 +46,18 @@ const SIZES = [
     await page.mouse.wheel(0, 240);
     await page.waitForTimeout(120); // mid scroll-chevrons
     await shot("scroll-effect");
+    await page.close();
+  }
+  const mainSize = SIZES[0];
+  for (const theme of THEMES) {
+    if (theme.id === "default") continue;
+    const page = await browser.newPage({ viewport: { width: mainSize.width, height: mainSize.height } });
+    await page.addInitScript((id) => localStorage.setItem("olsk60.theme", id), theme.id);
+    await page.goto("file://" + uiPath);
+    await page.waitForTimeout(600);
+    await page.keyboard.press("KeyA");
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: path.join(outDir, `${mainSize.tag}-main-${theme.id}.png`) });
     await page.close();
   }
   await browser.close();

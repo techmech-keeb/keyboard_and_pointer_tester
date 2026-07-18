@@ -1,0 +1,96 @@
+/* Retro LCD theme: all overrides are isolated to the selected theme. */
+html[data-theme="lcd"] {
+  --bg: #eceadf;
+  --panel: #f5f1dc;
+  --panel-solid: #e5e0c8;
+  --line: #30352a;
+  --txt: #242a20;
+  --dim: #586050;
+  --red: #9d5346;
+  --red-deep: #714238;
+  --red-soft: #bb7461;
+  --red-bright: #cc8b76;
+  --red-cap: #d2947e;
+  --red-cap-deep: #653b32;
+  --red-key-border: #75463a;
+  --red-cap-shadow: #4e3029;
+  --cyan: #416b8a;
+  --amber: #947332;
+  --green: #4d7045;
+  --sans: var(--mono);
+  --blur-panel: 0;
+  --blur-attract: 0;
+  --blur-osd: 0;
+  --blur-menu: 0;
+  --radius-panel: 0;
+  --radius-key: 0;
+  --radius-control: 0;
+  --fx-btn-l: #416b8a;
+  --fx-btn-m: #947332;
+  --fx-btn-r: #9d5346;
+  --fx-scroll-rgb: 36, 42, 32;
+  --fx-halo-rgb: 36, 42, 32;
+  --fx-trail-hue-start: 0;
+  --fx-trail-hue-end: 0;
+  --fx-trail-fixed-rgb: 36, 42, 32;
+}
+
+html[data-theme="lcd"] body {
+  background: var(--bg);
+}
+
+html[data-theme="lcd"] .panel,
+html[data-theme="lcd"] .staff-box,
+html[data-theme="lcd"] #freeDisplay,
+html[data-theme="lcd"] .input-feed-item,
+html[data-theme="lcd"] .keycap,
+html[data-theme="lcd"] .pointing.pad {
+  background: var(--panel);
+  box-shadow: none;
+}
+
+html[data-theme="lcd"] .key.down .keycap {
+  background: var(--red-soft);
+  box-shadow: none;
+}
+
+html[data-theme="lcd"] .tab.active,
+html[data-theme="lcd"] #staffExitBtn {
+  background: var(--red);
+  box-shadow: none;
+}
+
+html[data-theme="lcd"] #staffMenu,
+html[data-theme="lcd"] #attract,
+html[data-theme="lcd"] #missionDone {
+  background: rgba(236, 234, 223, 0.94);
+}
+
+html[data-theme="lcd"] .brand-dot,
+html[data-theme="lcd"] #tpCap,
+html[data-theme="lcd"] .attract-dot span {
+  box-shadow: none;
+  animation: none;
+}
+
+html[data-theme="lcd"] .attract-dot::before,
+html[data-theme="lcd"] .attract-dot::after,
+html[data-theme="lcd"] .badge.kiosk,
+html[data-theme="lcd"] #vialBadge.vial-live,
+html[data-theme="lcd"] #vialBadge.vial-locked,
+html[data-theme="lcd"] .key.unlock-target .keycap {
+  box-shadow: none;
+}
+
+html[data-theme="lcd"] #keyOsd,
+html[data-theme="lcd"] #clearFlash,
+html[data-theme="lcd"] .scroll-arrow.hot,
+html[data-theme="lcd"] #phraseLine span.cur::after,
+html[data-theme="lcd"] #freeDisplay .caret {
+  text-shadow: none;
+  box-shadow: none;
+}
+
+html[data-theme="lcd"] #scrollBarFill {
+  background: repeating-linear-gradient(180deg, transparent 0 6px, rgba(36, 42, 32, 0.55) 6px 12px);
+}
