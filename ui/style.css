@@ -36,6 +36,26 @@
   --fx-trail-hue-start: 195;
   --fx-trail-hue-end: 0;
   --fx-trail-fixed-rgb: ;
+  --fx-compass-rgb: 255, 255, 255;
+  --fx-compass-needle-start-rgb: 255, 59, 48;
+  --fx-compass-needle: #ff5a4c;
+  --fx-compass-hub: #ff3b30;
+  --keycap-bg: linear-gradient(180deg, #242c3b 0%, #1a212e 90%);
+  --keycap-border: rgba(255, 255, 255, 0.10);
+  --keycap-border-top: rgba(255, 255, 255, 0.18);
+  --keycap-shadow: 0 2.5px 0 rgba(0, 0, 0, 0.45);
+  --keycap-txt: #d7deeb;
+  --keycap-layer-bg: rgba(20, 26, 36, 0.6);
+  --keycap-layer-txt: var(--dim);
+  --keycap-layer-label: rgba(139, 149, 168, 0.6);
+  --txt-faint: rgba(139, 149, 168, 0.55);
+  --txt-cursor: #c3ccdc;
+  --txt-on-accent: #fff;
+  --txt-vial-inherit: rgba(139, 149, 168, 0.55);
+  --txt-vial-inherit-sub: rgba(139, 149, 168, 0.35);
+  --mission-done-border: rgba(61, 220, 132, 0.5);
+  --mission-done-bg: rgba(61, 220, 132, 0.09);
+  --mission-flash-rgb: 61, 220, 132;
   --mono: "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace;
   --sans: "Segoe UI Variable Text", "Segoe UI", "Yu Gothic UI", "Hiragino Sans", system-ui, sans-serif;
   --u: 60px; /* key unit, set by JS to fit */
@@ -182,7 +202,7 @@ body {
   transition: all .15s;
 }
 .tab.active {
-  color: #fff; border-color: transparent;
+  color: var(--txt-on-accent); border-color: transparent;
   background: linear-gradient(135deg, var(--red), var(--red-soft));
   box-shadow: 0 2px 14px rgba(255, 59, 48, 0.4);
 }
@@ -204,10 +224,10 @@ body {
   padding: 4px 10px;
   min-height: 0;
 }
-#phraseLine span { position: relative; color: rgba(139, 149, 168, 0.55); padding: 0 1px; border-radius: calc(var(--radius-control) - 6px); transition: color .08s; white-space: pre; }
+#phraseLine span { position: relative; color: var(--txt-faint); padding: 0 1px; border-radius: calc(var(--radius-control) - 6px); transition: color .08s; white-space: pre; }
 #phraseLine span.ok { color: var(--txt); }
 #phraseLine span.ok.was-ng { color: var(--amber); }
-#phraseLine span.cur { color: #c3ccdc; }
+#phraseLine span.cur { color: var(--txt-cursor); }
 #phraseLine span.cur::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 2px;
   height: 3px; border-radius: calc(var(--radius-control) - 7px);
@@ -309,14 +329,14 @@ body {
 .keycap {
   width: 100%; height: 100%;
   border-radius: var(--radius-key);
-  background: linear-gradient(180deg, #242c3b 0%, #1a212e 90%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-top-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 2.5px 0 rgba(0, 0, 0, 0.45);
+  background: var(--keycap-bg);
+  border: 1px solid var(--keycap-border);
+  border-top-color: var(--keycap-border-top);
+  box-shadow: var(--keycap-shadow);
   display: flex; align-items: center; justify-content: center;
   position: relative;
   font-weight: 600;
-  color: #d7deeb;
+  color: var(--keycap-txt);
   font-size: calc(var(--u) * 0.28);
   transition: background .25s, box-shadow .25s, color .2s;
   overflow: hidden;
@@ -346,22 +366,22 @@ body {
 .key.down .keycap {
   background: linear-gradient(180deg, var(--red-soft), var(--red-deep));
   border-color: var(--red-key-border);
-  color: #fff;
+  color: var(--txt-on-accent);
   box-shadow: 0 0 4px rgba(0,0,0,.4), 0 0 22px rgba(255, 59, 48, 0.75);
   transform: translateY(2px);
 }
 .key.down .sub { color: rgba(255,255,255,.8); }
 
 .key.layer .keycap {
-  background: rgba(20, 26, 36, 0.6);
+  background: var(--keycap-layer-bg);
   border-style: dashed;
-  color: var(--dim);
+  color: var(--keycap-layer-txt);
 }
 .key.layer .keycap::after {
   content: "LAYER";
   position: absolute; bottom: calc(var(--u) * 0.08); left: 0; right: 0;
   font-size: 7.5px; letter-spacing: .18em; text-align: center;
-  color: rgba(139, 149, 168, 0.6);
+  color: var(--keycap-layer-label);
 }
 
 body.kiosk .key.win .keycap .lock { display: block; }
@@ -464,15 +484,15 @@ body.kiosk .key.win .keycap .lock { display: block; }
 }
 #missions li.done {
   color: var(--txt);
-  border-color: rgba(61, 220, 132, 0.5);
-  background: rgba(61, 220, 132, 0.09);
+  border-color: var(--mission-done-border);
+  background: var(--mission-done-bg);
 }
 #missions li.done i { color: var(--green); }
 #missions li.done .check { color: var(--green); transform: scale(1); }
 #missions li.flash { animation: missionFlash .5s; }
 @keyframes missionFlash {
-  0% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0.7); }
-  100% { box-shadow: 0 0 0 14px rgba(61, 220, 132, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(var(--mission-flash-rgb), 0.7); }
+  100% { box-shadow: 0 0 0 14px rgba(var(--mission-flash-rgb), 0); }
 }
 
 #missionDone {
@@ -625,7 +645,7 @@ body.kiosk .key.win .keycap .lock { display: block; }
 }
 #staffExitBtn {
   background: linear-gradient(135deg, var(--red), var(--red-soft));
-  border-color: transparent; color: #fff;
+  border-color: transparent; color: var(--txt-on-accent);
   box-shadow: 0 2px 16px rgba(255, 59, 48, 0.45);
 }
 .staff-note { font-size: 11.5px !important; font-weight: 500 !important; color: var(--dim); }
@@ -697,8 +717,8 @@ body.kiosk .key.win .keycap .lock { display: block; }
 .layer-tabs .tab { padding: 4px 12px; font-family: var(--mono); font-size: 11px; }
 
 /* live-keymap legends */
-.key.vial-inherit .keycap { color: rgba(139, 149, 168, 0.55); }
-.key.vial-inherit .sub { color: rgba(139, 149, 168, 0.35); }
+.key.vial-inherit .keycap { color: var(--txt-vial-inherit); }
+.key.vial-inherit .sub { color: var(--txt-vial-inherit-sub); }
 .key.vial-none .keycap {
   background: rgba(14, 18, 26, 0.55);
   border-color: rgba(255, 255, 255, 0.05);
