@@ -1,22 +1,22 @@
 /* Retro LCD theme: all overrides are isolated to the selected theme. */
 html[data-theme="lcd"] {
-  --bg: #eceadf;
-  --panel: #f5f1dc;
-  --panel-solid: #e5e0c8;
-  --line: #30352a;
-  --txt: #242a20;
-  --dim: #586050;
-  --red: #9d5346;
-  --red-deep: #714238;
-  --red-soft: #bb7461;
-  --red-bright: #cc8b76;
-  --red-cap: #d2947e;
-  --red-cap-deep: #653b32;
-  --red-key-border: #75463a;
-  --red-cap-shadow: #4e3029;
-  --cyan: #416b8a;
-  --amber: #947332;
-  --green: #4d7045;
+  --bg: #f4f4d8;
+  --panel: #f8f8e2;
+  --panel-solid: #ececd0;
+  --line: #0d0d0d;
+  --txt: #0d0d0d;
+  --dim: #4a4a40;
+  --red: #0d0d0d;
+  --red-deep: #2a2a24;
+  --red-soft: #3a3a30;
+  --red-bright: #0d0d0d;
+  --red-cap: #3a3a30;
+  --red-cap-deep: #0d0d0d;
+  --red-key-border: #0d0d0d;
+  --red-cap-shadow: #2a2a24;
+  --cyan: #2a2a24;
+  --amber: #3a3a30;
+  --green: #2a2a24;
   --sans: var(--mono);
   --blur-panel: 0;
   --blur-attract: 0;
@@ -25,40 +25,42 @@ html[data-theme="lcd"] {
   --radius-panel: 0;
   --radius-key: 0;
   --radius-control: 0;
-  --fx-btn-l: #416b8a;
-  --fx-btn-m: #947332;
-  --fx-btn-r: #9d5346;
-  --fx-scroll-rgb: 36, 42, 32;
-  --fx-halo-rgb: 36, 42, 32;
+  --fx-btn-l: #0d0d0d;
+  --fx-btn-m: #2a2a24;
+  --fx-btn-r: #3a3a30;
+  --fx-scroll-rgb: 13, 13, 13;
+  --fx-halo-rgb: 13, 13, 13;
   --fx-trail-hue-start: 0;
   --fx-trail-hue-end: 0;
-  --fx-trail-fixed-rgb: 36, 42, 32;
-  --fx-compass-rgb: 36, 42, 32;
-  --fx-compass-needle-start-rgb: 36, 42, 32;
-  --fx-compass-needle: #242a20;
-  --fx-compass-hub: #242a20;
-  --keycap-bg: #f8f5e5;
-  --keycap-border: #30352a;
-  --keycap-border-top: #30352a;
-  --keycap-shadow: 0 2.5px 0 #30352a;
+  --fx-trail-fixed-rgb: 13, 13, 13;
+  --fx-compass-rgb: 13, 13, 13;
+  --fx-compass-needle-start-rgb: 13, 13, 13;
+  --fx-compass-needle: #0d0d0d;
+  --fx-compass-hub: #0d0d0d;
+  --keycap-bg: #fbfbe8;
+  --keycap-border: #0d0d0d;
+  --keycap-border-top: #0d0d0d;
+  --keycap-shadow: 0 2.5px 0 #0d0d0d;
   --keycap-txt: var(--txt);
-  --keycap-layer-bg: #eceadf;
+  --keycap-layer-bg: #ececd0;
   --keycap-layer-txt: var(--txt);
   --keycap-layer-label: var(--dim);
-  --txt-faint: #586050;
-  --txt-cursor: #242a20;
-  --txt-on-accent: #f8f5e5;
-  --txt-vial-inherit: #586050;
-  --txt-vial-inherit-sub: #586050;
-  --mission-done-border: #4d7045;
-  --mission-done-bg: #dce5d4;
-  --mission-flash-rgb: 77, 112, 69;
+  --txt-faint: #4a4a40;
+  --txt-cursor: #0d0d0d;
+  --txt-on-accent: #fbfbe8;
+  --txt-vial-inherit: #4a4a40;
+  --txt-vial-inherit-sub: #4a4a40;
+  --mission-done-border: #2a2a24;
+  --mission-done-bg: #ececd0;
+  --mission-flash-rgb: 42, 42, 36;
   --tour-scrim-bg: color-mix(in srgb, var(--txt) 64%, transparent);
   --tour-spot-bg: color-mix(in srgb, var(--panel) 18%, transparent);
   --tour-spot-ring: var(--red-key-border);
   --tour-spot-ring-strong: var(--red);
   --tour-spot-shadow: color-mix(in srgb, var(--txt) 48%, transparent);
   --tour-spot-shadow-strong: color-mix(in srgb, var(--txt) 70%, transparent);
+  --osd-color: #0d0d0d;
+  --osd-glow: none;
 }
 
 html[data-theme="lcd"] body {
@@ -88,7 +90,7 @@ html[data-theme="lcd"] #staffExitBtn {
 html[data-theme="lcd"] #staffMenu,
 html[data-theme="lcd"] #attract,
 html[data-theme="lcd"] #missionDone {
-  background: rgba(236, 234, 223, 0.94);
+  background: rgba(244, 244, 216, 0.94);
 }
 
 html[data-theme="lcd"] .brand-dot,
@@ -117,5 +119,5 @@ html[data-theme="lcd"] #freeDisplay .caret {
 }
 
 html[data-theme="lcd"] #scrollBarFill {
-  background: repeating-linear-gradient(180deg, transparent 0 6px, rgba(36, 42, 32, 0.55) 6px 12px);
+  background: repeating-linear-gradient(180deg, transparent 0 6px, rgba(13, 13, 13, 0.55) 6px 12px);
 }
