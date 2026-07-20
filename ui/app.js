@@ -1136,6 +1136,7 @@ let VS = {
   unlockTimer: 0,
   unlockKeys: [],
   lastError: "",   // shown in the staff menu for on-site diagnosis
+  lastSwitch: "",
   candidates: [],
 };
 
@@ -1559,32 +1560,75 @@ function savedSelectedDeviceUid() {
   try { return localStorage.getItem(SELECTED_DEVICE_UID_KEY) || ""; } catch (_) { return ""; }
 }
 
+function vialSoftTeardown() {
+  clearTimeout(VS.pollTimer);
+  clearInterval(VS.unlockTimer);
+  autoLayerSimCancel();
+  const oldTransport = VS.transport;
+  if (oldTransport) oldTransport.ondisconnect = null;
+  VS.connected = false;
+  VS.dev = null;
+  VS.unlocked = false;
+  VS.unlocking = false;
+  VS.keymap = null;
+  return oldTransport;
+}
+
 async function connectToCandidate(candidate) {
   if (!candidate) return false;
-  if (VS.connected) vialDisconnect("device changed", false);
+  const oldTransport = vialSoftTeardown();
+
+  const candidateIndex = candidate.index ?? VS.candidates.indexOf(candidate);
+  const candidateName = candidate.product || candidate.label;
+  const candidateUid = candidate.uidHex ? candidate.uidHex.slice(0, 8) : "UIDなし";
+  const switchTarget = "#" + candidateIndex + " " + candidateName + " (" + candidateUid + ")";
+  let t = null;
+  let lastProbeError = null;
   try {
-    let t;
-    if (VS.mode === "kiosk") {
-      t = (VS.kioskTransport ||= new KioskHidTransport());
-      const opened = await t.open(candidate.index);
-      t.product = opened.product;
-    } else {
-      t = await WebHidTransport.openDevice(candidate.device);
+    if (VS.mode === "webhid" && oldTransport) oldTransport.close();
+    let dev = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        if (VS.mode === "kiosk") {
+          t = (VS.kioskTransport ||= new KioskHidTransport());
+          t.ondisconnect = null;
+          const opened = await t.open(candidate.index);
+          t.product = opened.product;
+        } else {
+          t = await WebHidTransport.openDevice(candidate.device);
+        }
+        if (!t) throw new Error("選択デバイスを開けません");
+        dev = new VialDevice(t);
+        if (await dev.readVialInfo()) break;
+        throw new Error("選択デバイスからVial応答なし");
+      } catch (e) {
+        lastProbeError = e;
+        if (VS.mode === "webhid" && t) t.close();
+        t = null;
+        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 120));
+      }
     }
-    if (!t) throw new Error("選択デバイスを開けません");
+    if (!t || !dev) throw lastProbeError || new Error("選択デバイスからVial応答なし");
     VS.transport = t;
-    const dev = new VialDevice(t);
-    if (!(await dev.readVialInfo())) throw new Error("選択デバイスからVial応答なし");
     t.ondisconnect = () => vialDisconnect("device removed");
     VS.dev = dev;
     VS.lastError = "";
     await vialOnConnected();
+    if (candidate.uidHex) {
+      try { localStorage.setItem(SELECTED_DEVICE_UID_KEY, candidate.uidHex); } catch (_) { /* ignore */ }
+    }
+    VS.lastSwitch = "切替OK " + switchTarget;
+    vialStaffRefresh();
     return true;
   } catch (e) {
-    if (VS.transport) { try { VS.transport.close(); } catch (_) { /* ignore */ } }
+    if (VS.mode === "webhid" && t) { try { t.close(); } catch (_) { /* ignore */ } }
     VS.transport = null;
     VS.dev = null;
+    VS.deviceName = "";
     VS.lastError = (e && e.message) || String(e);
+    VS.lastSwitch = "切替NG " + switchTarget + ": " + VS.lastError;
+    vialRestoreStatic();
+    applyDeviceName();
     vialStaffRefresh();
     vialScheduleRetry();
     return false;
@@ -1653,6 +1697,33 @@ function vialStaffRefresh() {
     option.selected = !!(VS.dev && candidate.uidHex && candidate.uidHex === vialUidHex(VS.dev.uid));
     select.appendChild(option);
   }
+  let diag = $("vialDeviceDiag");
+  if (!diag) {
+    diag = document.createElement("div");
+    diag.id = "vialDeviceDiag";
+    diag.className = "staff-note";
+    controls.after(diag);
+  }
+  diag.innerHTML = "";
+  const connectedUid = VS.dev ? vialUidHex(VS.dev.uid) : "";
+  if (!VS.candidates.length) {
+    diag.textContent = "検出候補: なし";
+  } else {
+    for (let i = 0; i < VS.candidates.length; i++) {
+      const candidate = VS.candidates[i];
+      const row = document.createElement("span");
+      const uid = candidate.uidHex ? candidate.uidHex.slice(0, 8) : "UIDなし";
+      row.textContent = "#" + (candidate.index ?? i) + " " + (candidate.product || candidate.label) + " (" + uid + ")" +
+        (connectedUid && candidate.uidHex === connectedUid ? " ● 接続中" : "");
+      diag.appendChild(row);
+      diag.appendChild(document.createElement("br"));
+    }
+  }
+  if (VS.lastSwitch) {
+    const result = document.createElement("span");
+    result.textContent = VS.lastSwitch;
+    diag.appendChild(result);
+  }
   if (!VS.connected) {
     line.textContent = "未接続（静的レイアウト表示中）" +
       (VS.lastError ? " ／ 直近の失敗: " + VS.lastError : "");
@@ -1670,14 +1741,11 @@ function vialStaffRefresh() {
 $("vialDeviceSelect").addEventListener("change", async (event) => {
   const candidate = VS.candidates[Number(event.target.value)];
   if (!candidate) return;
-  if (candidate.uidHex) {
-    try { localStorage.setItem(SELECTED_DEVICE_UID_KEY, candidate.uidHex); } catch (_) { /* ignore */ }
-  }
   await connectToCandidate(candidate);
 });
 
 $("vialRescanBtn").addEventListener("click", async () => {
-  if (VS.mode === "kiosk" && VS.connected) vialDisconnect("rescan", false);
+  if (VS.mode === "kiosk" && VS.connected) vialSoftTeardown();
   await vialConnect();
   if (VS.connected && VS.mode === "webhid") await scanVialDevices();
   vialStaffRefresh();
