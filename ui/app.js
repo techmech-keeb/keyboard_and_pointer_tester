@@ -1114,6 +1114,7 @@ window.addEventListener("resize", () => { resizeCanvas(); sizeCompass(); fitKeyb
 let VS = {
   transport: null,
   dev: null,
+  deviceName: "",
   mode: "none",          // none | kiosk | webhid
   connected: false,
   unlocked: false,
@@ -1140,6 +1141,13 @@ let VS = {
 const vialBadge = $("vialBadge");
 const layerTabsEl = $("layerTabs");
 const KB_CAPTION_STATIC = $("kbCaption").textContent;
+
+function applyDeviceName() {
+  const el = $("kbDeviceName");
+  const name = VS.connected ? VS.deviceName : "";
+  el.hidden = !name;
+  el.textContent = name ? "接続中: " + name : "";
+}
 
 function vialBadgeSet(cls, text) {
   vialBadge.hidden = false;
@@ -1396,8 +1404,9 @@ async function vialOnConnected() {
   // Browser/WebHID mode has no XZ decoder: fall back to layout.js data.
   // The device is untrusted input: sanity-clamp everything it claims,
   // otherwise a hostile board could make us allocate/poll absurd sizes.
+  let def = null;
   try {
-    const def = await dev.readDefinition();
+    def = await dev.readDefinition();
     const dim = (v) => Number.isInteger(v) && v >= 1 && v <= 32;
     if (def && def.matrix && dim(def.matrix.rows) && dim(def.matrix.cols)) {
       VS.rows = def.matrix.rows;
@@ -1420,6 +1429,8 @@ async function vialOnConnected() {
   } catch (_) { /* older firmware — treat as locked */ }
 
   VS.connected = true;
+  VS.deviceName = (def && def.name) || VS.transport.product || "";
+  applyDeviceName();
   VS.unlocked = unlocked;
   VS.viewLayer = 0;
   VS.defaultLayer = 0;
@@ -1454,6 +1465,8 @@ function vialDisconnect(reason) {
   VS.transport = null;
   VS.dev = null;
   VS.connected = false;
+  VS.deviceName = "";
+  applyDeviceName();
   VS.unlocked = false;
   VS.unlocking = false;
   VS.keymap = null;
@@ -1481,9 +1494,13 @@ async function vialConnect() {
       VS.transport = t; // so the catch below cleans up mid-probe failures
       // probe every raw-HID interface until one speaks Vial
       const first = await t.open(0);
+      t.product = first.product;
       let found = false;
       for (let i = 0; i < Math.max(first.count, 1); i++) {
-        if (i > 0) await t.open(i);
+        if (i > 0) {
+          const opened = await t.open(i);
+          t.product = opened.product;
+        }
         const dev = new VialDevice(t);
         if (await dev.readVialInfo()) {
           VS.dev = dev;
@@ -1653,6 +1670,8 @@ $("unlockCancelBtn").addEventListener("click", () => {
 function vialOnIdleReset() {
   if (!VS.connected) return;
   autoLayerSimCancel();
+  VS.deviceName = "";
+  applyDeviceName();
   VS.toggleMask = 0;
   VS.momentary.clear();
   VS.viewLayer = vialEffectiveLayer();

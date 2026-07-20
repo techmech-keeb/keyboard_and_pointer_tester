@@ -195,6 +195,16 @@ body {
   vertical-align: 1px;
 }
 .panel-sub { font-size: 11px; font-weight: 500; letter-spacing: .05em; color: var(--dim); margin-left: 8px; }
+.kb-device-name {
+  display: inline-flex; align-items: center;
+  max-width: 24em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-left: 8px; padding: 3px 8px;
+  border: 1px solid var(--line); border-radius: calc(var(--radius-control) * 111);
+  color: var(--cyan); background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .04em;
+  vertical-align: 1px;
+}
+.kb-device-name[hidden] { display: none; }
 
 /* ---------- typing panel ---------- */
 #typePanel { flex: 1 1 auto; display: flex; flex-direction: column; position: relative; overflow: hidden; }
