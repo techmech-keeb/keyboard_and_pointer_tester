@@ -21,7 +21,7 @@ jobs:
 
       - name: Publish (self-contained win-x64)
         run: >
-          dotnet publish kiosk/OLSK60Tester.csproj
+          dotnet publish kiosk/TechmechInputLab.csproj
           -c Release -r win-x64 --self-contained
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
@@ -29,6 +29,6 @@ jobs:
 
       - uses: actions/upload-artifact@v6
         with:
-          name: OLSK60Tester-win-x64
+          name: TechmechInputLab-win-x64
           path: publish/
           if-no-files-found: error

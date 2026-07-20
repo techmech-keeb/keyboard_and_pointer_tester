@@ -6,7 +6,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>OLSK60Tester</AssemblyName>
+    <AssemblyName>TechmechInputLab</AssemblyName>
     <RootNamespace>Olsk60Tester</RootNamespace>
     <!-- Default dev version. The single source of truth for releases is the
          git tag vX.Y.Z: CI overrides this via -p:Version=<tag> (see
