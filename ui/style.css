@@ -778,14 +778,20 @@ body.kiosk .key.win .keycap .lock { display: block; }
   border: 1px solid var(--line);
   background: transparent; color: var(--txt);
 }
-#defaultBoardSelect, #themeSelect {
+#defaultBoardSelect, #themeSelect, #vialDeviceSelect {
   display: block; width: 100%;
   font-family: inherit; font-size: 13px; font-weight: 700;
   margin-top: 6px; padding: 8px;
   border-radius: var(--radius-control); border: 1px solid var(--line);
   background: var(--panel-solid); color: var(--txt);
 }
-#staffOptions label { display: block; font-size: 13px; font-weight: 700; }
+#staffOptions label, #staffVial label { display: block; font-size: 13px; font-weight: 700; }
+.vial-device-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+#vialRescanBtn, #vialAddDeviceBtn {
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  padding: 7px 10px; border-radius: var(--radius-control); cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--txt);
+}
 #windowSizeControls { margin-top: 10px; }
 .window-size-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 #windowSizeControls button { margin-top: 0; padding: 7px 10px; font-size: 12px; }

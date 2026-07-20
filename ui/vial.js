@@ -143,6 +143,16 @@ class WebHidTransport {
     return null;
   }
 
+  /** Opens one already-selected HIDDevice without changing the legacy pick-first paths. */
+  static async openDevice(device) {
+    if (!device) return null;
+    const ok = device.collections.some(
+      (c) => c.usagePage === WebHidTransport.FILTER.usagePage && c.usage === WebHidTransport.FILTER.usage);
+    if (!ok) return null;
+    if (!device.opened) await device.open();
+    return new WebHidTransport(device);
+  }
+
   get product() { return this._dev.productName || ""; }
   get vendorId() { return this._dev.vendorId; }
   get productId() { return this._dev.productId; }
