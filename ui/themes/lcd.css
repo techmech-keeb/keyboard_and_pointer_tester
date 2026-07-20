@@ -45,7 +45,7 @@ html[data-theme="lcd"] {
   --keycap-layer-bg: #ececd0;
   --keycap-layer-txt: var(--txt);
   --keycap-layer-label: var(--dim);
-  --txt-faint: #4a4a40;
+  --txt-faint: #2a2a24;
   --txt-cursor: #0d0d0d;
   --txt-on-accent: #fbfbe8;
   --txt-vial-inherit: #4a4a40;
@@ -107,6 +107,51 @@ html[data-theme="lcd"] #vialBadge.vial-live,
 html[data-theme="lcd"] #vialBadge.vial-locked,
 html[data-theme="lcd"] .key.unlock-target .keycap {
   box-shadow: none;
+}
+
+/* Keep pending text readable while rendering the active cell as an LCD cursor. */
+html[data-theme="lcd"] #phraseLine span.cur {
+  color: var(--bg);
+  background: var(--red);
+  animation: lcdCaretBlink 1.2s ease-in-out infinite;
+}
+
+html[data-theme="lcd"] #phraseLine span.cur::after {
+  display: none;
+}
+
+@keyframes lcdCaretBlink {
+  50% { opacity: 0.72; }
+}
+
+/* Replace filled pointing surfaces with ink-only LCD line art. */
+html[data-theme="lcd"] .pointing.pad {
+  box-sizing: border-box;
+  background: transparent;
+  border: 2px solid var(--red);
+}
+
+html[data-theme="lcd"] #tpCap {
+  box-sizing: border-box;
+  background: transparent;
+  border: 2px solid var(--red);
+}
+
+html[data-theme="lcd"] #tpCap::after {
+  width: 4px;
+  height: 4px;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  background: var(--red);
+}
+
+/* Filled badges denote an active kiosk or Vial connection state. */
+html[data-theme="lcd"] .badge.kiosk,
+html[data-theme="lcd"] #vialBadge.vial-live,
+html[data-theme="lcd"] #vialBadge.vial-locked {
+  color: var(--bg);
+  background: var(--red);
+  border-color: var(--red);
 }
 
 html[data-theme="lcd"] #keyOsd,
