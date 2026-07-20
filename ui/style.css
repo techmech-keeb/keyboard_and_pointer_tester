@@ -26,6 +26,10 @@
   --blur-osd: 3px;
   --osd-color: #fff;
   --osd-glow: 0 0 34px rgba(255, 59, 48, 0.9), 0 0 8px rgba(255, 255, 255, 0.6);
+  --osd-font: var(--mono);
+  --osd-plate-bg: rgba(15, 20, 28, 0.84);
+  --osd-plate-border: rgba(255, 255, 255, 0.14);
+  --osd-plate-shadow: 0 8px 24px rgba(0, 0, 0, 0.38);
   --blur-menu: 8px;
   --radius-panel: 16px;
   --radius-key: calc(var(--u) * 0.12);
@@ -457,9 +461,14 @@ body.kiosk .key.win .keycap .lock { display: block; }
   position: absolute;
   left: 50%; top: 38%;
   transform: translate(-50%, -50%);
-  font-family: var(--mono);
+  padding: 8px 20px;
+  font-family: var(--osd-font);
   font-size: 84px; font-weight: 800;
   color: var(--osd-color);
+  background: var(--osd-plate-bg);
+  border: 1px solid var(--osd-plate-border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--osd-plate-shadow);
   text-shadow: var(--osd-glow);
   opacity: 0;
   pointer-events: none;
