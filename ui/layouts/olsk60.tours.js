@@ -77,4 +77,78 @@ tourEngine.registerTours("olsk60v2", [
       },
     ],
   },
+  {
+    id: "tp-custom",
+    title: "じぶん好みの速さをつくる",
+    description: "Fn2 の設定レイヤーで、カスタム枠の速度を調整します。",
+    steps: [
+      {
+        title: "1. Fn2 を押しつづけます",
+        body: "設定レイヤーは、キーボード上の Fn2（MO(2)）を押している間だけ有効です。光っているキーだけを押してね。",
+        target: { mo: 2 },
+        cond: { type: "hold" },
+      },
+      {
+        title: "2. Fn2 のまま 5 を押します",
+        preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
+        body: "5 は Custom Fast です。LED がオレンジに2回光ったらカスタム枠に入りました。光っているキーだけを押してね。",
+        target: { custom: "CustFast" },
+        cond: { type: "press", while: { mo: 2 } },
+      },
+      {
+        title: "3. Fn2 のまま Q を押します",
+        preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
+        body: "Q は基本速度を上げます。LED が明るい緑に1回光ったら成功です。※1〜3 の固定プロファイル中は赤3回点滅で断られます。光っているキーだけを押してね。",
+        target: { custom: "Spd+" },
+        cond: { type: "press", while: { mo: 2 } },
+      },
+      {
+        title: "4. 速くなったのを体感します",
+        body: "赤いスティックを動かして、速くなった感じを試します。次へでも進めます。",
+        cond: { type: "pointerSpeed", threshold: 300 },
+      },
+      {
+        title: "5. ほかの調整もできます",
+        body: "W で下げる、A/S は加速度、D/F は減速度です。Fn2 + 3 でいつもの Fast に戻れます。",
+        cond: { type: "next" },
+      },
+    ],
+  },
+  {
+    id: "auto-layer",
+    title: "オートレイヤーをととのえる",
+    description: "Fn2 の設定レイヤーで、文字入力に戻るタイミングを調整します。",
+    steps: [
+      {
+        title: "1. Fn2 を押しつづけます",
+        body: "設定レイヤーは、キーボード上の Fn2（MO(2)）を押している間だけ有効です。光っているキーだけを押してね。",
+        target: { mo: 2 },
+        cond: { type: "hold" },
+      },
+      {
+        title: "2. Fn2 のまま Y を押します",
+        preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
+        body: "Y は解除を短い150msにします。光っているキーだけを押してね。",
+        target: { custom: "AL 150ms" },
+        cond: { type: "press", while: { mo: 2 } },
+      },
+      {
+        title: "3. 戻る速さを体感します",
+        body: "赤いスティックを動かして、止めた直後にキーを打ってみます。手を離すとすぐ文字入力に戻ります。次へでも進めます。",
+        cond: { type: "pointerSpeed", threshold: 300 },
+      },
+      {
+        title: "4. Fn2 のまま I を押します",
+        preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
+        body: "I はデフォルトの800msに戻します。光っているキーだけを押してね。",
+        target: { custom: "AL 800ms" },
+        cond: { type: "press", while: { mo: 2 } },
+      },
+      {
+        title: "5. ほかの設定もあります",
+        body: "U は中間400ms、O は機能そのものの ON/OFF です。",
+        cond: { type: "next" },
+      },
+    ],
+  },
 ]);
