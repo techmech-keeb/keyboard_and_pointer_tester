@@ -128,6 +128,14 @@
     <div id="staffVial">
       <h4>VIAL連携</h4>
       <p id="staffVialStatus">未接続</p>
+      <div id="vialDeviceControls" hidden>
+        <label for="vialDeviceSelect">接続キーボード</label>
+        <select id="vialDeviceSelect"></select>
+        <div class="vial-device-buttons">
+          <button id="vialRescanBtn" type="button">再スキャン</button>
+          <button id="vialAddDeviceBtn" type="button" hidden>接続を追加</button>
+        </div>
+      </div>
       <button id="unlockBtn" type="button" hidden>マトリクス検出を有効化（unlock）</button>
       <div id="unlockWizard" hidden>
         <p id="unlockHint">光っているキーを押し続けてください</p>
