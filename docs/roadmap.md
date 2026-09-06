@@ -1,6 +1,6 @@
 # Techmech keys INPUT LAB — 残課題・プラン（進捗・引き継ぎ）
 
-最終更新: 2026-07-18
+最終更新: 2026-09-06
 
 このファイルは、実装済みの経緯・未完了の実機検証・今後の改善プランを
 引き継ぎ用にまとめたもの。作業を再開するときはまずここを見る。
@@ -158,8 +158,28 @@ Platyx = 設計中の 50% ワイヤレス・オルソリニア＋トラックポ
 - OLSK60 の RMK 移行（KB #27）と同じ基盤のため知見は相互流用可。単一バイナリ化
   （上記プラン1）ともプロファイル埋め込みで相性良好。
 
+### 5. RMK 版 OLSK60 への追従（2026-09-06 点検・未着手）
+
+RMK 0.9 系（rmk-config `3.0.0-rc.1`）との接続経路は
+[`research/2026-09-06_rmk-0.9-vial-integration-check.md`](research/2026-09-06_rmk-0.9-vial-integration-check.md)
+で照合済み。プロトコルは無改修で通るが、TIL 側に次が残る（優先順）。
+
+- [ ] **T-10 相当**: Vial UID の追加（RMK 版 `1E EB CB 50 9F 6B 94 EE`。QMK 版は残す）、
+      matrix fallback 6×13、customKeycodes を RMK の `vial.json` 名へ、`shortName` の改行正規化、
+      ガイドツアーの `target.custom` 名の更新
+- [ ] ツアー文言（LED 点滅・速度プロファイル）を RMK 版実装で再確認して同期
+- [ ] 詳細スクロール（hi-res）の表現: 解像度インジケータ・ノッチ換算・フィードのノッチ集約・
+      横スクロール方向表示（同書 §4.4）
+- [ ] ロータリーエンコーダの表現: プロファイルにノブを追加、Vial `0xFE 0x03` で割当を読んで
+      回転を逆引き、押し込み `(5,12)`、打鍵数から分離（同書 §5.3）
+- [ ] 実機確認: WebView2 で `AudioVolumeUp` keydown が届くか／hi-res 時の `wheel` の値／
+      ボトム行の matrix 位置（Space `[4,4]` vs RMK keymap の `(4,6)`）
+
 ## 関連する他リポジトリの課題
 
 - `knowledge-base` `02_notes/_open-verifications.md` #27:
   **RMK+Vial 移行時**にロック中キーマップ読み出し可否・マトリクス応答形式を
   実機で再確認（プロトコル仕様ノート `02_notes/keyboard/2026-07-08_vial-raw-hid-protocol-notes.md` 参照）。
+  → 2026-09-06 にソース照合で両方「同じ」と確認（バイト配置は実機でも確認済み）。残るのは
+  ロック中読み出しの実機確認のみ。
+- `rmk-config` `WATCHLIST.md` T-10（テスター更新）: 上記 5 の 1 点目と同じ。

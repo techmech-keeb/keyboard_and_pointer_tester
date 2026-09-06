@@ -226,11 +226,13 @@ Artifact `visual-check-screenshots` として 14 日間保存されます。ロ�
 - 注意: 一度ウィザードを開始すると、完了するまでファームは unlock 進行中状態になり大半のコマンドを受け付けません。中断した場合はキーボードを挿し直すか、再度ウィザードを完了させてください
 - unlock 状態はキーボードの電源が切れるまで維持されます（展示開始時に一度実行すればOK）
 
-### RMK 移行時の再確認事項
+### RMK 移行時の再確認事項（2026-09-06 に RMK 0.9 系の実ソースで照合済み）
 
-- ロック中でもキーマップ読み出しが可能か（vial-qmk は可能）
-- マトリクステスター応答のバイト配置（行ごとの big-endian パック）が同一か
-- Vialプロトコル版数とキーコード番号体系（`ui/keycodes.js` の分岐で吸収）
+- ロック中でもキーマップ読み出しが可能か → **可能**（RMK は `0x11`/`0x12` にロック判定なし。実機は未確認）
+- マトリクステスター応答のバイト配置（行ごとの big-endian パック）が同一か → **同一**（実機 Vial-RMK で確認済み）
+- Vialプロトコル版数とキーコード番号体系（`ui/keycodes.js` の分岐で吸収）→ **protocol 6・modern QMK と同じ番号**
+- 未更新の 3 点（Vial UID / matrix 6×13 / customKeycodes）と、詳細スクロール・ロータリーエンコーダの
+  表現案は [`docs/research/2026-09-06_rmk-0.9-vial-integration-check.md`](docs/research/2026-09-06_rmk-0.9-vial-integration-check.md)
 
 ## クレジット
 
