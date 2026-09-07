@@ -158,11 +158,14 @@ Platyx = 設計中の 50% ワイヤレス・オルソリニア＋トラックポ
 - OLSK60 の RMK 移行（KB #27）と同じ基盤のため知見は相互流用可。単一バイナリ化
   （上記プラン1）ともプロファイル埋め込みで相性良好。
 
-### 5. RMK 版 OLSK60 への追従（2026-09-06 点検・未着手）
+### 5. RMK 版 OLSK60 への追従（2026-09-07 再点検・未着手）
 
 RMK 0.9 系（rmk-config `3.0.0-rc.1`）との接続経路は
 [`research/2026-09-06_rmk-0.9-vial-integration-check.md`](research/2026-09-06_rmk-0.9-vial-integration-check.md)
 で照合済み。プロトコルは無改修で通るが、TIL 側に次が残る（優先順）。
+2026-09-07 の再点検では公開 upstream の 0.9.0 タグが同じ基準 rev を指すことを確認した。
+ただし private の `rmk-config` remote と実機にはこの環境からアクセスできないため、最新 FW の
+remote HEAD 確認および下記の実機項目は未確認のまま。
 
 - [ ] **T-10 相当**: Vial UID の追加（RMK 版 `1E EB CB 50 9F 6B 94 EE`。QMK 版は残す）、
       matrix fallback 6×13、customKeycodes を RMK の `vial.json` 名へ、`shortName` の改行正規化、
