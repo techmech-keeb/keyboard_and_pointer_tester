@@ -172,13 +172,15 @@ remote HEAD 確認および下記の実機項目は未確認のまま。
       ガイドツアーの `target.custom` 名の更新
 - [ ] **EEPROM レイアウト選択の反映**: VIA `0x02 0x02` で永続化済み layout options を読み、
       `vial.json.layouts.labels/keymap` の qualifier を解決して選択中の物理配列だけを描画する。
-      取得失敗時は静的 profile 全体へフォールバック（調査書 §8）
+      結果は一時 `DeviceLayout` として board profile に重ね、OLSK60 の TrackPoint、ガイド、外形等は
+      profile から維持する。取得失敗時は overlay だけを破棄（調査書 §8.3）
 - [ ] ツアー文言（LED 点滅・速度プロファイル）を RMK 版実装で再確認して同期
 - [ ] 詳細スクロール（hi-res）の表現: 解像度インジケータ・ノッチ換算・フィードのノッチ集約・
       横スクロール方向表示（同書 §4.4）
 - [ ] ロータリーエンコーダの表現: 選択済み `vial.json` からノブ位置/index を取得し、Vial
       `0xFE 0x03` で全 layer の割当を表示、押し込み `(5,12)` を反映する。回転元は標準 HID では
-      一意に識別できないため「推定」表示とし、HID 出力のない L2 は設定値のみ表示（同書 §8）
+      一意に識別できないため「推定」表示とし、HID 出力のない L2 は設定値のみ表示。エンコーダー有無は
+      option 名でなく、layout options 適用後に encoder KLE 要素が残るかで判定（同書 §8.2–8.5）
 - [ ] 実機確認: WebView2 で `AudioVolumeUp` keydown が届くか／hi-res 時の `wheel` の値／
       ボトム行の matrix 位置（Space `[4,4]` vs RMK keymap の `(4,6)`）
 
