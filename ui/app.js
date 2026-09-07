@@ -568,6 +568,15 @@ let scrollTimer = 0;
 // scale. A resolution-multiplier device can therefore report fractions such
 // as 10/120 without guessing from OS-dependent pixel deltas. Other browsers
 // still use the existing deltaX/Y path and leave notch resolution unknown.
+const WHEEL_DETENT = 120;
+// A high-resolution wheel is one that reports *less* than a detent per event.
+// Test for that, not for "any magnitude that 120 does not divide": a value at
+// or above one detent can also come from an ordinary wheel whose delta the
+// platform scaled (page zoom, display scaling, coalesced events), and calling
+// that high resolution would mislabel a plain mouse on the exhibition PC.
+// The epsilon absorbs the float error such scaling leaves behind.
+const WHEEL_DETENT_EPSILON = 0.5;
+
 function readScrollTelemetry(e) {
   const axes = [];
   if (Number.isFinite(e.wheelDeltaX) && e.wheelDeltaX !== 0) axes.push(Math.abs(e.wheelDeltaX));
@@ -575,8 +584,8 @@ function readScrollTelemetry(e) {
   if (!axes.length && Number.isFinite(e.wheelDelta) && e.wheelDelta !== 0) axes.push(Math.abs(e.wheelDelta));
   if (!axes.length) return { notches: null, highResolution: false };
   return {
-    notches: axes.reduce((sum, value) => sum + value / 120, 0),
-    highResolution: axes.some((value) => value % 120 !== 0),
+    notches: axes.reduce((sum, value) => sum + value / WHEEL_DETENT, 0),
+    highResolution: axes.some((value) => value < WHEEL_DETENT - WHEEL_DETENT_EPSILON),
   };
 }
 
