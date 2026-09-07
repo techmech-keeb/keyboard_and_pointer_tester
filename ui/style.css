@@ -597,6 +597,20 @@ body.kiosk .key.win .keycap .lock { display: block; }
 @keyframes flowUp { to { background-position-y: -24px; } }
 @keyframes flowDown { to { background-position-y: 24px; } }
 .scroll-nums { grid-column: 2; grid-row: 1 / span 3; }
+.scroll-resolution {
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  padding: 3px 7px;
+  color: var(--dim);
+  font: 700 10px/1.2 var(--mono);
+  letter-spacing: .04em;
+}
+.scroll-resolution[data-resolution="high"] {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 10px rgba(63, 217, 255, .2);
+}
 
 #inputFeed {
   flex: 1 1 0;

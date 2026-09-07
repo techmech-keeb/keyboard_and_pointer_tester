@@ -69,6 +69,8 @@ const S = {
   clicks: { L: 0, M: 0, R: 0 },
   distPx: 0,
   scrollTotal: 0,
+  scrollNotches: 0,
+  scrollResolution: "unknown",
   speed: 0,                     // px/s smoothed
   vx: 0, vy: 0,                 // smoothed velocity px/ms
   lastPointer: null,            // {x,y,t}
@@ -561,6 +563,37 @@ document.addEventListener("pointerup", (e) => {
 
 // ---------- wheel / scroll ----------
 let scrollTimer = 0;
+
+// Chromium exposes wheelDeltaX/Y in the HID-compatible 120-units-per-detent
+// scale. A resolution-multiplier device can therefore report fractions such
+// as 10/120 without guessing from OS-dependent pixel deltas. Other browsers
+// still use the existing deltaX/Y path and leave notch resolution unknown.
+function readScrollTelemetry(e) {
+  const axes = [];
+  if (Number.isFinite(e.wheelDeltaX) && e.wheelDeltaX !== 0) axes.push(Math.abs(e.wheelDeltaX));
+  if (Number.isFinite(e.wheelDeltaY) && e.wheelDeltaY !== 0) axes.push(Math.abs(e.wheelDeltaY));
+  if (!axes.length && Number.isFinite(e.wheelDelta) && e.wheelDelta !== 0) axes.push(Math.abs(e.wheelDelta));
+  if (!axes.length) return { notches: null, highResolution: false };
+  return {
+    notches: axes.reduce((sum, value) => sum + value / 120, 0),
+    highResolution: axes.some((value) => value % 120 !== 0),
+  };
+}
+
+function updateScrollTelemetry(e) {
+  const sample = readScrollTelemetry(e);
+  if (sample.notches !== null) {
+    S.scrollNotches += sample.notches;
+    $("numScrollNotches").textContent = S.scrollNotches.toFixed(2);
+    if (sample.highResolution) S.scrollResolution = "high";
+    else if (S.scrollResolution === "unknown") S.scrollResolution = "standard";
+  }
+  const indicator = $("scrollResolution");
+  indicator.dataset.resolution = S.scrollResolution;
+  indicator.textContent = S.scrollResolution === "high" ? "高解像度スクロール" :
+    S.scrollResolution === "standard" ? "標準スクロール" : "解像度を測定中";
+}
+
 document.addEventListener("wheel", (e) => {
   e.preventDefault();
   touchInput();
@@ -568,6 +601,7 @@ document.addEventListener("wheel", (e) => {
   const amt = Math.abs(e.deltaY) + Math.abs(e.deltaX);
   S.scrollTotal += amt;
   $("numScroll").textContent = Math.round(S.scrollTotal).toLocaleString();
+  updateScrollTelemetry(e);
 
   const dir = e.deltaY === 0 ? 0 : e.deltaY > 0 ? 1 : -1;
   if (dir !== 0) {
@@ -1012,12 +1046,16 @@ setInterval(() => {
 
 function resetAll(showAttract) {
   // counters
-  S.keyCount = 0; S.distPx = 0; S.scrollTotal = 0;
+  S.keyCount = 0; S.distPx = 0; S.scrollTotal = 0; S.scrollNotches = 0;
+  S.scrollResolution = "unknown";
   S.clicks = { L: 0, M: 0, R: 0 };
   S.vx = 0; S.vy = 0; S.speed = 0; S.lastPointer = null; S.moveMission = 0;
   $("keyCount").textContent = "0";
   $("lastKey").textContent = "—";
   $("numScroll").textContent = "0";
+  $("numScrollNotches").textContent = "0.00";
+  $("scrollResolution").dataset.resolution = "unknown";
+  $("scrollResolution").textContent = "解像度を測定中";
   clearInputFeed();
   updatePointerReadouts();
   for (const n of ["L", "M", "R"]) {
