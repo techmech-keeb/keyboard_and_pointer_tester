@@ -1,6 +1,8 @@
 # キーボード中心の展示画面と SCROLL LAB
 
-更新: 2026-09-08。外観レビュー用の実装。OLSK60・展示PC・WebView2での実機確認は未実施。
+更新: 2026-09-09（JST）。外観レビュー用の実装。Windows側で新UIの起動・表示は
+ユーザー確認済み。ただし確認に使ったArtifact/runは `要確認`。OLSK60の入力特性、
+通常マウスとの比較、展示PC構成・WebView2での総合動作は未確認。
 
 ## 方針と戻り先
 
@@ -16,8 +18,8 @@ mainへ反映する前にfeatureブランチとPRでレビューし、基点は�
 - 調査・実装基点: `b92b96287aa59e25a730a2cbbabf73d4559e936c`
 - 作業開始時のGitHub確認: mainは上記SHA、open PRは0件
 - 作業ブランチ: `feat/keyboard-stage-scroll-lab`
-- 保持した基点ブランチ: `checkpoint/pre-scroll-lab-b92b962`
-- 変更前の別worktree: `../keyboard-tester-before`
+- GitHub上に保持した基点ブランチ: `checkpoint/pre-scroll-lab-b92b962`
+- 変更前の別worktree（作業環境内）: `../keyboard-tester-before`
 
 別環境でも、作業中の差分を捨てずに基点を開ける。
 
@@ -27,6 +29,47 @@ git worktree add --detach ../keyboard-tester-reconsider b92b96287aa59e25a730a2cb
 
 そのworktreeの `ui/index.html` を開いて比較する。新案のCSSだけを外すとHTML構造と整合しないため、
 戻す際は基点一式を使用する。新案を残したまま別案を作ることも可能。
+
+## 試作確認履歴
+
+### Windows版で旧UIが表示された事象
+
+2026-09-09（JST）、featureブランチを選んでWindows版をビルドした後も旧UIが表示される
+事象をユーザーが確認した。source選択、Actionsのcheckout、publish内容、ダウンロード／展開、
+旧プロセス、WebView2 cacheのどの層が単独原因だったかは特定しておらず、推測で一つに
+断定しない。
+
+commit `f6c77e6` で、次の再発防止と切り分け手段を追加した。
+
+- PR更新時にも `build-kiosk` を実行し、.NET SDK 8を `global.json` とworkflow内検査で固定。
+- source側とpublish後のUI 18ファイルについて、path・件数・SHA-256の一致をActionsで検査。
+- Artifact名を `ci-<run number>` とし、branch、commit、run URLを `BUILD-INFO.json` に保存。
+- アプリ専用WebView2 profileのdisk cacheを起動時に消去し、`localStorage` の設定は保持。
+- READMEに、空フォルダへの展開、旧プロセス終了、アプリ内build表示と
+  `BUILD-INFO.json` の照合手順を追加。
+
+[build-kiosk #74](https://github.com/techmech-keeb/keyboard_and_pointer_tester/actions/runs/34243241376)
+では、head `f6c77e6c9a4c2484c883ca24d1076940ce31dc2c` から
+`TechmechInputLab-win-x64-ci-74` を生成し、UI 18ファイルの一致を確認した。
+[visual-check #46](https://github.com/techmech-keeb/keyboard_and_pointer_tester/actions/runs/34243241509)
+も成功している。その後、ユーザーはWindows側で新UIが表示されたことを確認した。
+ただし、その確認に使ったArtifact/runの対応付け、OLSK60入力、キオスク離脱防止、
+OS IME、実機Vialの確認は未実施または `要確認` とする。
+
+### ThinkPad X9との初期比較と試験保留
+
+ユーザーは ThinkPad X9-14 Gen 1（21QBCTO1WW）の高精細オプションの
+Precision Touchpad とOLSK60を新しいスクロール面で操作し、次を観察した。
+
+- OLSK60のTrackPointでも、微小移動から大きな移動まで幅広く操作できた。
+- X9のPrecision Touchpadは、それより滑らかかつ精緻に微小操作でき、強い操作時の
+  ダイナミックな移動も両立していると感じられた。
+
+これは同一条件の計測による結論ではなく、ユーザーの初期的な体感比較である。
+通常マウスとの比較、入力値の一時観測、OLSK60のUSB／Bluetooth別比較は、ユーザー判断で
+いったん見送った。センサー、firmwareのtransfer、report頻度、Windows Precision Touchpad
+stackの寄与率や、firmware変更でどこまで近づけられるかは、現時点では `要確認`。
+比較試験を再開するまで、SCROLL LAB側に独自の加速や平滑化を加えて差を覆い隠さない。
 
 ## 外観の確認用画像
 
@@ -168,9 +211,20 @@ git diff --check
 2. 実機レビューで確定した基準画像と運用手順の反映。
 3. 横スクロールやPlatyxプロファイルなど、今回の縦スクロール体験と独立した機能。
 
-## 他リポジトリへ共有する候補
+## 関連リポジトリと正本の分担
 
-- knowledge-base: signed合計だけでは端の方向反転を再現できないこと、論理小数位置と実scrollTopを分離する必要性。
-- AI-agent-playbook: 推奨案を試作するときも基点SHA・別worktree・新旧スクリーンショットを残し、外観評価と合成fixture／実機確認を区別する運用。
+TIL固有のUI、試作履歴、体感観察、未完了の受入確認は本書とroadmapに残す。
+技術調査、firmware設計、汎用的なAI作業ルールは重複コピーせず、次を正本とする。
 
-これらの外部リポジトリへの書き込みは行っていない。
+- [knowledge-base PR #54](https://github.com/techmech-keeb/knowledge-base/pull/54):
+  Precision Touchpadの一次情報、X9の実機証跡、OLSK60との比較材料。
+- [rmk-config PR #227](https://github.com/techmech-keeb/rmk-config/pull/227):
+  OLSK60の精密域・高速域、USB／Bluetooth共通化を含むfirmware候補設計。
+  firmware実装と比較試験は含まない。
+- [AI-agent-playbook PR #50](https://github.com/techmech-keeb/AI-agent-playbook/pull/50):
+  CI成果物の同一性・来歴確認を、source、package、download／extraction、runtimeの
+  各層に分ける共通ルール。
+
+端で方向反転するときの順序付きクランプ、論理小数位置と実 `scrollTop` の分離、
+基点SHA・新旧スクリーンショット・合成fixture／実機確認を区別する運用は、
+本試作の設計判断として本書にも保持する。
