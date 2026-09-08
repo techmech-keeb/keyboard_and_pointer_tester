@@ -12,7 +12,7 @@ let BOARD = DEFAULT_BOARD;
 // ---------- tunables ----------
 const TRAIL_MS = 2800;          // trail fade time
 const RIPPLE_MS = 750;
-const CHEVRON_MS = 620;
+const SCROLL_CUE_MS = 320;
 const IDLE_RESET_MS = 75000;    // auto reset for the next visitor
 const MAX_DPR = 1.5;            // battery-friendly rendering in kiosk display
 const URL_KIOSK_DISPLAY = new URLSearchParams(window.location.search).get("kiosk") === "1";
@@ -62,6 +62,7 @@ const JP_INPUT_DEFAULT = false;
 const DEFAULT_BOARD_KEY = "olsk60.defaultBoard";
 const AUTO_LAYER_SIM_KEY = "olsk60.autoLayerSim";
 const AUTO_LAYER_SIM_DEFAULT = { on: true, delay: 800 };
+let autoLayerSimConfig = null;
 
 // ---------- state ----------
 const S = {
@@ -71,6 +72,7 @@ const S = {
   scrollTotal: 0,
   scrollNotches: 0,
   scrollResolution: "unknown",
+  scrollTelemetrySamples: 0,
   speed: 0,                     // px/s smoothed
   vx: 0, vy: 0,                 // smoothed velocity px/ms
   lastPointer: null,            // {x,y,t}
@@ -176,11 +178,11 @@ function buildKeyboard() {
 function fitKeyboard() {
   const wrap = $("kbWrap");
   const u = Math.min(
-    64,
-    Math.floor(wrap.clientWidth / BOARD.unitsWide),
-    Math.floor(window.innerHeight * 0.48 / BOARD.unitsHigh),
+    window.innerWidth >= 1800 ? 100 : 68,
+    (wrap.clientWidth - 4) / BOARD.unitsWide,
+    (wrap.clientHeight - 8) / BOARD.unitsHigh,
   );
-  document.documentElement.style.setProperty("--u", u + "px");
+  document.documentElement.style.setProperty("--u", Math.max(1, u).toFixed(3) + "px");
 }
 
 function applyBoard(profile) {
@@ -198,6 +200,7 @@ function applyBoard(profile) {
   const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
   const pointingLabel = pointings.length ? " + " + pointings.map((pointing) =>
     pointing.type === "trackpoint" ? "トラックポイント" : pointing.type || "ポインティング").join("・") : "";
+  $("kbBoardName").textContent = BOARD.name;
   $("kbProfileLabel").textContent = BOARD.keys.length + "キー" + pointingLabel;
   practiceInit();
   if (VS) {
@@ -281,7 +284,8 @@ document.addEventListener("keydown", (e) => {
   // staff menu: Escape closes it and is consumed
   const staffOpen = !$("staffMenu").hidden;
   if (staffOpen) {
-    if (e.code === "Escape" && !e.repeat) $("staffMenu").hidden = true;
+    if (e.code === "Escape" && !e.repeat) { $("staffMenu").hidden = true; resumeFreeFocus(); }
+    return; // Staff form controls keep their native keyboard behavior.
   }
   // typing practice (IME-independent via code fallback)
   else if (!S.freeMode && !e.ctrlKey && !e.altKey && !e.metaKey) {
@@ -363,7 +367,7 @@ function resizeCanvas() {
 
 const trail = [];    // {x,y,t,break}
 const ripples = [];  // {x,y,t,color,label}
-const chevrons = []; // {x,y,t,dir}
+const wheelVisual = { x: 0, y: 0, dir: 0, until: 0, energy: 0, time: 0 };
 
 const BTN = [
   { name: "L", label: "左クリック", color: FX_PALETTE.buttons.L },
@@ -375,26 +379,26 @@ const INPUT_FEED_MAX = 30;
 const INPUT_FEED_GROUP_MS = 400;
 let lastInputFeed = null;
 
-function addInputFeed(type, label) {
+function addInputFeed(type, label, amount = 1, unit = "count") {
   const now = performance.now();
   const feed = $("inputFeed");
-  if (lastInputFeed && lastInputFeed.type === type && now - lastInputFeed.time <= INPUT_FEED_GROUP_MS) {
-    lastInputFeed.count++;
-    lastInputFeed.el.querySelector("b").textContent = "×" + lastInputFeed.count;
+  const format = (value) => unit === "px" ? value.toFixed(1) + " px" : "×" + value;
+  if (lastInputFeed && lastInputFeed.type === type && lastInputFeed.unit === unit && now - lastInputFeed.time <= INPUT_FEED_GROUP_MS) {
+    lastInputFeed.count += amount;
+    lastInputFeed.el.querySelector("b").textContent = format(lastInputFeed.count);
     lastInputFeed.time = now;
     return;
   }
-
   const item = document.createElement("div");
   item.className = "input-feed-item " + type;
   const name = document.createElement("span");
   const count = document.createElement("b");
   name.textContent = label;
-  count.textContent = "×1";
+  count.textContent = format(amount);
   item.append(name, count);
   feed.prepend(item);
   while (feed.children.length > INPUT_FEED_MAX) feed.lastElementChild.remove();
-  lastInputFeed = { type, time: now, count: 1, el: item };
+  lastInputFeed = { type, time: now, count: amount, unit, el: item };
 }
 
 function clearInputFeed() {
@@ -408,6 +412,7 @@ function wake() {
 }
 
 function frame(now) {
+  updateScrollFrame(now);
   ctx.clearRect(0, 0, cw, ch);
 
   // ---- trail ----
@@ -467,20 +472,22 @@ function frame(now) {
     }
   }
 
-  // ---- scroll chevrons ----
-  for (let i = chevrons.length - 1; i >= 0; i--) {
-    const c = chevrons[i];
-    const k = (now - c.t) / CHEVRON_MS;
-    if (k >= 1) { chevrons.splice(i, 1); continue; }
-    const y = c.y + c.dir * k * 46 * fxScale;
-    ctx.strokeStyle = `rgba(${FX_PALETTE.chevron},${(1 - k) * 0.95})`;
-    ctx.lineWidth = 3 * fxScale;
+  // One bounded cursor cue. Direction is visible even for a fraction of a pixel;
+  // its strength follows input amount, never the number of wheel events.
+  if (now < wheelVisual.until && wheelVisual.dir) {
+    const alpha = Math.min(1, (wheelVisual.until - now) / SCROLL_CUE_MS);
+    const { x, y, dir } = wheelVisual;
+    ctx.strokeStyle = `rgba(${FX_PALETTE.chevron},${alpha * (.4 + wheelVisual.energy * .6)})`;
+    ctx.lineWidth = 2 * fxScale;
     ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(c.x - 9 * fxScale, y + c.dir * 7 * fxScale);
-    ctx.lineTo(c.x, y);
-    ctx.lineTo(c.x + 9 * fxScale, y + c.dir * 7 * fxScale);
-    ctx.stroke();
+    for (let i = 0; i < 2; i++) {
+      const cy = y + dir * (18 + i * 10) * fxScale;
+      ctx.beginPath();
+      ctx.moveTo(x - 6 * fxScale, cy - dir * 5 * fxScale);
+      ctx.lineTo(x, cy);
+      ctx.lineTo(x + 6 * fxScale, cy - dir * 5 * fxScale);
+      ctx.stroke();
+    }
   }
 
   // ---- decay speed & trackpoint tilt ----
@@ -492,7 +499,7 @@ function frame(now) {
   drawCompass();
   updateTrackpointTilt();
 
-  const busy = trail.length > 1 || ripples.length || chevrons.length ||
+  const busy = ScrollLab.dirty || trail.length > 1 || ripples.length || now < wheelVisual.until ||
     S.speed > 0 || (S.lastPointer && now - S.lastPointer.t < 1700);
   if (busy) { rafId = requestAnimationFrame(frame); }
   else { rafOn = false; ctx.clearRect(0, 0, cw, ch); drawCompass(); }
@@ -562,92 +569,72 @@ document.addEventListener("pointerup", (e) => {
 });
 
 // ---------- wheel / scroll ----------
-let scrollTimer = 0;
-
-// Chromium exposes wheelDeltaX/Y in the HID-compatible 120-units-per-detent
-// scale. A resolution-multiplier device can therefore report fractions such
-// as 10/120 without guessing from OS-dependent pixel deltas. Other browsers
-// still use the existing deltaX/Y path and leave notch resolution unknown.
-const WHEEL_DETENT = 120;
-// A high-resolution wheel is one that reports *less* than a detent per event.
-// Test for that, not for "any magnitude that 120 does not divide": a value at
-// or above one detent can also come from an ordinary wheel whose delta the
-// platform scaled (page zoom, display scaling, coalesced events), and calling
-// that high resolution would mislabel a plain mouse on the exhibition PC.
-// The epsilon absorbs the float error such scaling leaves behind.
-const WHEEL_DETENT_EPSILON = 0.5;
-
 function readScrollTelemetry(e) {
-  const axes = [];
-  if (Number.isFinite(e.wheelDeltaX) && e.wheelDeltaX !== 0) axes.push(Math.abs(e.wheelDeltaX));
-  if (Number.isFinite(e.wheelDeltaY) && e.wheelDeltaY !== 0) axes.push(Math.abs(e.wheelDeltaY));
-  if (!axes.length && Number.isFinite(e.wheelDelta) && e.wheelDelta !== 0) axes.push(Math.abs(e.wheelDelta));
-  if (!axes.length) return { notches: null, highResolution: false };
-  return {
-    notches: axes.reduce((sum, value) => sum + value / WHEEL_DETENT, 0),
-    highResolution: axes.some((value) => value < WHEEL_DETENT - WHEEL_DETENT_EPSILON),
-  };
+  return ScrollInput.telemetry(e);
 }
 
-function updateScrollTelemetry(e) {
-  const sample = readScrollTelemetry(e);
+function updateScrollTelemetry(sample) {
   if (sample.notches !== null) {
     S.scrollNotches += sample.notches;
-    $("numScrollNotches").textContent = S.scrollNotches.toFixed(2);
+    S.scrollTelemetrySamples++;
     if (sample.highResolution) S.scrollResolution = "high";
     else if (S.scrollResolution === "unknown") S.scrollResolution = "standard";
   }
-  const indicator = $("scrollResolution");
-  indicator.dataset.resolution = S.scrollResolution;
-  indicator.textContent = S.scrollResolution === "high" ? "高解像度スクロール" :
-    S.scrollResolution === "standard" ? "標準スクロール" : "解像度を測定中";
+}
+
+function interactionModalOpen() {
+  return !$("staffMenu").hidden || !$("tourMenu").hidden;
+}
+
+function updateScrollFrame(now) {
+  const batch = ScrollLab.flush(now);
+  const elapsed = Math.max(0, now - wheelVisual.time);
+  wheelVisual.energy *= Math.exp(-elapsed / 180);
+  wheelVisual.time = now;
+  if (batch) {
+    $("numScroll").textContent = S.scrollTotal.toFixed(1);
+    $("numScrollNotches").textContent = S.scrollTelemetrySamples ? S.scrollNotches.toFixed(2) : "—";
+    const indicator = $("scrollResolution");
+    indicator.dataset.resolution = S.scrollResolution;
+    indicator.textContent = S.scrollResolution === "high" ? "高解像度相当の入力を観測" :
+      S.scrollResolution === "standard" ? "標準ノッチ相当の入力" : "解像度：判定情報なし";
+    if (batch.dir) {
+      wheelVisual.x = batch.x; wheelVisual.y = batch.y;
+      wheelVisual.dir = batch.dir; wheelVisual.until = now + SCROLL_CUE_MS;
+      wheelVisual.energy = Math.min(1, wheelVisual.energy + (batch.up + batch.down) / 240);
+      const directions = batch.dir < 0 ? ["down", "up"] : ["up", "down"];
+      for (const direction of directions) {
+        if (batch[direction]) addInputFeed("scroll-" + direction, direction === "up" ? "スクロール ↑" : "スクロール ↓", batch[direction], "px");
+      }
+    }
+  }
+  const active = now < wheelVisual.until;
+  $("scrollUp").classList.toggle("hot", active && wheelVisual.dir < 0);
+  $("scrollDown").classList.toggle("hot", active && wheelVisual.dir > 0);
+  const opacity = active ? .35 + wheelVisual.energy * .65 : 0;
+  $("scrollBarFill").style.opacity = opacity;
+  const ring = $("tpRing");
+  if (ring) ring.style.setProperty("--scroll-energy", opacity * .65);
 }
 
 document.addEventListener("wheel", (e) => {
-  e.preventDefault();
   touchInput();
+  // Staff selectors/dialogs may scroll themselves; the experience behind them pauses.
+  if (interactionModalOpen()) return;
+  if (e.cancelable) e.preventDefault();
+  const { dx, dy, sample } = ScrollLab.receive(e);
+  if (!dx && !dy) return;
   autoLayerSimPointerInput();
-  const amt = Math.abs(e.deltaY) + Math.abs(e.deltaX);
-  S.scrollTotal += amt;
-  $("numScroll").textContent = Math.round(S.scrollTotal).toLocaleString();
-  updateScrollTelemetry(e);
-
-  const dir = e.deltaY === 0 ? 0 : e.deltaY > 0 ? 1 : -1;
-  if (dir !== 0) {
-    $("scrollUp").classList.toggle("hot", dir < 0);
-    $("scrollDown").classList.toggle("hot", dir > 0);
-    const fill = $("scrollBarFill");
-    fill.classList.remove("up", "down");
-    void fill.offsetWidth;
-    fill.classList.add(dir < 0 ? "up" : "down");
-    const n = performance.now();
-    const rippleMaxRadius = Math.max(70, 0.08 * Math.min(cw, ch));
-    const fxScale = rippleMaxRadius / 70;
-    for (let i = 0; i < 3; i++) {
-      chevrons.push({ x: e.clientX, y: e.clientY - 20 + i * 12 * fxScale * dir, t: n, dir });
-    }
-    while (chevrons.length > 60) chevrons.shift();
-    const ring = $("tpRing");
-    ring.classList.remove("pulse");
-    void ring.offsetWidth;
-    ring.classList.add("pulse");
-    addInputFeed(dir < 0 ? "scroll-up" : "scroll-down", dir < 0 ? "スクロール ↑" : "スクロール ↓");
-  }
-  clearTimeout(scrollTimer);
-  scrollTimer = setTimeout(() => {
-    $("scrollUp").classList.remove("hot");
-    $("scrollDown").classList.remove("hot");
-    $("scrollBarFill").classList.remove("up", "down");
-  }, 320);
+  S.scrollTotal += Math.abs(dx) + Math.abs(dy);
+  updateScrollTelemetry(sample);
   missionDone("scroll");
   wake();
-}, { passive: false });
+}, { passive: false, capture: true });
 
 // ---------- readouts ----------
 function updatePointerReadouts() {
   $("numSpeed").textContent = Math.round(S.speed).toLocaleString();
-  const meters = (S.distPx / 96) * 0.0254;
-  $("numDist").innerHTML = meters.toFixed(1) + "<i> m</i>";
+  $("numDist").textContent = Math.round(S.distPx).toLocaleString();
 }
 
 function updateTrackpointTilt() {
@@ -744,6 +731,7 @@ function practiceInit() {
 
 function practiceNext() {
   clearTimeout(nextTimer);
+  $("clearFlash").classList.remove("show");
   phraseIdx = (phraseIdx + 1) % phrases.length;
   phrase = phrases[phraseIdx];
   pos = 0;
@@ -839,7 +827,7 @@ hiddenInput.addEventListener("compositionstart", () => { composing = true; compT
 hiddenInput.addEventListener("compositionupdate", (e) => { compText = e.data || ""; renderFree(); });
 hiddenInput.addEventListener("compositionend", () => { composing = false; compText = ""; renderFree(); });
 hiddenInput.addEventListener("blur", () => {
-  if (S.freeMode) setTimeout(() => { if (S.freeMode) hiddenInput.focus({ preventScroll: true }); }, 40);
+  if (S.freeMode) setTimeout(resumeFreeFocus, 40);
 });
 
 function escapeHtml(s) {
@@ -869,9 +857,12 @@ function setMode(free) {
   S.freeMode = free;
   $("tabFree").classList.toggle("active", free);
   $("tabPractice").classList.toggle("active", !free);
+  $("tabFree").setAttribute("aria-selected", String(free));
+  $("tabPractice").setAttribute("aria-selected", String(!free));
+  $("practiceHint").textContent = free ? "好きなことばを、そのまま。" : "そのまま、打ってみよう。";
   $("freeView").hidden = !free;
   $("practiceView").hidden = free;
-  if (free) hiddenInput.focus({ preventScroll: true });
+  if (free) resumeFreeFocus();
   else hiddenInput.blur();
 }
 $("tabPractice").addEventListener("click", () => setMode(false));
@@ -938,11 +929,18 @@ function setAutoLayerSimConfig(next) {
   try { localStorage.setItem(AUTO_LAYER_SIM_KEY, JSON.stringify(config)); } catch (_) { /* ignore */ }
   applyAutoLayerSimControls();
   if (!config.on) autoLayerSimCancel();
+  else if (AUTO_LAYER_SIM.active) {
+    clearTimeout(AUTO_LAYER_SIM.timer);
+    AUTO_LAYER_SIM.timer = 0;
+    AUTO_LAYER_SIM.deadline = performance.now() + config.delay;
+    autoLayerSimSchedule();
+  }
 }
 
 function applyAutoLayerSimControls() {
   const profile = autoLayerSimProfile();
   const config = autoLayerSimSaved();
+  autoLayerSimConfig = config;
   const toggle = $("autoLayerSimToggleBtn");
   const select = $("autoLayerSimDelaySelect");
   if (!toggle || !select) return;
@@ -997,9 +995,13 @@ $("defaultBoardSelect").addEventListener("change", (event) => {
   applyBoard(profile);
 });
 
+function resumeFreeFocus() {
+  if (S.freeMode && !interactionModalOpen()) hiddenInput.focus({ preventScroll: true });
+}
+
 // clicking anywhere in free mode keeps the textarea focused
 document.addEventListener("pointerup", () => {
-  if (S.freeMode) setTimeout(() => hiddenInput.focus({ preventScroll: true }), 0);
+  if (S.freeMode) setTimeout(resumeFreeFocus, 0);
 });
 
 // =============================================================
@@ -1057,14 +1059,23 @@ function resetAll(showAttract) {
   // counters
   S.keyCount = 0; S.distPx = 0; S.scrollTotal = 0; S.scrollNotches = 0;
   S.scrollResolution = "unknown";
+  S.scrollTelemetrySamples = 0;
   S.clicks = { L: 0, M: 0, R: 0 };
   S.vx = 0; S.vy = 0; S.speed = 0; S.lastPointer = null; S.moveMission = 0;
   $("keyCount").textContent = "0";
   $("lastKey").textContent = "—";
+  clearTimeout(osdTimer);
+  osdEl.classList.remove("pop");
   $("numScroll").textContent = "0";
-  $("numScrollNotches").textContent = "0.00";
+  $("numScrollNotches").textContent = "—";
   $("scrollResolution").dataset.resolution = "unknown";
-  $("scrollResolution").textContent = "解像度を測定中";
+  $("scrollResolution").textContent = "解像度：未観測";
+  ScrollLab.reset();
+  wheelVisual.until = 0; wheelVisual.energy = 0; wheelVisual.dir = 0;
+  $("scrollUp").classList.remove("hot");
+  $("scrollDown").classList.remove("hot");
+  $("scrollBarFill").style.opacity = 0;
+  $("tpRing")?.style.setProperty("--scroll-energy", 0);
   clearInputFeed();
   updatePointerReadouts();
   for (const n of ["L", "M", "R"]) {
@@ -1073,7 +1084,7 @@ function resetAll(showAttract) {
     pill.classList.remove("active");
   }
   // canvas
-  trail.length = 0; ripples.length = 0; chevrons.length = 0;
+  trail.length = 0; ripples.length = 0;
   ctx.clearRect(0, 0, cw, ch);
   drawCompass();
   // keyboard heat
@@ -1131,7 +1142,7 @@ document.querySelectorAll("[data-window-size]").forEach((btn) => {
     window.chrome.webview.postMessage({ op: "resize", w, h });
   });
 });
-$("staffCancelBtn").addEventListener("click", () => { $("staffMenu").hidden = true; });
+$("staffCancelBtn").addEventListener("click", () => { $("staffMenu").hidden = true; resumeFreeFocus(); });
 $("staffExitBtn").addEventListener("click", () => {
   if (window.chrome && window.chrome.webview) {
     window.chrome.webview.postMessage({ type: "exit" });
@@ -1148,6 +1159,18 @@ window.addEventListener("blur", () => {
 });
 
 window.addEventListener("resize", () => { resizeCanvas(); sizeCompass(); fitKeyboard(); drawCompass(); });
+let geometryRaf = 0;
+function refreshStageGeometry() {
+  if (geometryRaf) return;
+  geometryRaf = requestAnimationFrame(() => {
+    geometryRaf = 0;
+    fitKeyboard();
+    ScrollLab.measure();
+  });
+}
+new ResizeObserver(refreshStageGeometry).observe($("kbWrap"));
+new ResizeObserver(refreshStageGeometry).observe($("scrollViewport"));
+document.fonts.ready.then(refreshStageGeometry);
 
 // =============================================================
 // Vial integration
@@ -1258,8 +1281,7 @@ function autoLayerSimBlocked() {
 function autoLayerSimAvailable() {
   const profile = autoLayerSimProfile();
   if (!profile || !VS.connected || !VS.keymap) return false;
-  const config = autoLayerSimSaved();
-  return config.on && profile.layer < VS.layers;
+  return (autoLayerSimConfig || autoLayerSimSaved()).on && profile.layer < VS.layers;
 }
 
 function autoLayerSimCancel() {
@@ -1270,7 +1292,8 @@ function autoLayerSimCancel() {
 }
 
 function autoLayerSimSchedule() {
-  clearTimeout(AUTO_LAYER_SIM.timer);
+  // Continuous hi-res input extends the deadline without creating a timer per event.
+  if (AUTO_LAYER_SIM.timer) return;
   const wait = Math.max(0, AUTO_LAYER_SIM.deadline - performance.now());
   AUTO_LAYER_SIM.timer = setTimeout(autoLayerSimExpire, wait);
 }
@@ -1299,7 +1322,7 @@ function autoLayerSimExpire() {
 function autoLayerSimPointerInput() {
   if (!autoLayerSimAvailable() || autoLayerSimBlocked()) return;
   const profile = autoLayerSimProfile();
-  const config = autoLayerSimSaved();
+  const config = autoLayerSimConfig || autoLayerSimSaved();
   if (!AUTO_LAYER_SIM.active) {
     AUTO_LAYER_SIM.active = true;
     AUTO_LAYER_SIM.baseLayer = VS.viewLayer;
@@ -1880,7 +1903,6 @@ $("unlockCancelBtn").addEventListener("click", () => {
 function vialOnIdleReset() {
   if (!VS.connected) return;
   autoLayerSimCancel();
-  VS.deviceName = "";
   applyDeviceName();
   VS.toggleMask = 0;
   VS.momentary.clear();
@@ -1917,3 +1939,5 @@ updatePointerReadouts();
 applyJpInput();
 setAppVersion(""); // browser/dev fallback; kiosk host overrides via host hello
 vialInit();
+ScrollLab.measure();
+wake();

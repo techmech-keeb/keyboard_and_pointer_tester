@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Techmech keys INPUT LAB</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="stage.css">
 <link rel="stylesheet" href="themes/lcd.css">
 </head>
 <body>
@@ -28,99 +29,104 @@
 </header>
 
 <main id="layout">
-  <div id="leftCol">
-
-    <section class="panel" id="typePanel">
-      <div class="panel-head">
-        <h2>TYPING <span class="panel-sub">タイピングテスト</span></h2>
-        <div class="tabs" role="tablist">
-          <button id="tabPractice" class="tab active" type="button">練習モード</button>
-          <button id="tabFree" class="tab" type="button" hidden>自由入力</button>
-        </div>
+  <section class="panel" id="typePanel" aria-labelledby="typingTitle">
+    <div class="typing-label">
+      <h2 id="typingTitle"><span class="section-index">01</span> TYPE</h2>
+      <p class="type-hint" id="practiceHint">そのまま、打ってみよう。</p>
+      <div class="tabs" role="tablist" aria-label="タイピング">
+        <button id="tabPractice" class="tab active" type="button" role="tab" aria-selected="true">練習</button>
+        <button id="tabFree" class="tab" type="button" role="tab" aria-selected="false" hidden>自由入力</button>
       </div>
-
-      <div id="practiceView">
-        <p class="type-hint" id="practiceHint">下のことばをキーボードでそのまま打ってみよう</p>
-        <div id="phraseLine" aria-live="polite"></div>
-        <div id="practiceStats">
-          <div class="stat"><b id="statWpm">0</b><span>WPM</span></div>
-          <div class="stat"><b id="statAcc">100<i>%</i></b><span>正確率</span></div>
-          <div class="stat"><b id="statClears">0</b><span>クリア</span></div>
-          <p class="stat-note">Esc で次のことばへ</p>
-        </div>
-        <div id="clearFlash">CLEAR!</div>
+    </div>
+    <div id="practiceView">
+      <div id="phraseLine" aria-label="練習することば"></div>
+      <div id="practiceStats">
+        <div class="stat"><b id="statWpm">0</b><span>WPM</span></div>
+        <div class="stat"><b id="statAcc">100<i>%</i></b><span>正確率</span></div>
+        <div class="stat"><b id="statClears">0</b><span>クリア</span></div>
+        <p class="stat-note">Esc：次のことば</p>
       </div>
+      <div id="clearFlash">CLEAR!</div>
+    </div>
+    <div id="freeView" hidden><div id="freeDisplay"><span id="freeEmpty">好きなことばを、そのまま入力。</span></div></div>
+  </section>
 
-      <div id="freeView" hidden>
-        <p class="type-hint">好きに入力してみよう（日本語IMEもOK）</p>
-        <div id="freeDisplay"><span id="freeEmpty">ここに入力した文字が表示されます</span></div>
+  <section class="panel" id="kbPanel" aria-labelledby="keyboardTitle">
+    <div class="keyboard-heading">
+      <div class="keyboard-identity">
+        <span class="eyebrow">YOUR KEYBOARD, LIVE.</span>
+        <h2 id="keyboardTitle"><span id="kbBoardName">KEYBOARD</span><span class="kb-device-name" id="kbDeviceName" hidden></span></h2>
+        <span class="panel-sub" id="kbProfileLabel"></span>
+      </div>
+      <div class="tabs layer-tabs" id="layerTabs" hidden aria-label="表示レイヤー"></div>
+      <div class="key-readouts">
+        <span class="kb-meta-item">打鍵数 <b id="keyCount">0</b></span>
+        <div class="last-key-readout"><span>LAST KEY</span><b id="lastKey">—</b><div id="keyOsd" aria-hidden="true"></div></div>
+      </div>
+    </div>
+    <div id="kbWrap"><div id="keyboard"></div></div>
+    <div class="keyboard-footer">
+      <p class="kb-caption" id="kbCaption">押したキーが光ります。カーソルの動きも、画面のどこでも。</p>
+      <section id="missionPanel" aria-label="試せる操作">
+        <ol id="missions">
+          <li id="m-type"><i>01</i><span>打つ</span><b class="check">✓</b></li>
+          <li id="m-move"><i>02</i><span>動かす</span><b class="check">✓</b></li>
+          <li id="m-click"><i>03</i><span>クリック</span><b class="check">✓</b></li>
+          <li id="m-scroll"><i>04</i><span>スクロール</span><b class="check">✓</b></li>
+        </ol>
+        <div id="missionDone">ひと通り、体験できました。</div>
+      </section>
+    </div>
+  </section>
+
+  <section class="panel" id="scrollPanel" aria-labelledby="scrollTitle">
+    <div class="scroll-intro">
+      <h2 id="scrollTitle"><span class="section-index">02</span> SCROLL LAB</h2>
+      <h3>指先で、<br>読み進める。</h3>
+      <p>軽く動かして、線に合わせる。<br>強く動かして、遠くの章へ。</p>
+      <span class="anywhere-note">カーソルは、どこにあっても。</span>
+    </div>
+    <div class="scroll-paper">
+      <div class="scroll-paper-heading"><span>FIELD NOTES</span><span id="scrollChapter">01 / 10</span></div>
+      <div id="scrollViewport" aria-label="スクロール体験用の長文"><div id="scrollContent"></div></div>
+      <div class="scroll-reference" aria-hidden="true"><span>◀ 合わせる</span></div>
+    </div>
+    <div class="scroll-position">
+      <span class="eyebrow">POSITION</span>
+      <b id="scrollPercent">0<span>%</span></b>
+      <div class="scroll-progress-track" aria-hidden="true"><div id="scrollProgressFill"></div></div>
+      <span id="scrollPositionText">0 px</span><span id="scrollEdge">START</span>
+    </div>
+  </section>
+
+  <aside id="monitorBar" aria-label="入力モニター">
+    <section id="pointerPanel" aria-label="ポインターの動き">
+      <canvas id="compass" width="150" height="150" aria-label="カーソルの方向"></canvas>
+      <div class="pointer-nums">
+        <div class="num"><b id="numSpeed">0</b><span>速度 px/s</span></div>
+        <div class="num"><b id="numDist">0</b><span>移動距離 px</span></div>
       </div>
     </section>
-
-    <section class="panel" id="kbPanel">
-      <div class="panel-head">
-        <h2>KEYBOARD <span class="panel-sub" id="kbProfileLabel">60キー + トラックポイント</span><span class="kb-device-name" id="kbDeviceName" hidden></span></h2>
-        <div class="tabs layer-tabs" id="layerTabs" hidden></div>
-        <div class="kb-meta">
-          <span class="kb-meta-item">打鍵数 <b id="keyCount">0</b></span>
-          <span class="kb-meta-item">最後のキー <b id="lastKey">—</b></span>
-        </div>
+    <section id="inputMonitorPanel" aria-label="クリック・スクロール">
+      <div id="clickPills">
+        <div class="pill" id="pill-L"><span>左</span><b>0</b></div>
+        <div class="pill" id="pill-M"><span>中</span><b>0</b></div>
+        <div class="pill" id="pill-R"><span>右</span><b>0</b></div>
       </div>
-      <div id="kbWrap">
-        <div id="keyboard"></div>
-        <div id="keyOsd"></div>
-      </div>
-      <p class="kb-caption" id="kbCaption">押したキーが光ります ・ Fn1 / Fn2 はレイヤーキー（単体では信号を送りません） ・ 中央の赤いスティックがトラックポイント</p>
-    </section>
-
-  </div>
-
-  <aside id="rightCol">
-
-    <section class="panel" id="missionPanel">
-      <div class="panel-head"><h2>TRY IT! <span class="panel-sub">ぜんぶ試してみよう</span></h2></div>
-      <ol id="missions">
-        <li id="m-type"><i>①</i><span>キーを押してみる</span><b class="check">✓</b></li>
-        <li id="m-move"><i>②</i><span>赤いスティックでカーソルを動かす</span><b class="check">✓</b></li>
-        <li id="m-click"><i>③</i><span>クリックしてみる</span><b class="check">✓</b></li>
-        <li id="m-scroll"><i>④</i><span>スクロールしてみる</span><b class="check">✓</b></li>
-      </ol>
-      <div id="missionDone">ALL CLEAR — 完璧！ 🎉</div>
-    </section>
-
-    <section class="panel" id="pointerPanel">
-      <div class="panel-head"><h2>TRACKPOINT <span class="panel-sub">カーソルの動き</span></h2></div>
-      <div class="pointer-grid">
-        <canvas id="compass" width="150" height="150"></canvas>
-        <div class="pointer-nums">
-          <div class="num"><b id="numSpeed">0</b><span>速度 px/s</span></div>
-          <div class="num"><b id="numDist">0.0<i> m</i></b><span>移動距離</span></div>
+      <div id="scrollViz">
+        <div class="scroll-arrow" id="scrollUp">▲</div>
+        <div id="scrollBar"><div id="scrollBarFill"></div></div>
+        <div class="scroll-arrow" id="scrollDown">▼</div>
+        <div class="scroll-nums">
+          <div class="num"><b id="numScroll">0</b><span>入力合計 px（X+Y）</span></div>
+          <div class="num"><b id="numScrollNotches">—</b><span>ノッチ換算（X+Y）</span></div>
         </div>
       </div>
     </section>
-
-    <section class="panel" id="inputMonitorPanel">
-      <div class="panel-head"><h2>INPUT MONITOR <span class="panel-sub">クリック・スクロール検知</span></h2></div>
-      <div class="input-monitor-summary">
-        <div id="clickPills">
-          <div class="pill" id="pill-L"><span>左</span><b>0</b></div>
-          <div class="pill" id="pill-M"><span>中</span><b>0</b></div>
-          <div class="pill" id="pill-R"><span>右</span><b>0</b></div>
-        </div>
-        <div id="scrollViz">
-          <div class="scroll-arrow" id="scrollUp">▲</div>
-          <div id="scrollBar"><div id="scrollBarFill"></div></div>
-          <div class="scroll-arrow" id="scrollDown">▼</div>
-          <div class="scroll-nums">
-            <div class="num"><b id="numScroll">0</b><span>合計スクロール量</span></div>
-            <div class="num"><b id="numScrollNotches">0.00</b><span>ノッチ換算</span></div>
-            <div id="scrollResolution" class="scroll-resolution" data-resolution="unknown">解像度を測定中</div>
-          </div>
-        </div>
-      </div>
-      <div id="inputFeed" aria-live="polite" aria-label="直近の入力イベント"></div>
-    </section>
-
+    <div class="monitor-status">
+      <div id="scrollResolution" class="scroll-resolution" data-resolution="unknown">解像度：未観測</div>
+      <div id="inputFeed" aria-label="直近のクリック・スクロール"></div>
+    </div>
   </aside>
 </main>
 
@@ -166,6 +172,12 @@
       <select id="autoLayerSimDelaySelect"></select>
       <p class="staff-note">実機側のオートレイヤー設定と表示が合わない場合は、オフにすると従来表示に戻ります。</p>
     </div>
+    <details id="scrollDiagnostics"><summary>スクロールの一時観測</summary>
+      <p class="staff-note">wheelと描画位置のみを端末内で観測します。キー入力は記録しません。</p>
+      <button id="scrollDebugToggle" type="button">観測を開始</button>
+      <button id="scrollDebugClear" type="button">記録を消去</button>
+      <pre id="scrollDebugReadout">観測停止中</pre>
+    </details>
     <p>テスターを終了しますか？</p>
     <div class="staff-actions">
       <button id="staffExitBtn" type="button">終了する</button>
@@ -204,10 +216,9 @@
 
 <div id="attract" class="hidden">
   <div class="attract-inner">
-    <div class="attract-dot"><span></span></div>
-    <h2>Techmech keys <em>INPUT LAB</em></h2>
-    <p class="attract-lead">さわって、たしかめる。</p>
-    <p class="attract-sub">キーを押すか、まんなかの赤いスティックでカーソルを動かしてスタート</p>
+    <span class="eyebrow">READY WHEN YOU ARE.</span>
+    <h2>さわって、たしかめる。</h2>
+    <p class="attract-sub">キーを打つ。カーソルを動かす。文章をスクロールする。</p>
   </div>
 </div>
 
@@ -220,6 +231,9 @@
 <script src="layout.js"></script>
 <script src="keycodes.js"></script>
 <script src="vial.js"></script>
+<script src="scroll-input.js"></script>
+<script src="scroll-content.js"></script>
+<script src="scroll-lab.js"></script>
 <script src="app.js"></script>
 <script src="tours.js"></script>
 <script src="layouts/olsk60.tours.js"></script>

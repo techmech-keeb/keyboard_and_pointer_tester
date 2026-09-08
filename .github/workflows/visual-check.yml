@@ -2,10 +2,15 @@ name: visual-check
 
 on:
   push:
-    branches: ["main", "claude/**", "codex/**"]
+    branches: ["main", "claude/**", "codex/**", "feat/**"]
     paths:
       - "ui/**"
-      - "tools/visual-check.js"
+      - "tools/**"
+      - ".github/workflows/visual-check.yml"
+  pull_request:
+    paths:
+      - "ui/**"
+      - "tools/**"
       - ".github/workflows/visual-check.yml"
   workflow_dispatch:
 
@@ -14,6 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - name: Check JavaScript and scroll arithmetic
+        run: |
+          node --check ui/app.js
+          node --check ui/scroll-lab.js
+          node --check ui/scroll-content.js
+          node --check ui/tours.js
+          node --test tools/scroll-input.test.js
 
       - name: Install Playwright and Chromium
         run: |
@@ -24,6 +37,7 @@ jobs:
         run: node tools/visual-check.js screenshots
 
       - uses: actions/upload-artifact@v6
+        if: always()
         with:
           name: visual-check-screenshots
           path: screenshots/

@@ -1,5 +1,8 @@
 /* Retro LCD theme: all overrides are isolated to the selected theme. */
 html[data-theme="lcd"] {
+  --scroll-ink: #24251e;
+  --scroll-paper: #eeefdb;
+  --stage-soft: #dcdebf;
   --bg: #f4f4d8;
   --panel: #f8f8e2;
   --panel-solid: #ececd0;
@@ -166,5 +169,12 @@ html[data-theme="lcd"] #freeDisplay .caret {
 }
 
 html[data-theme="lcd"] #scrollBarFill {
-  background: repeating-linear-gradient(180deg, transparent 0 6px, rgba(13, 13, 13, 0.55) 6px 12px);
+  background: var(--scroll-ink);
 }
+
+html[data-theme="lcd"] #kbPanel { background: transparent; }
+html[data-theme="lcd"] .tab.active { color: var(--txt-on-accent); }
+html[data-theme="lcd"] #scrollPanel { background: var(--scroll-paper); }
+html[data-theme="lcd"] .key.down .keycap { outline: 2px solid var(--txt); outline-offset: 1px; color: var(--txt-on-accent); }
+html[data-theme="lcd"] #keyOsd { background: var(--txt); }
+html[data-theme="lcd"] #attract { background: var(--panel-solid); border: 1px solid var(--line); }

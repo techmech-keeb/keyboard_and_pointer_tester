@@ -107,11 +107,14 @@ const tourEngine = (() => {
       els.list.appendChild(item);
     }
     els.menu.hidden = false;
+    els.list.firstElementChild?.focus({ preventScroll: true });
   }
 
   function closeMenu() {
+    const wasOpen = state.menuOpen;
     state.menuOpen = false;
     if (els.menu) els.menu.hidden = true;
+    if (wasOpen && typeof resumeFreeFocus === "function") resumeFreeFocus();
   }
 
   function keycodeForTarget(target) {
@@ -177,6 +180,7 @@ const tourEngine = (() => {
       applyLayerView();
     }
     updateGuideButton();
+    if (typeof resumeFreeFocus === "function") resumeFreeFocus();
   }
 
   function bumpIdle() {
