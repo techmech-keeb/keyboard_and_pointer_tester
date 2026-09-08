@@ -74,6 +74,18 @@ internal sealed class KioskForm : Form
         await _webView.EnsureCoreWebView2Async(env);
 
         var core = _webView.CoreWebView2;
+        // The app reuses a dedicated WebView2 profile so localStorage settings
+        // survive upgrades. Clear only its HTTP disk cache before mapping the
+        // packaged UI, otherwise Chromium can display assets from an older
+        // extracted build under the stable virtual origin.
+        try
+        {
+            await core.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.DiskCache);
+        }
+        catch (COMException)
+        {
+            // Cache cleanup is defensive; never prevent the offline UI from starting.
+        }
         var s = core.Settings;
         s.AreDefaultContextMenusEnabled = false;
         s.AreDevToolsEnabled = false;

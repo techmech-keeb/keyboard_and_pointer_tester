@@ -51,7 +51,7 @@ keyboard_and_pointer_tester/
 
 ### アプリモード（通常ウィンドウ / 練習用途）
 
-1. GitHub Actions の **build-kiosk** ワークフローの Artifact `TechmechInputLab-win-x64` をダウンロードして展開
+1. GitHub Actions の **build-kiosk** ワークフローの Artifact `TechmechInputLab-win-x64-ci-<実行番号>` をダウンロードして、新しいフォルダへ展開
    （手元でビルドする場合は下記「ビルド」参照）
 2. `TechmechInputLab.exe` を実行すると、通常のタイトルバー付きウィンドウで起動します。販売ユーザーの練習用途や、開発者の高解像度メインPCでの作業に使えます。
    - WebView2 ランタイムが必要です（Windows 10/11 には標準搭載）
@@ -101,6 +101,12 @@ dotnet publish kiosk/TechmechInputLab.csproj -c Release -r win-x64 --self-contai
 ```
 
 `publish/` に `TechmechInputLab.exe` と `ui/` フォルダが出力されます。2つセットで配置してください。
+
+`ui/` または `kiosk/` を変更するPRでは `build-kiosk` が自動実行されます。CI成果物には
+チェックアウトしたUI全ファイルとのSHA-256照合が入り、`BUILD-INFO.json` に対象ブランチ、
+コミット、Actions実行URLを記録します。スタッフメニューに表示される開発版番号
+`0.1.0-ci.<実行番号>` はArtifact名の番号と一致します。別版を試すときは、起動中の
+`TechmechInputLab.exe` を終了してから、対象runのArtifactを空のフォルダへ展開してください。
 
 ## UI ビジュアルチェック
 
@@ -154,7 +160,8 @@ GPU のない検証環境では `CHROMIUM_DISABLE_GPU=1` を指定できます�
 
   規約に沿わないメッセージは patch 扱いになります。minor/major を自動で
   出したいときは `feat:` / `feat!:` を使うか、`bump` で明示指定してください。
-- 日常の CI ビルド（`build-kiosk.yml`）はブランチ push で従来どおり動きます。
+- 日常の CI ビルド（`build-kiosk.yml`）は対象ブランチへの push に加え、`ui/` または
+  `kiosk/` を変更するPRでも動きます。
   配布はタグ＝リリース、と役割を分けています。
 
 ## テスターの機能

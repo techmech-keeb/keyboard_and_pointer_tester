@@ -6,6 +6,13 @@ on:
     paths:
       - "kiosk/**"
       - "ui/**"
+      - "global.json"
+      - ".github/workflows/build-kiosk.yml"
+  pull_request:
+    paths:
+      - "kiosk/**"
+      - "ui/**"
+      - "global.json"
       - ".github/workflows/build-kiosk.yml"
   workflow_dispatch:
 
@@ -17,7 +24,16 @@ jobs:
 
       - uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: "8.0.x"
+          global-json-file: global.json
+
+      - name: Verify .NET SDK
+        shell: pwsh
+        run: |
+          $sdk = dotnet --version
+          Write-Host "Selected .NET SDK: $sdk"
+          if (-not $sdk.StartsWith("8.0.")) {
+            throw "Expected a .NET 8 SDK, but dotnet selected $sdk"
+          }
 
       - name: Publish (self-contained win-x64)
         run: >
@@ -25,10 +41,55 @@ jobs:
           -c Release -r win-x64 --self-contained
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=0.1.0-ci.${{ github.run_number }}
           -o publish
+
+      - name: Verify packaged UI and record provenance
+        shell: pwsh
+        env:
+          HEAD_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $sourceRoot = (Resolve-Path "ui").Path
+          $publishedRoot = (Resolve-Path "publish/ui").Path
+          $sourceFiles = @(Get-ChildItem $sourceRoot -Recurse -File)
+          $publishedFiles = @(Get-ChildItem $publishedRoot -Recurse -File)
+
+          if ($sourceFiles.Count -eq 0) {
+            throw "No source UI files were found."
+          }
+          if ($sourceFiles.Count -ne $publishedFiles.Count) {
+            throw "UI file count differs: source=$($sourceFiles.Count), publish=$($publishedFiles.Count)"
+          }
+
+          foreach ($source in $sourceFiles) {
+            $relative = [System.IO.Path]::GetRelativePath($sourceRoot, $source.FullName)
+            $published = Join-Path $publishedRoot $relative
+            if (-not (Test-Path $published -PathType Leaf)) {
+              throw "Published UI is missing: $relative"
+            }
+            $sourceHash = (Get-FileHash $source.FullName -Algorithm SHA256).Hash
+            $publishedHash = (Get-FileHash $published -Algorithm SHA256).Hash
+            if ($sourceHash -ne $publishedHash) {
+              throw "Published UI differs from the checked-out source: $relative"
+            }
+          }
+
+          [ordered]@{
+            repository = "${{ github.repository }}"
+            workflowRun = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            event = "${{ github.event_name }}"
+            sourceRef = $env:HEAD_REF
+            headCommit = $env:HEAD_COMMIT
+            checkedOutCommit = "${{ github.sha }}"
+            ciVersion = "0.1.0-ci.${{ github.run_number }}"
+          } | ConvertTo-Json | Set-Content "publish/BUILD-INFO.json" -Encoding utf8
+
+          Write-Host "Verified $($sourceFiles.Count) UI files from $env:HEAD_REF at $env:HEAD_COMMIT"
 
       - uses: actions/upload-artifact@v6
         with:
-          name: TechmechInputLab-win-x64
+          name: TechmechInputLab-win-x64-ci-${{ github.run_number }}
           path: publish/
           if-no-files-found: error
