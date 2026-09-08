@@ -16,6 +16,7 @@ function applyTheme(id) {
   else document.documentElement.dataset.theme = theme.id;
   try { localStorage.setItem(THEME_KEY, theme.id); } catch (_) { /* ignore */ }
   refreshFxPalette();
+  refreshStageGeometry();
   const select = document.getElementById("themeSelect");
   if (select) select.value = theme.id;
 }
