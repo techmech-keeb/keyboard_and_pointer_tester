@@ -407,7 +407,10 @@ body {
   color: var(--keycap-layer-label);
 }
 
-body.kiosk .key.win .keycap .lock { display: block; }
+body.kiosk .key.encoder .keycap { border-radius: 50%; }
+.key.encoder .keycap > span { font-size: calc(var(--u) * 0.34); }
+
+.key.win .keycap .lock { display: block; }
 .key.win .keycap .lock {
   display: none;
   position: absolute; top: calc(var(--u) * 0.06); right: calc(var(--u) * 0.09);

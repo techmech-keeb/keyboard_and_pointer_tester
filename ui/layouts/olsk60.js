@@ -16,6 +16,26 @@
 // =============================================================
 "use strict";
 
+// vial.json の layouts.keymap (KLE 生データ)。端末から vial.json を取れない経路
+// (ブラウザ/WebHID) でも、端末が返す layout options に合わせて Space の分割と
+// エンコーダの有無を描き分けられるようにする。正本: rmk-config keyboards/olsk60/vial.json。
+const OLSK60_KLE_RMK = [
+  [{"x": 0.75, "c": "#777777"}, "0,0\n\n`", {"c": "#cccccc"}, "0,1", "0,2", "0,3", "0,4", "0,5", {"x": 0.75}, "0,6", "0,7", "0,8", "0,9", "0,10", {"c": "#aaaaaa", "w": 2}, "0,11"],
+  [{"x": 0.15, "w": 1.5}, "1,0", {"x": 0.1, "c": "#cccccc"}, "1,1", "1,2", "1,3", "1,4", "1,5", {"x": 0.75}, "1,6", "1,7", "1,8", "1,9", "1,10", "1,11", {"w": 1.5}, "1,12"],
+  [{"c": "#aaaaaa", "w": 1.75}, "2,0", {"c": "#cccccc"}, "2,1", "2,2", "2,3", "2,4", "2,5", {"x": 0.75}, "2,6", "2,7", "2,8", "2,9", "2,10", {"c": "#777777", "w": 2.25}, "2,11"],
+  [{"c": "#aaaaaa", "w": 1.75}, "3,0", {"c": "#cccccc"}, "3,1", "3,2", "3,3", "3,4", "3,5", {"x": 0.75}, "3,6", "3,7", "3,8", "3,9", "3,10", {"c": "#777777"}, "3,11", {"c": "#aaaaaa", "w": 1.25}, "3,12"],
+  [{"x": 0.5, "w": 1.25}, "4,0", {"w": 1.25}, "4,1", {"x": 7.5, "c": "#aaaaaa"}, "4,9", {"c": "#777777"}, "4,10", "4,11\n\n\n1,0", "4,12"],
+  [{"y": -1, "x": 3, "w": 1.5, "c": "#aaaaaa"}, "4,2\n\n\n0,0", {"c": "#cccccc", "w": 1}, "4,3\n\n\n0,0", {"w": 1}, "4,4\n\n\n0,0", {"w": 1.25}, "4,5\n\n\n0,0", {"w": 1}, "4,6\n\n\n0,0", {"w": 1.75}, "4,7\n\n\n0,0"],
+  [{"y": -1, "x": 3, "w": 1.25, "c": "#aaaaaa"}, "4,2\n\n\n0,1", {"c": "#cccccc", "w": 2.25}, "4,4\n\n\n0,1", {"c": "#aaaaaa", "w": 1.25}, "4,5\n\n\n0,1", {"c": "#cccccc", "w": 2.75}, "4,7\n\n\n0,1"],
+  [{"y": -1, "x": 3, "w": 1.25, "c": "#aaaaaa"}, "4,2\n\n\n0,2", {"c": "#cccccc", "w": 6.25}, "4,5\n\n\n0,2"],
+  [{"y": -1, "x": 12.5, "c": "#777777"}, "5,12\n\n\n1,1"],
+  [{"y": 0.25, "x": 12.5, "c": "#cccccc"}, "0,0\n\n\n1,1\n\n\n\n\n\ne", "0,1\n\n\n1,1\n\n\n\n\n\ne"],
+];
+// QMK 版 (qmk-config keymaps/vial/vial.json) との差はエンコーダのプッシュ位置だけ
+// (RMK 5,12 / QMK 5,13。QMK の matrix が 6x14 のため)。
+const OLSK60_KLE_QMK = OLSK60_KLE_RMK.map((row) =>
+  row.map((item) => (item === "5,12\n\n\n1,1" ? "5,13\n\n\n1,1" : item)));
+
 // 版に依存しない部分。両プロファイルが同じ配列を参照する (読み取り専用)。
 const OLSK60_GEOMETRY = {
   unitsWide: 15,
@@ -120,6 +140,7 @@ const OLSK60_QMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   },
   // qmk-config techmechkeys/olsk60/keyboard.json
   matrix: { rows: 6, cols: 14 },
+  layoutKeymap: OLSK60_KLE_QMK,
   customKeycodes: [
     "Precision", "Balanced", "Fast", "CustPrec", "CustFast",
     "Spd+", "Spd-", "Acc+", "Acc-", "Dec+", "Dec-",
@@ -137,6 +158,7 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   },
   // rmk-config keyboards/olsk60/vial.json (keyboard.toml と同じ 6x13)
   matrix: { rows: 6, cols: 13 },
+  layoutKeymap: OLSK60_KLE_RMK,
   customKeycodes: [
     "TP Spd1", "TP Spd2", "TP Spd3", "TP Spd4", "TP Spd5",
     "AL 150", "AL 400", "AL 800",

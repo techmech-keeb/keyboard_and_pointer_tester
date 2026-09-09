@@ -1,7 +1,7 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { bitsFor, decodeOptions, encodeOptions, parseKle, selectLayout, describe } = require("../ui/vial-layout.js");
+const { bitsFor, decodeOptions, encodeOptions, parseKle, selectLayout, composeOverlay, describe } = require("../ui/vial-layout.js");
 
 // 正本: rmk-config keyboards/olsk60/vial.json の layouts（labels / keymap）。
 // QMK 版（qmk-config keymaps/vial/vial.json）との差はエンコーダのプッシュ位置
@@ -125,4 +125,59 @@ test("VialDevice.readLayoutOptions decodes the big-endian u32 after [cmd, value 
   assert.equal(await dev.readLayoutOptions(), 3);
   assert.deepEqual(sent, [[0x02, 0x02]]);
   assert.deepEqual(decodeOptions(OLSK60_LABELS, 3), [1, 1]);
+});
+
+// ボードプロファイル（素のスクリプト）を vm で読み、合成を検査する。
+function loadProfiles() {
+  const vm = require("node:vm");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const ctx = vm.createContext({ console });
+  for (const f of ["ui/boards.js", "ui/layouts/olsk60.js"]) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, "..", f), "utf8"), ctx, { filename: f });
+  }
+  return vm.runInContext("BOARDS", ctx);
+}
+
+test("the profile KLE matches the canonical vial.json, QMK differing only at the encoder push", () => {
+  const boards = loadProfiles();
+  const rmk = boards.find((b) => b.id === "olsk60v2-rmk");
+  const qmk = boards.find((b) => b.id === "olsk60v2-qmk");
+  assert.deepEqual(JSON.parse(JSON.stringify(rmk.layoutKeymap)), OLSK60_KEYMAP);
+  assert.deepEqual(JSON.parse(JSON.stringify(rmk.layoutLabels)), OLSK60_LABELS);
+  const pushOf = (b) => parseKle(b.layoutKeymap).filter((k) => k.row === 5).map((k) => k.col);
+  assert.deepEqual(pushOf(rmk), [12]);
+  assert.deepEqual(pushOf(qmk), [13]);
+});
+
+test("composeOverlay keeps profile legends but takes geometry from the device", () => {
+  const rmk = loadProfiles().find((b) => b.id === "olsk60v2-rmk");
+  const parsed = parseKle(OLSK60_KEYMAP);
+  const at = (o, r, c) => o.keys.find((k) => k.m && k.m[0] === r && k.m[1] === c);
+
+  // Holy: 5-Split・エンコーダ無し = 0
+  const five = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 0)));
+  assert.equal(five.keys.length, 62);
+  assert.equal(five.encoders.length, 0);
+  assert.deepEqual([five.unitsWide, five.unitsHigh], [15, 5]);
+  assert.equal(at(five, 4, 11).code, "ArrowDown");            // プロファイルの刻印を継承
+  assert.equal(at(five, 4, 3).code, "__m4_3");                 // プロファイルに無い座標は合成
+  assert.deepEqual([at(five, 4, 4).code, at(five, 4, 4).w], ["Space", 1]); // 寸法は端末側
+  assert.equal(at(five, 5, 12), undefined);
+
+  // 5-Split・エンコーダ有り = 1
+  const enc = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 1)));
+  assert.equal(enc.keys.length, 62);
+  assert.equal(at(enc, 4, 11), undefined);
+  assert.deepEqual([at(enc, 5, 12).x, at(enc, 5, 12).y], [12.5, 4]);
+  assert.deepEqual(enc.encoders.map((e) => [e.index, e.direction, e.x, e.y]), [[0, 0, 12.5, 5.25], [0, 1, 13.5, 5.25]]);
+  assert.deepEqual([enc.unitsWide, enc.unitsHigh], [15, 6.25]);
+
+  // 3-Split・エンコーダ無し = 2 はプロファイルそのものと同じ配置になる
+  const three = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 2)));
+  assert.equal(three.keys.length, rmk.keys.length);
+  for (const k of rmk.keys) {
+    const d = at(three, k.m[0], k.m[1]);
+    assert.deepEqual([d.x, d.y, d.w, d.code], [k.x, k.y, k.w, k.code], k.code);
+  }
 });

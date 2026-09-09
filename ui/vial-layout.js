@@ -126,6 +126,31 @@ const VialLayout = (() => {
     };
   }
 
+  // 端末の選択済みレイアウトを、ボードプロファイルの鍵に重ねる。位置・寸法は
+  // 端末側、刻印や KeyboardEvent.code はプロファイル側（同じ matrix 座標の
+  // キーがあれば）を使う。プロファイルに無い座標は matrix だけの合成キーにする。
+  function composeOverlay(profileKeys, selected) {
+    const byPos = new Map();
+    for (const k of profileKeys || []) if (k.m) byPos.set(k.m[0] + "," + k.m[1], k);
+    const keys = (selected.keys || []).map((d) => {
+      const base = byPos.get(d.row + "," + d.col);
+      const merged = base ? Object.assign({}, base) : {
+        code: "__m" + d.row + "_" + d.col, label: "", m: [d.row, d.col], device: true,
+      };
+      merged.x = d.x; merged.y = d.y; merged.w = d.w; merged.h = d.h;
+      return merged;
+    });
+    const encoders = (selected.encoders || []).map((e) => ({
+      index: e.encoder.index, direction: e.encoder.direction, x: e.x, y: e.y, w: e.w, h: e.h,
+    }));
+    const all = keys.concat(encoders);
+    return {
+      keys, encoders,
+      unitsWide: all.reduce((m, k) => Math.max(m, k.x + k.w), 0),
+      unitsHigh: all.reduce((m, k) => Math.max(m, k.y + k.h), 0),
+    };
+  }
+
   // labels と選択値から、スタッフ画面向けの短い説明を作る。
   function describe(labels, choices) {
     return labels.map((label, i) => {
@@ -134,7 +159,7 @@ const VialLayout = (() => {
     });
   }
 
-  return { bitsFor, decodeOptions, encodeOptions, parseKle, selectLayout, describe };
+  return { bitsFor, decodeOptions, encodeOptions, parseKle, selectLayout, composeOverlay, describe };
 })();
 
 if (typeof module !== "undefined" && module.exports) module.exports = VialLayout;

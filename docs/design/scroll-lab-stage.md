@@ -86,7 +86,7 @@ stackの寄与率や、firmware変更でどこまで近づけられるかは、�
 | 打鍵中のfixture | — | [1368×912](scroll-lab-images/1368x912-lcd-key-down.png) |
 
 [変更前の1368×912](scroll-lab-images/before-1368x912.png) とも比較できる。
-全72状態は `tools/visual-check.js` で再撮影でき、CIではArtifactに保存する。
+全78状態は `tools/visual-check.js` で再撮影でき、CIではArtifactに保存する。
 
 継続点検で [1024×768の長い練習文](scroll-lab-images/1024x768-default-long-phrase.png) と
 [ガイド表示fixture・スタンダード](scroll-lab-images/1024x768-default-guide-fixture.png)、

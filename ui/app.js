@@ -8,6 +8,15 @@
 
 const $ = (id) => document.getElementById(id);
 let BOARD = DEFAULT_BOARD;
+// 接続中の端末が保存している物理レイアウト（Space の分割・エンコーダ有無）を
+// プロファイルに重ねたもの。無ければ BOARD.keys をそのまま描く。切断で捨てる。
+let DEVICE_LAYOUT = null;
+function activeKeys() { return DEVICE_LAYOUT ? DEVICE_LAYOUT.keys : BOARD.keys; }
+function activeUnits() {
+  return DEVICE_LAYOUT
+    ? { w: Math.max(BOARD.unitsWide, DEVICE_LAYOUT.unitsWide), h: Math.max(BOARD.unitsHigh, DEVICE_LAYOUT.unitsHigh) }
+    : { w: BOARD.unitsWide, h: BOARD.unitsHigh };
+}
 
 // ---------- tunables ----------
 const TRAIL_MS = 2800;          // trail fade time
@@ -134,7 +143,7 @@ function renderCap(el, k, parts) {
 }
 
 function buildKeyboard() {
-  for (const k of BOARD.keys) {
+  for (const k of activeKeys()) {
     const el = document.createElement("div");
     el.className = "key";
     if (k.layer) el.classList.add("layer");
@@ -152,6 +161,19 @@ function buildKeyboard() {
     if (!keyEls.has(k.code)) keyEls.set(k.code, []);
     keyEls.get(k.code).push(el);
     if (k.m) matrixEls.set(k.m[0] + "," + k.m[1], el);
+  }
+  for (const e of DEVICE_LAYOUT ? DEVICE_LAYOUT.encoders : []) {
+    // vial.json の回転エントリ 1 つ = 1u の丸いキャップ。0 = 反時計回り / 1 = 時計回り。
+    const el = document.createElement("div");
+    el.className = "key encoder";
+    el.style.left = `calc(var(--u) * ${e.x})`;
+    el.style.top = `calc(var(--u) * ${e.y})`;
+    el.style.width = `calc(var(--u) * ${e.w})`;
+    el.style.height = `calc(var(--u) * ${e.h})`;
+    el.dataset.id = "encoder" + e.index + (e.direction ? "cw" : "ccw");
+    el._key = { code: el.dataset.id, label: e.direction ? "↻" : "↺" };
+    renderCap(el, el._key);
+    keyboardEl.appendChild(el);
   }
 
   const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
@@ -179,29 +201,51 @@ function fitKeyboard() {
   const wrap = $("kbWrap");
   const u = Math.min(
     window.innerWidth >= 1800 ? 100 : 68,
-    (wrap.clientWidth - 4) / BOARD.unitsWide,
-    (wrap.clientHeight - 8) / BOARD.unitsHigh,
+    (wrap.clientWidth - 4) / activeUnits().w,
+    (wrap.clientHeight - 8) / activeUnits().h,
   );
   document.documentElement.style.setProperty("--u", Math.max(1, u).toFixed(3) + "px");
+}
+
+// キーボードの絵を現在の BOARD と DEVICE_LAYOUT から描き直す。
+function rebuildKeyboardDom() {
+  keyboardEl.innerHTML = "";
+  keyEls.clear();
+  matrixEls.clear();
+  buildKeyboard();
+  buildCodeChars();
+  const units = activeUnits();
+  keyboardEl.style.width = `calc(var(--u) * ${units.w})`;
+  keyboardEl.style.height = `calc(var(--u) * ${units.h})`;
+  fitKeyboard();
+  const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
+  const pointingLabel = pointings.length ? " + " + pointings.map((pointing) =>
+    pointing.type === "trackpoint" ? "トラックポイント" : pointing.type || "ポインティング").join("・") : "";
+  $("kbBoardName").textContent = BOARD.name;
+  $("kbProfileLabel").textContent = activeKeys().length + "キー" + pointingLabel +
+    (DEVICE_LAYOUT && DEVICE_LAYOUT.encoders.length ? " + エンコーダ" : "");
+}
+
+// 端末の layout options で選ばれたキー集合を描く。プロファイル側の TrackPoint・
+// ガイド・練習文は保ったまま、キーの配置と寸法だけを実機に合わせる。
+function applyDeviceLayout(layout) {
+  if (!layout || !layout.keys || !layout.keys.length) { clearDeviceLayout(); return; }
+  DEVICE_LAYOUT = VialLayout.composeOverlay(BOARD.keys, layout);
+  rebuildKeyboardDom();
+}
+
+function clearDeviceLayout() {
+  if (!DEVICE_LAYOUT) return;
+  DEVICE_LAYOUT = null;
+  rebuildKeyboardDom();
 }
 
 function applyBoard(profile) {
   if (!profile || profile === BOARD) return;
   autoLayerSimCancel();
   BOARD = profile;
-  keyboardEl.innerHTML = "";
-  keyEls.clear();
-  matrixEls.clear();
-  buildKeyboard();
-  buildCodeChars();
-  keyboardEl.style.width = `calc(var(--u) * ${BOARD.unitsWide})`;
-  keyboardEl.style.height = `calc(var(--u) * ${BOARD.unitsHigh})`;
-  fitKeyboard();
-  const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
-  const pointingLabel = pointings.length ? " + " + pointings.map((pointing) =>
-    pointing.type === "trackpoint" ? "トラックポイント" : pointing.type || "ポインティング").join("・") : "";
-  $("kbBoardName").textContent = BOARD.name;
-  $("kbProfileLabel").textContent = BOARD.keys.length + "キー" + pointingLabel;
+  DEVICE_LAYOUT = null;
+  rebuildKeyboardDom();
   practiceInit();
   if (VS) {
     VS.rows = BOARD.matrix ? BOARD.matrix.rows : 0;
@@ -1484,7 +1528,8 @@ async function vialReadLayoutOptions(dev, def) {
   try {
     const value = await dev.readLayoutOptions();
     const choices = VialLayout.decodeOptions(labels, value);
-    const kle = def && def.layouts && Array.isArray(def.layouts.keymap) ? def.layouts.keymap : null;
+    const kle = (def && def.layouts && Array.isArray(def.layouts.keymap) && def.layouts.keymap) ||
+      BOARD.layoutKeymap || null;
     const selected = kle ? VialLayout.selectLayout(VialLayout.parseKle(kle), choices) : null;
     return {
       value, labels, choices,
@@ -1522,6 +1567,7 @@ async function vialOnConnected() {
   } catch (_) { /* definition is optional */ }
 
   VS.layoutOptions = await vialReadLayoutOptions(dev, def);
+  applyDeviceLayout(VS.layoutOptions);
 
   VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
   VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
@@ -1576,6 +1622,7 @@ function vialDisconnect(reason, scheduleRetry = true) {
   VS.unlocking = false;
   VS.keymap = null;
   VS.layoutOptions = null;
+  clearDeviceLayout();
   vialRestoreStatic();
   vialStaffRefresh();
   if (window.tourEngine) tourEngine.updateGuideButton();

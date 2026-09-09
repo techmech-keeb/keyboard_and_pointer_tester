@@ -347,6 +347,26 @@ async function recoveryChecks(page, shot) {
       await settle(page);
       await shot("free-input");
       await layoutCheck(page, tag + "-free");
+      // 端末が保存しているレイアウト（5-Split・エンコーダ有り = 1）を重ねた状態。
+      // 応答の合成だけで、接続機の検証ではない。
+      const overlay = await page.evaluate(() => {
+        applyBoard(BOARDS.find(b => b.id === "olsk60v2-rmk")); // 既定は QMK 版（プッシュは 5,13）
+        const parsed = VialLayout.parseKle(BOARD.layoutKeymap);
+        applyDeviceLayout(VialLayout.selectLayout(parsed, VialLayout.decodeOptions(BOARD.layoutLabels, 1)));
+        return { push: matrixEls.has("5,12"), arrowDown: matrixEls.has("4,11"),
+          encoders: document.querySelectorAll(".key.encoder").length, keys: activeKeys().length };
+      });
+      assert.deepEqual(overlay, { push: true, arrowDown: false, encoders: 2, keys: 62 }, "device layout overlay");
+      await settle(page);
+      await shot("device-layout");
+      await layoutCheck(page, tag + "-device-layout");
+      const restored = await page.evaluate(() => {
+        clearDeviceLayout();
+        const r = { keys: activeKeys().length, encoders: document.querySelectorAll(".key.encoder").length, arrowDown: matrixEls.has("4,11") };
+        applyBoard(DEFAULT_BOARD);
+        return r;
+      });
+      assert.deepEqual(restored, { keys: 60, encoders: 0, arrowDown: true }, "profile restored after overlay");
       await inputChecks(page);
       await recoveryChecks(page, shot);
       if (size === SIZES[0] && theme === THEMES[0]) await idleCheck(page);
