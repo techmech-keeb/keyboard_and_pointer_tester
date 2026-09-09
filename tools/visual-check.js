@@ -563,6 +563,61 @@ async function recoveryChecks(page, shot) {
       assert.deepEqual(noDefinitionUnlocked,
         { board: "olsk60v2-qmk", polling: false, matrixEls: 60 },
         "a generic fallback does not follow the device matrix");
+      // unlock が成立した瞬間、接続時とは別の場所でバッジ・キャプション・
+      // ポーリングを書いていたため、未登録機が登録機向けの表示に化けていた。
+      // 判定は vialApplyConnectionView 1 か所に寄せてある。
+      const unlockKeepsState = await page.evaluate(async () => {
+        const view = () => ({
+          badge: document.getElementById("vialBadge").textContent,
+          caption: document.getElementById("kbCaption").textContent,
+          polling: VS.pollTimer !== 0,
+        });
+        // 定義を取れた未登録機（キオスク経路）と、取れない未登録機（WebHID）。
+        const run = async (definition) => {
+          let polls = 0;
+          VS.mode = "webhid";
+          VS.transport = { vendorId: 0x1234, productId: 0x5678, product: "OmniTB", close() {} };
+          VS.dev = {
+            uid: new Uint8Array(8),
+            readDefinition: async () => definition,
+            readLayoutOptions: async () => 0,
+            readLayerCount: async () => 1,
+            readKeymap: async () => [[[0x0004, 0x0005]]],
+            readUnlockStatus: async () => ({ unlocked: false, keys: [[0, 0]] }),
+            readMatrix: async () => [0],
+            unlockStart: async () => {},
+            unlockPoll: async () => ({ unlocked: ++polls > 1, counter: 0 }),
+          };
+          VS.rows = 1; VS.cols = 2;
+          await vialOnConnected();
+          const connected = view();
+          await vialUnlockStart();
+          await new Promise((r) => setTimeout(r, 400));   // unlockTimer が成立を拾うまで
+          const unlocked = view();
+          clearTimeout(VS.beatTimer); clearTimeout(VS.pollTimer); clearInterval(VS.unlockTimer);
+          vialDisconnect("fixture", false);
+          return { connected, unlocked };
+        };
+        const withDef = await run({
+          name: "OmniTB fixture",
+          matrix: { rows: 1, cols: 2 },
+          layouts: { labels: [], keymap: [[{ a: 4 }, "0,0", "0,1"]] },
+        });
+        const withoutDef = await run(null);
+        applyBoard(DEFAULT_BOARD);
+        return { withDef, withoutDef };
+      });
+      // 定義から描けた機は unlock で押下も追うが、登録機の顔にはならない。
+      assert.equal(unlockKeepsState.withDef.unlocked.badge, "VIAL 未登録機");
+      assert.ok(unlockKeepsState.withDef.unlocked.caption.startsWith("未登録のキーボードです"),
+        unlockKeepsState.withDef.unlocked.caption);
+      assert.equal(unlockKeepsState.withDef.unlocked.polling, true);
+      // 定義を取れない機は unlock しても汎用表示のまま、ポーリングも始めない。
+      assert.deepEqual(unlockKeepsState.withoutDef.unlocked, unlockKeepsState.withoutDef.connected,
+        "unlocking a definition-less device must not change the view");
+      assert.equal(unlockKeepsState.withoutDef.unlocked.polling, false);
+      assert.equal(unlockKeepsState.withoutDef.unlocked.caption,
+        "この機の定義を取得できないため、選択中の既定ボードによる汎用表示です");
       // 登録機でも、端末が申告する matrix がプロファイルと食い違えば fits=false に
       // なり、絵はプロファイルのまま・キーマップだけ端末の寸法で読まれる。この
       // ずれた組み合わせで applyLayerView が範囲外を読んで落ちていた（PR #49）。
