@@ -1211,6 +1211,10 @@ let VS = {
   lastError: "",   // shown in the staff menu for on-site diagnosis
   lastSwitch: "",
   candidates: [],
+  // 端末が保存している物理レイアウトの選択（vial-layout.js で解釈）。
+  // { value, labels, choices, keys, encoders } / 未取得なら null。
+  // 描画への反映はまだ行わず、スタッフ画面で確認できるだけ。
+  layoutOptions: null,
 };
 
 const SELECTED_DEVICE_UID_KEY = "olsk60.selectedDeviceUid";
@@ -1471,6 +1475,25 @@ function vialStartPolling() {
   VS.pollTimer = setTimeout(tick, 33);
 }
 
+// 端末が保存している layout options を読み、vial.json（無ければボード
+// プロファイルの layoutLabels）で解釈する。失敗したら null（表示は従来どおり）。
+async function vialReadLayoutOptions(dev, def) {
+  const labels = (def && def.layouts && Array.isArray(def.layouts.labels) && def.layouts.labels) ||
+    BOARD.layoutLabels || null;
+  if (!labels || !labels.length) return null;
+  try {
+    const value = await dev.readLayoutOptions();
+    const choices = VialLayout.decodeOptions(labels, value);
+    const kle = def && def.layouts && Array.isArray(def.layouts.keymap) ? def.layouts.keymap : null;
+    const selected = kle ? VialLayout.selectLayout(VialLayout.parseKle(kle), choices) : null;
+    return {
+      value, labels, choices,
+      keys: selected ? selected.keys : null,
+      encoders: selected ? selected.encoders : null,
+    };
+  } catch (_) { return null; }
+}
+
 // ---------- connection ----------
 async function vialOnConnected() {
   const dev = VS.dev;
@@ -1497,6 +1520,8 @@ async function vialOnConnected() {
         .map((k) => String((k && (k.shortName || k.name)) || "").replace(/\s+/g, " ").trim());
     }
   } catch (_) { /* definition is optional */ }
+
+  VS.layoutOptions = await vialReadLayoutOptions(dev, def);
 
   VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
   VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
@@ -1550,6 +1575,7 @@ function vialDisconnect(reason, scheduleRetry = true) {
   VS.unlocked = false;
   VS.unlocking = false;
   VS.keymap = null;
+  VS.layoutOptions = null;
   vialRestoreStatic();
   vialStaffRefresh();
   if (window.tourEngine) tourEngine.updateGuideButton();
@@ -1799,6 +1825,15 @@ function vialStaffRefresh() {
     const result = document.createElement("span");
     result.textContent = VS.lastSwitch;
     diag.appendChild(result);
+  }
+  if (VS.connected && VS.layoutOptions) {
+    const lo = VS.layoutOptions;
+    const line = document.createElement("span");
+    line.textContent = "レイアウト設定 0x" + lo.value.toString(16).padStart(8, "0") + ": " +
+      VialLayout.describe(lo.labels, lo.choices).join(" / ") +
+      (lo.keys ? "（キー " + lo.keys.length + " / エンコーダ " + lo.encoders.length + "）" : "（vial.json 未取得）");
+    diag.appendChild(document.createElement("br"));
+    diag.appendChild(line);
   }
   if (!VS.connected) {
     line.textContent = "未接続（静的レイアウト表示中）" +

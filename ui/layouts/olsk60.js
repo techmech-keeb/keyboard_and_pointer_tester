@@ -23,6 +23,9 @@ const OLSK60_GEOMETRY = {
   // Trackpoint stick sits in the 0.75u center channel at home-row height.
   pointing: { type: "trackpoint", x: 7.125, y: 2.5, image: null },
   autoLayerSim: { layer: 3, delays: [150, 400, 800], defaultDelay: 800 },
+  // vial.json の layouts.labels（QMK 版・RMK 版とも同じ）。端末から vial.json を
+  // 取れない経路でも、端末が返す layout options（u32）を解釈できるようにする。
+  layoutLabels: [["Spacebar", "5-Split Space", "3-Split Space", "6.25U Space"], "RotaryEncoder"],
   // m: [row, col] — bottom row follows the 3-split-space layout option
   // of vial.json ([4,3]/[4,6] are unused in this physical variant).
   keys: [

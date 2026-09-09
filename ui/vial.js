@@ -236,6 +236,14 @@ class VialDevice {
   }
 
   // --- dynamic keymap --------------------------------------------
+  // --- layout options (VIA GetKeyboardValue 0x02 / value id 0x02) ---
+  // 端末が flash から復元した 32 bit（big-endian）。vial.json の layouts.labels
+  // と組み合わせて解釈する（vial-layout.js）。読み出しに unlock は要らない。
+  async readLayoutOptions() {
+    const r = await this.cmd([0x02, 0x02]);
+    return ((r[2] << 24) | (r[3] << 16) | (r[4] << 8) | r[5]) >>> 0;
+  }
+
   async readLayerCount() {
     const r = await this.cmd([0x11]);
     this.layers = r[1];
