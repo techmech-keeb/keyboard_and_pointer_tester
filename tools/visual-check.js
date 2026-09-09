@@ -563,6 +563,35 @@ async function recoveryChecks(page, shot) {
       assert.deepEqual(noDefinitionUnlocked,
         { board: "olsk60v2-qmk", polling: false, matrixEls: 60 },
         "a generic fallback does not follow the device matrix");
+      // Vial 非対応のキーボードは端末として列挙されない（キオスクのホストは
+      // raw HID だけを見る）。候補 0 のまま打鍵が届いた時点で識別できる。
+      const plainKeyboard = await page.evaluate(() => {
+        const view = () => ({
+          badge: document.getElementById("vialBadge").textContent,
+          caption: document.getElementById("kbCaption").textContent,
+        });
+        VS.mode = "kiosk"; VS.connected = false; VS.candidates = [];
+        resetAll(false);
+        const idle = view();                       // まだ何も打っていない
+        registerKeyDown("KeyA", "a", false);       // 非対応機で打鍵
+        const typed = view();
+        resetAll(false);                           // 次の来場者
+        const afterReset = view();
+        // Vial 端末が見つかっているなら、打鍵だけでは 非対応 と言わない
+        VS.candidates = [{ index: 0, uidHex: "", label: "x" }];
+        registerKeyDown("KeyA", "a", false);
+        const withCandidate = view();
+        VS.candidates = [];
+        resetAll(false);
+        return { idle, typed, afterReset, withCandidate };
+      });
+      assert.equal(plainKeyboard.idle.badge, "VIAL 未接続");
+      assert.equal(plainKeyboard.typed.badge, "VIAL 非対応キーボード", "typing with no Vial device");
+      assert.equal(plainKeyboard.typed.caption,
+        "Vial に対応した端末が見つかりません：打鍵は汎用の配列で表示しています");
+      assert.equal(plainKeyboard.afterReset.badge, "VIAL 未接続", "idle reset clears the verdict");
+      assert.equal(plainKeyboard.withCandidate.badge, "VIAL 未接続", "a Vial device is only unconnected");
+
       // unlock が成立した瞬間、接続時とは別の場所でバッジ・キャプション・
       // ポーリングを書いていたため、未登録機が登録機向けの表示に化けていた。
       // 判定は vialApplyConnectionView 1 か所に寄せてある。

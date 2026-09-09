@@ -349,6 +349,8 @@ function registerKeyDown(code, key, repeat) {
   keyVisualDown(code);
   S.keyCount++;
   $("keyCount").textContent = S.keyCount;
+  // 1 打目で「Vial 端末は無いが打鍵は届いている」= 非対応機と分かる。
+  if (!VS.connected) vialIdleView();
   const printable = key && key.length === 1 && key !== " " ? key : null;
   $("lastKey").textContent = printable || OSD_LABEL[code] || key || code;
   $("lastKey").title = code;
@@ -1142,6 +1144,7 @@ setInterval(() => {
 function resetAll(showAttract) {
   // counters
   S.keyCount = 0; S.distPx = 0; S.scrollTotal = 0; S.scrollNotches = 0;
+  vialIdleView();   // 打鍵数を消したので、次の来場者には 未接続 から見せる
   S.scrollResolution = "unknown";
   S.scrollTelemetrySamples = 0;
   S.clicks = { L: 0, M: 0, R: 0 };
@@ -1586,6 +1589,22 @@ function vialStartPolling() {
   VS.pollTimer = setTimeout(tick, 33);
 }
 
+// 接続していないときのバッジとキャプション。キオスクのホストは raw HID
+// （usagePage 0xFF60）だけを列挙するので、候補が 0 のまま打鍵が届いていれば
+// 「Vial に対応していないキーボードで打っている」と言い切れる。ブラウザは
+// 許可した端末しか見えず候補 0 の理由が絞れないので、ここでは触らない。
+function vialIdleView() {
+  if (VS.connected || VS.mode !== "kiosk") return;
+  if (!VS.candidates.length && S.keyCount > 0) {
+    vialBadgeSet("", "VIAL 非対応キーボード");
+    $("kbCaption").textContent =
+      "Vial に対応した端末が見つかりません：打鍵は汎用の配列で表示しています";
+  } else {
+    vialBadgeSet("", "VIAL 未接続");
+    $("kbCaption").textContent = KB_CAPTION_STATIC;
+  }
+}
+
 // バッジ・キャプション・マトリクスポーリングは接続状態から一意に決まる。
 // 接続時と unlock 成立時で別々に書いていたため、未登録機を unlock すると
 // 登録機向けの表示に化けてポーリングまで始まっていた（2026-09-09）。
@@ -1758,7 +1777,8 @@ function vialDisconnect(reason, scheduleRetry = true) {
   vialRestoreStatic();
   vialStaffRefresh();
   if (window.tourEngine) tourEngine.updateGuideButton();
-  vialBadgeSet("", "VIAL 未接続");
+  vialBadgeSet("", "VIAL 未接続");   // ブラウザ経路はここまで（vialIdleView は キオスク限定）
+  vialIdleView();
   if (scheduleRetry) vialScheduleRetry();
 }
 
