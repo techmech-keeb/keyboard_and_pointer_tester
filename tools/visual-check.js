@@ -193,6 +193,46 @@ async function inputChecks(page) {
   assert.equal(await page.evaluate(() => VS.viewLayer), 3, "auto-layer simulation on wheel");
   await page.waitForTimeout(200);
   assert.equal(await page.evaluate(() => VS.viewLayer), 0, "auto-layer simulation restores view");
+
+  // 同じ PC に別の Vial 機が挿さっていても、登録済みボードの機を先に選ぶ。
+  const picked = await page.evaluate(() => {
+    const rmk = BOARDS.find(b => b.id === "olsk60v2-rmk");
+    const other = { uid: new Uint8Array(8), uidHex: "0000000000000000", vendorId: 0x1234, productId: 0x0001 };
+    const olsk = { uid: Uint8Array.from(rmk.match.uid), uidHex: "1eebcb509f6b94ee", vendorId: 0x746D, productId: 0x0102 };
+    return [pickPreferredCandidate([other, olsk], "").uidHex, pickPreferredCandidate([other, olsk], other.uidHex).uidHex];
+  });
+  assert.deepEqual(picked, ["1eebcb509f6b94ee", "0000000000000000"], "candidate preference");
+
+  // 未登録の機や matrix が食い違う定義は、値は読んでも絵には重ねない。
+  const guard = await page.evaluate(async () => {
+    const dev = { readLayoutOptions: async () => 1 };
+    const foreign = { matrix: { rows: 1, cols: 3 }, layouts: { labels: ["Opt"], keymap: [["0,0", "0,1", "0,2"]] } };
+    const unknown = await vialReadLayoutOptions(dev, foreign, false);
+    const mismatch = await vialReadLayoutOptions(dev, foreign, true);
+    const own = await vialReadLayoutOptions(dev, null, true);
+    return { unknown: unknown && unknown.keys, unknownFits: unknown && unknown.fits,
+      mismatch: mismatch && mismatch.keys, own: own && own.keys.length };
+  });
+  assert.deepEqual(guard, { unknown: null, unknownFits: false, mismatch: null, own: 62 }, "device layout guard");
+
+  // unlock の案内は、マウスレイヤー表示中でも刻印（Esc と Enter）で名付ける。
+  const unlockHint = await page.evaluate(async () => {
+    const esc = BOARD.keys.find(k => k.code === "Escape").m, enter = BOARD.keys.find(k => k.code === "Enter").m;
+    VS.keymap[3][esc[0]][esc[1]] = 0x5200; // TO(0)
+    VS.viewLayer = 3; applyLayerView();
+    VS.unlocked = false;
+    VS.dev = {
+      readUnlockStatus: async () => ({ unlocked: false, keys: [esc, enter] }),
+      unlockStart: async () => { throw new Error("fixture: stop before polling"); },
+    };
+    await vialUnlockStart();
+    const text = document.getElementById("unlockHint").textContent;
+    const layer = VS.viewLayer;
+    VS.dev = null; VS.keymap[3][esc[0]][esc[1]] = 0x0004; VS.viewLayer = 0; applyLayerView();
+    return { text, layer };
+  });
+  assert.ok(unlockHint.text.includes("Esc と Enter"), "unlock hint names the legends: " + unlockHint.text);
+  assert.equal(unlockHint.layer, 0, "unlock resets the view to the base layer");
   await page.evaluate(() => { autoLayerSimCancel(); VS.connected = false; VS.keymap = null; vialRestoreStatic(); setAutoLayerSimConfig({ on: true, delay: 800 }); });
   await reset();
 }
@@ -347,6 +387,26 @@ async function recoveryChecks(page, shot) {
       await settle(page);
       await shot("free-input");
       await layoutCheck(page, tag + "-free");
+      // 端末が保存しているレイアウト（5-Split・エンコーダ有り = 1）を重ねた状態。
+      // 応答の合成だけで、接続機の検証ではない。
+      const overlay = await page.evaluate(() => {
+        applyBoard(BOARDS.find(b => b.id === "olsk60v2-rmk")); // 既定は QMK 版（プッシュは 5,13）
+        const parsed = VialLayout.parseKle(BOARD.layoutKeymap);
+        applyDeviceLayout(VialLayout.selectLayout(parsed, VialLayout.decodeOptions(BOARD.layoutLabels, 1)));
+        return { push: matrixEls.has("5,12"), arrowDown: matrixEls.has("4,11"),
+          encoders: document.querySelectorAll(".key.encoder").length, keys: activeKeys().length };
+      });
+      assert.deepEqual(overlay, { push: true, arrowDown: false, encoders: 2, keys: 62 }, "device layout overlay");
+      await settle(page);
+      await shot("device-layout");
+      await layoutCheck(page, tag + "-device-layout");
+      const restored = await page.evaluate(() => {
+        clearDeviceLayout();
+        const r = { keys: activeKeys().length, encoders: document.querySelectorAll(".key.encoder").length, arrowDown: matrixEls.has("4,11") };
+        applyBoard(DEFAULT_BOARD);
+        return r;
+      });
+      assert.deepEqual(restored, { keys: 60, encoders: 0, arrowDown: true }, "profile restored after overlay");
       await inputChecks(page);
       await recoveryChecks(page, shot);
       if (size === SIZES[0] && theme === THEMES[0]) await idleCheck(page);

@@ -8,6 +8,15 @@
 
 const $ = (id) => document.getElementById(id);
 let BOARD = DEFAULT_BOARD;
+// 接続中の端末が保存している物理レイアウト（Space の分割・エンコーダ有無）を
+// プロファイルに重ねたもの。無ければ BOARD.keys をそのまま描く。切断で捨てる。
+let DEVICE_LAYOUT = null;
+function activeKeys() { return DEVICE_LAYOUT ? DEVICE_LAYOUT.keys : BOARD.keys; }
+function activeUnits() {
+  return DEVICE_LAYOUT
+    ? { w: Math.max(BOARD.unitsWide, DEVICE_LAYOUT.unitsWide), h: Math.max(BOARD.unitsHigh, DEVICE_LAYOUT.unitsHigh) }
+    : { w: BOARD.unitsWide, h: BOARD.unitsHigh };
+}
 
 // ---------- tunables ----------
 const TRAIL_MS = 2800;          // trail fade time
@@ -134,7 +143,7 @@ function renderCap(el, k, parts) {
 }
 
 function buildKeyboard() {
-  for (const k of BOARD.keys) {
+  for (const k of activeKeys()) {
     const el = document.createElement("div");
     el.className = "key";
     if (k.layer) el.classList.add("layer");
@@ -152,6 +161,19 @@ function buildKeyboard() {
     if (!keyEls.has(k.code)) keyEls.set(k.code, []);
     keyEls.get(k.code).push(el);
     if (k.m) matrixEls.set(k.m[0] + "," + k.m[1], el);
+  }
+  for (const e of DEVICE_LAYOUT ? DEVICE_LAYOUT.encoders : []) {
+    // vial.json の回転エントリ 1 つ = 1u の丸いキャップ。0 = 反時計回り / 1 = 時計回り。
+    const el = document.createElement("div");
+    el.className = "key encoder";
+    el.style.left = `calc(var(--u) * ${e.x})`;
+    el.style.top = `calc(var(--u) * ${e.y})`;
+    el.style.width = `calc(var(--u) * ${e.w})`;
+    el.style.height = `calc(var(--u) * ${e.h})`;
+    el.dataset.id = "encoder" + e.index + (e.direction ? "cw" : "ccw");
+    el._key = { code: el.dataset.id, label: e.direction ? "↻" : "↺" };
+    renderCap(el, el._key);
+    keyboardEl.appendChild(el);
   }
 
   const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
@@ -179,29 +201,51 @@ function fitKeyboard() {
   const wrap = $("kbWrap");
   const u = Math.min(
     window.innerWidth >= 1800 ? 100 : 68,
-    (wrap.clientWidth - 4) / BOARD.unitsWide,
-    (wrap.clientHeight - 8) / BOARD.unitsHigh,
+    (wrap.clientWidth - 4) / activeUnits().w,
+    (wrap.clientHeight - 8) / activeUnits().h,
   );
   document.documentElement.style.setProperty("--u", Math.max(1, u).toFixed(3) + "px");
+}
+
+// キーボードの絵を現在の BOARD と DEVICE_LAYOUT から描き直す。
+function rebuildKeyboardDom() {
+  keyboardEl.innerHTML = "";
+  keyEls.clear();
+  matrixEls.clear();
+  buildKeyboard();
+  buildCodeChars();
+  const units = activeUnits();
+  keyboardEl.style.width = `calc(var(--u) * ${units.w})`;
+  keyboardEl.style.height = `calc(var(--u) * ${units.h})`;
+  fitKeyboard();
+  const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
+  const pointingLabel = pointings.length ? " + " + pointings.map((pointing) =>
+    pointing.type === "trackpoint" ? "トラックポイント" : pointing.type || "ポインティング").join("・") : "";
+  $("kbBoardName").textContent = BOARD.name;
+  $("kbProfileLabel").textContent = activeKeys().length + "キー" + pointingLabel +
+    (DEVICE_LAYOUT && DEVICE_LAYOUT.encoders.length ? " + エンコーダ" : "");
+}
+
+// 端末の layout options で選ばれたキー集合を描く。プロファイル側の TrackPoint・
+// ガイド・練習文は保ったまま、キーの配置と寸法だけを実機に合わせる。
+function applyDeviceLayout(layout) {
+  if (!layout || !layout.keys || !layout.keys.length) { clearDeviceLayout(); return; }
+  DEVICE_LAYOUT = VialLayout.composeOverlay(BOARD.keys, layout);
+  rebuildKeyboardDom();
+}
+
+function clearDeviceLayout() {
+  if (!DEVICE_LAYOUT) return;
+  DEVICE_LAYOUT = null;
+  rebuildKeyboardDom();
 }
 
 function applyBoard(profile) {
   if (!profile || profile === BOARD) return;
   autoLayerSimCancel();
   BOARD = profile;
-  keyboardEl.innerHTML = "";
-  keyEls.clear();
-  matrixEls.clear();
-  buildKeyboard();
-  buildCodeChars();
-  keyboardEl.style.width = `calc(var(--u) * ${BOARD.unitsWide})`;
-  keyboardEl.style.height = `calc(var(--u) * ${BOARD.unitsHigh})`;
-  fitKeyboard();
-  const pointings = BOARD.pointing ? (Array.isArray(BOARD.pointing) ? BOARD.pointing : [BOARD.pointing]) : [];
-  const pointingLabel = pointings.length ? " + " + pointings.map((pointing) =>
-    pointing.type === "trackpoint" ? "トラックポイント" : pointing.type || "ポインティング").join("・") : "";
-  $("kbBoardName").textContent = BOARD.name;
-  $("kbProfileLabel").textContent = BOARD.keys.length + "キー" + pointingLabel;
+  DEVICE_LAYOUT = null;
+  rebuildKeyboardDom();
   practiceInit();
   if (VS) {
     VS.rows = BOARD.matrix ? BOARD.matrix.rows : 0;
@@ -971,7 +1015,10 @@ $("autoLayerSimDelaySelect").addEventListener("change", (event) => {
 
 function savedDefaultBoard() {
   try {
-    const id = localStorage.getItem(DEFAULT_BOARD_KEY);
+    const stored = localStorage.getItem(DEFAULT_BOARD_KEY);
+    // 2026-09: OLSK60 のプロファイルを QMK 版 / RMK 版へ分けた。分割前に保存
+    // された "olsk60v2" は現行量産の QMK 版として読み替える。
+    const id = stored === "olsk60v2" ? "olsk60v2-qmk" : stored;
     return BOARDS.find((profile) => profile.id === id) || DEFAULT_BOARD;
   } catch (_) { return DEFAULT_BOARD; }
 }
@@ -1208,6 +1255,11 @@ let VS = {
   lastError: "",   // shown in the staff menu for on-site diagnosis
   lastSwitch: "",
   candidates: [],
+  // 端末が保存している物理レイアウトの選択（vial-layout.js で解釈）。
+  // { value, labels, choices, keys, encoders } / 未取得なら null。
+  // 描画への反映はまだ行わず、スタッフ画面で確認できるだけ。
+  layoutOptions: null,
+  lastEdge: "",  // 直近に押されたマトリクス位置と解釈（スタッフ画面の診断用）
 };
 
 const SELECTED_DEVICE_UID_KEY = "olsk60.selectedDeviceUid";
@@ -1392,7 +1444,17 @@ function vialMatrixEdge(r, c, down) {
 
   if (down) {
     const d = vialDescribe(vialResolveKeycode(r, c));
-    if (d.kind === "layer" && typeof d.layer === "number") {
+    VS.lastEdge = "(" + r + "," + c + ") " + (d.text || d.kind);
+    const lastEdgeEl = $("vialLastEdge");
+    if (lastEdgeEl) lastEdgeEl.textContent = "直近の押下: " + VS.lastEdge;
+    // 押している間だけ層を有効にするカスタムキー（OLSK60 RMK 版の Scrl L1 等）は
+    // MO(n) と同じ扱い。名前はプロファイルの customLayerKeys で宣言する。
+    const customLayer = d.kind === "custom" && BOARD.customLayerKeys
+      ? BOARD.customLayerKeys[(VS.custom || [])[d.index]] : undefined;
+    if (Number.isInteger(customLayer)) {
+      autoLayerSimCancel();
+      VS.momentary.set(pos, customLayer);
+    } else if (d.kind === "layer" && typeof d.layer === "number") {
       switch (d.hold) {
         case "mo": case "lt": case "tt": case "lm":
           autoLayerSimCancel();
@@ -1468,6 +1530,35 @@ function vialStartPolling() {
   VS.pollTimer = setTimeout(tick, 33);
 }
 
+// 端末が保存している layout options を読み、vial.json（無ければボード
+// プロファイルの layoutLabels）で解釈する。失敗したら null（表示は従来どおり）。
+// `known` = 接続機が登録済みボードプロファイルに一致した（UID か VID/PID）。
+// 一致しない機の定義をプロファイルに重ねると、別製品のキー配置が OLSK60 の絵に
+// 化ける（2026-09-09 に別の Vial 機を同居させたときに再現）ので、その場合は
+// 定義に labels があっても値の読み取りと表示だけにし、絵には反映しない。
+async function vialReadLayoutOptions(dev, def, known) {
+  const defLayouts = def && def.layouts ? def.layouts : {};
+  const labels = (Array.isArray(defLayouts.labels) && defLayouts.labels) ||
+    (known ? BOARD.layoutLabels : null) || null;
+  if (!labels || !labels.length) return null;
+  // プロファイルと定義の matrix が食い違うなら、その定義はこのプロファイルの物ではない。
+  const fits = known && !(def && def.matrix && BOARD.matrix &&
+    (def.matrix.rows !== BOARD.matrix.rows || def.matrix.cols !== BOARD.matrix.cols));
+  try {
+    const value = await dev.readLayoutOptions();
+    const choices = VialLayout.decodeOptions(labels, value);
+    const kle = fits
+      ? (Array.isArray(defLayouts.keymap) && defLayouts.keymap) || BOARD.layoutKeymap || null
+      : null;
+    const selected = kle ? VialLayout.selectLayout(VialLayout.parseKle(kle), choices) : null;
+    return {
+      value, labels, choices, fits,
+      keys: selected ? selected.keys : null,
+      encoders: selected ? selected.encoders : null,
+    };
+  } catch (_) { return null; }
+}
+
 // ---------- connection ----------
 async function vialOnConnected() {
   const dev = VS.dev;
@@ -1487,10 +1578,16 @@ async function vialOnConnected() {
       VS.cols = def.matrix.cols;
     }
     if (def && Array.isArray(def.customKeycodes)) {
+      // shortName は改行入りのことがある (RMK 版の "TP\nSpd1" 等)。ボード
+      // プロファイルの予備リストとガイドツアーの target.custom は空白 1 個に
+      // 正規化した名前で書いてあるので、端末側も同じ形へ揃える。
       VS.custom = def.customKeycodes.slice(0, 64)
-        .map((k) => String((k && (k.shortName || k.name)) || ""));
+        .map((k) => String((k && (k.shortName || k.name)) || "").replace(/\s+/g, " ").trim());
     }
   } catch (_) { /* definition is optional */ }
+
+  VS.layoutOptions = await vialReadLayoutOptions(dev, def, !!profile);
+  applyDeviceLayout(VS.layoutOptions);
 
   VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
   VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
@@ -1544,6 +1641,8 @@ function vialDisconnect(reason, scheduleRetry = true) {
   VS.unlocked = false;
   VS.unlocking = false;
   VS.keymap = null;
+  VS.layoutOptions = null;
+  clearDeviceLayout();
   vialRestoreStatic();
   vialStaffRefresh();
   if (window.tourEngine) tourEngine.updateGuideButton();
@@ -1562,8 +1661,12 @@ function vialUidHex(uid) {
   return uid ? Array.from(uid, (v) => v.toString(16).padStart(2, "0")).join("") : "";
 }
 
+// 保存済みの選択 → 登録済みボードプロファイルに一致する機 → 先頭、の順。
+// 同じ PC に別の Vial 機（マクロパッド等）が挿さっていても、まず OLSK60 を選ぶ。
 function pickPreferredCandidate(candidates, savedUidHex) {
-  return candidates.find((candidate) => savedUidHex && candidate.uidHex === savedUidHex) || candidates[0] || null;
+  return candidates.find((candidate) => savedUidHex && candidate.uidHex === savedUidHex) ||
+    candidates.find((candidate) => !!findBoard(candidate.uid, candidate.vendorId, candidate.productId)) ||
+    candidates[0] || null;
 }
 window.pickPreferredCandidate = pickPreferredCandidate;
 
@@ -1794,6 +1897,23 @@ function vialStaffRefresh() {
     result.textContent = VS.lastSwitch;
     diag.appendChild(result);
   }
+  if (VS.connected && VS.layoutOptions) {
+    const lo = VS.layoutOptions;
+    const line = document.createElement("span");
+    line.textContent = "レイアウト設定 0x" + lo.value.toString(16).padStart(8, "0") + ": " +
+      VialLayout.describe(lo.labels, lo.choices).join(" / ") +
+      (lo.keys ? "（キー " + lo.keys.length + " / エンコーダ " + lo.encoders.length + "）"
+        : lo.fits === false ? "（未登録の機のため絵には反映しない）" : "（vial.json 未取得）");
+    diag.appendChild(document.createElement("br"));
+    diag.appendChild(line);
+  }
+  if (VS.connected && VS.unlocked) {
+    const edge = document.createElement("span");
+    edge.id = "vialLastEdge";
+    edge.textContent = "直近の押下: " + (VS.lastEdge || "—");
+    diag.appendChild(document.createElement("br"));
+    diag.appendChild(edge);
+  }
   if (!VS.connected) {
     line.textContent = "未接続（静的レイアウト表示中）" +
       (VS.lastError ? " ／ 直近の失敗: " + VS.lastError : "");
@@ -1845,13 +1965,20 @@ async function vialUnlockStart() {
     VS.unlockKeys = st.keys;
   } catch (_) { /* keep whatever we had */ }
 
-  // highlight the combo keys on the on-screen keyboard
+  // unlock は物理キーの組み合わせなので、案内は表示中のレイヤーではなく刻印
+  // （プロファイルの label、無ければベース層のキーコード）で名付ける。直前に
+  // TrackPoint を動かしているとマウスレイヤー表示（例: Esc 位置が TO(0)）の
+  // ままになるので、表示もベース層へ戻す。
+  autoLayerSimCancel();
+  if (VS.viewLayer !== 0) { VS.viewLayer = 0; applyLayerView(); }
   const names = [];
   for (const [r, c] of VS.unlockKeys) {
     const el = matrixEls.get(r + "," + c);
     if (el) {
       el.classList.add("unlock-target");
-      names.push(el.querySelector(".keycap")?.textContent || `(${r},${c})`);
+      const legend = el._key && el._key.label;
+      const base = VS.keymap ? vialDescribe(vialDisplayKeycode(0, r, c)).text : "";
+      names.push(legend || base || `(${r},${c})`);
     } else {
       names.push(`(${r},${c})`);
     }
