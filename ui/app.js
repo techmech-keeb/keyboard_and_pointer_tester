@@ -349,6 +349,8 @@ function registerKeyDown(code, key, repeat) {
   keyVisualDown(code);
   S.keyCount++;
   $("keyCount").textContent = S.keyCount;
+  // 1 打目で「Vial 端末は無いが打鍵は届いている」= 非対応機と分かる。
+  if (!VS.connected) vialIdleView();
   const printable = key && key.length === 1 && key !== " " ? key : null;
   $("lastKey").textContent = printable || OSD_LABEL[code] || key || code;
   $("lastKey").title = code;
@@ -1142,6 +1144,7 @@ setInterval(() => {
 function resetAll(showAttract) {
   // counters
   S.keyCount = 0; S.distPx = 0; S.scrollTotal = 0; S.scrollNotches = 0;
+  vialIdleView();   // 打鍵数を消したので、次の来場者には 未接続 から見せる
   S.scrollResolution = "unknown";
   S.scrollTelemetrySamples = 0;
   S.clicks = { L: 0, M: 0, R: 0 };
@@ -1272,6 +1275,7 @@ let VS = {
   mode: "none",          // none | kiosk | webhid
   connected: false,
   known: false,          // 接続機が登録済みボードプロファイルに一致したか
+  deviceDrawn: false,    // 絵の matrix 座標が接続機のものか（登録機 or 定義から描けた未登録機）
   unlocked: false,
   unlocking: false,
   rows: BOARD.matrix.rows,
@@ -1563,8 +1567,10 @@ function vialHandleMatrix(state) {
 
 function vialStartPolling() {
   clearTimeout(VS.pollTimer);
+  VS.pollTimer = 0;
   VS.matrixPrev = new Array(VS.rows).fill(0);
   const tick = async () => {
+    VS.pollTimer = 0;
     if (!VS.connected || !VS.unlocked || VS.unlocking) return;
     if (!document.hidden) {
       try {
@@ -1581,6 +1587,52 @@ function vialStartPolling() {
     VS.pollTimer = setTimeout(tick, 33); // ~30 Hz
   };
   VS.pollTimer = setTimeout(tick, 33);
+}
+
+// 接続していないときのバッジとキャプション。キオスクのホストは raw HID
+// （usagePage 0xFF60）だけを列挙するので、候補が 0 のまま打鍵が届いていれば
+// 「Vial に対応していないキーボードで打っている」と言い切れる。ブラウザは
+// 許可した端末しか見えず候補 0 の理由が絞れないので、ここでは触らない。
+function vialIdleView() {
+  if (VS.connected || VS.mode !== "kiosk") return;
+  if (!VS.candidates.length && S.keyCount > 0) {
+    vialBadgeSet("", "VIAL 非対応キーボード");
+    $("kbCaption").textContent =
+      "Vial に対応した端末が見つかりません：打鍵は汎用の配列で表示しています";
+  } else {
+    vialBadgeSet("", "VIAL 未接続");
+    $("kbCaption").textContent = KB_CAPTION_STATIC;
+  }
+}
+
+// バッジ・キャプション・マトリクスポーリングは接続状態から一意に決まる。
+// 接続時と unlock 成立時で別々に書いていたため、未登録機を unlock すると
+// 登録機向けの表示に化けてポーリングまで始まっていた（2026-09-09）。
+// 判断はここ 1 か所に置く。
+function vialApplyConnectionView() {
+  if (!VS.deviceDrawn) {
+    // 絵は既定ボードで、matrix 座標は接続機のものではない。押下を読んでも
+    // 無関係なキーが光るだけなので、unlock 済みでもポーリングしない。
+    vialBadgeSet("vial-locked", "VIAL 未登録機（定義なし）");
+    $("kbCaption").textContent =
+      "この機の定義を取得できないため、選択中の既定ボードによる汎用表示です";
+    return;
+  }
+  if (!VS.known) {
+    vialBadgeSet("vial-locked", "VIAL 未登録機");
+    $("kbCaption").textContent = VS.unlocked
+      ? "未登録のキーボードです：端末の定義とキーマップを表示 ・ 物理押下も検出します"
+      : "未登録のキーボードです：端末の定義と実際のキーマップを表示しています";
+  } else if (VS.unlocked) {
+    vialBadgeSet("vial-live", "VIAL LIVE");
+    $("kbCaption").textContent =
+      "Vial接続中：実際のキーマップを表示 ・ 物理押下を検出（MO/LTキーも光ります） ・ レイヤーは自動追従します";
+  } else {
+    vialBadgeSet("vial-locked", "VIAL 接続（ロック中）");
+    $("kbCaption").textContent =
+      "Vial接続中：実際のキーマップを表示 ・ レイヤーはタブで切替（マトリクス検出はunlock後に有効）";
+  }
+  if (VS.unlocked) vialStartPolling();
 }
 
 // ロック中はマトリクスポーリングが走らないので HID の通信が絶える。キオスク
@@ -1662,9 +1714,8 @@ async function vialOnConnected() {
   } catch (_) { /* definition is optional */ }
 
   VS.layoutOptions = await vialReadLayoutOptions(dev, def, !!profile);
-  let unregisteredLayoutApplied = false;
   if (profile) applyDeviceLayout(VS.layoutOptions);
-  else unregisteredLayoutApplied = applyUnregisteredDeviceLayout(def, VS.layoutOptions);
+  else VS.deviceDrawn = applyUnregisteredDeviceLayout(def, VS.layoutOptions);
 
   VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
   VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
@@ -1678,6 +1729,7 @@ async function vialOnConnected() {
 
   VS.connected = true;
   VS.known = !!profile;
+  if (profile) VS.deviceDrawn = true;
   VS.deviceName = (def && def.name) || VS.transport.product || "";
   applyDeviceName();
   VS.unlocked = unlocked;
@@ -1692,30 +1744,14 @@ async function vialOnConnected() {
   vialStaffRefresh();
   if (window.tourEngine) tourEngine.updateGuideButton();
 
-  if (!VS.known) {
-    vialBadgeSet("vial-locked", "VIAL 未登録機");
-    $("kbCaption").textContent = unregisteredLayoutApplied
-      ? "未登録のキーボードです：端末の定義と実際のキーマップを表示しています"
-      : "この機の定義を取得できないため、選択中の既定ボードによる汎用表示です";
-    // 汎用表示へ落とした端末は、絵の matrix 座標が端末のものではない。押下を
-    // 読んでも無関係なキーが光るだけなので、定義から描けたときだけ追う。
-    if (VS.unlocked && unregisteredLayoutApplied) vialStartPolling();
-  } else if (VS.unlocked) {
-    vialBadgeSet("vial-live", "VIAL LIVE");
-    $("kbCaption").textContent =
-      "Vial接続中：実際のキーマップを表示 ・ 物理押下を検出（MO/LTキーも光ります） ・ レイヤーは自動追従します";
-    vialStartPolling();
-  } else {
-    vialBadgeSet("vial-locked", "VIAL 接続（ロック中）");
-    $("kbCaption").textContent =
-      "Vial接続中：実際のキーマップを表示 ・ レイヤーはタブで切替（マトリクス検出はunlock後に有効）";
-  }
+  vialApplyConnectionView();
   vialStartHeartbeat();
 }
 
 function vialDisconnect(reason, scheduleRetry = true) {
   clearTimeout(VS.pollTimer);
   clearTimeout(VS.beatTimer);
+  VS.pollTimer = 0;
   VS.beatTimer = 0;
   clearInterval(VS.unlockTimer);
   autoLayerSimCancel();
@@ -1726,6 +1762,7 @@ function vialDisconnect(reason, scheduleRetry = true) {
   VS.dev = null;
   VS.connected = false;
   VS.known = false;
+  VS.deviceDrawn = false;
   VS.deviceName = "";
   applyDeviceName();
   VS.unlocked = false;
@@ -1740,7 +1777,8 @@ function vialDisconnect(reason, scheduleRetry = true) {
   vialRestoreStatic();
   vialStaffRefresh();
   if (window.tourEngine) tourEngine.updateGuideButton();
-  vialBadgeSet("", "VIAL 未接続");
+  vialBadgeSet("", "VIAL 未接続");   // ブラウザ経路はここまで（vialIdleView は キオスク限定）
+  vialIdleView();
   if (scheduleRetry) vialScheduleRetry();
 }
 
@@ -1830,6 +1868,7 @@ function savedSelectedDeviceUid() {
 function vialSoftTeardown() {
   clearTimeout(VS.pollTimer);
   clearTimeout(VS.beatTimer);
+  VS.pollTimer = 0;
   VS.beatTimer = 0;
   clearInterval(VS.unlockTimer);
   autoLayerSimCancel();
@@ -1837,6 +1876,7 @@ function vialSoftTeardown() {
   if (oldTransport) oldTransport.ondisconnect = null;
   VS.connected = false;
   VS.known = false;
+  VS.deviceDrawn = false;
   VS.dev = null;
   VS.unlocked = false;
   VS.unlocking = false;
@@ -2102,10 +2142,7 @@ async function vialUnlockStart() {
         vialUnlockCleanup();
         VS.unlocked = true;
         vialStaffRefresh();
-        vialBadgeSet("vial-live", "VIAL LIVE");
-        $("kbCaption").textContent =
-          "Vial接続中：実際のキーマップを表示 ・ 物理押下を検出（MO/LTキーも光ります） ・ レイヤーは自動追従します";
-        vialStartPolling();
+        vialApplyConnectionView();
         if (window.tourEngine) tourEngine.updateGuideButton();
       }
     } catch (_) { /* keep polling; unplug is caught by ondisconnect */ }
