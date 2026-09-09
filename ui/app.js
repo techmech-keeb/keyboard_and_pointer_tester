@@ -971,7 +971,10 @@ $("autoLayerSimDelaySelect").addEventListener("change", (event) => {
 
 function savedDefaultBoard() {
   try {
-    const id = localStorage.getItem(DEFAULT_BOARD_KEY);
+    const stored = localStorage.getItem(DEFAULT_BOARD_KEY);
+    // 2026-09: OLSK60 のプロファイルを QMK 版 / RMK 版へ分けた。分割前に保存
+    // された "olsk60v2" は現行量産の QMK 版として読み替える。
+    const id = stored === "olsk60v2" ? "olsk60v2-qmk" : stored;
     return BOARDS.find((profile) => profile.id === id) || DEFAULT_BOARD;
   } catch (_) { return DEFAULT_BOARD; }
 }
@@ -1487,8 +1490,11 @@ async function vialOnConnected() {
       VS.cols = def.matrix.cols;
     }
     if (def && Array.isArray(def.customKeycodes)) {
+      // shortName は改行入りのことがある (RMK 版の "TP\nSpd1" 等)。ボード
+      // プロファイルの予備リストとガイドツアーの target.custom は空白 1 個に
+      // 正規化した名前で書いてあるので、端末側も同じ形へ揃える。
       VS.custom = def.customKeycodes.slice(0, 64)
-        .map((k) => String((k && (k.shortName || k.name)) || ""));
+        .map((k) => String((k && (k.shortName || k.name)) || "").replace(/\s+/g, " ").trim());
     }
   } catch (_) { /* definition is optional */ }
 

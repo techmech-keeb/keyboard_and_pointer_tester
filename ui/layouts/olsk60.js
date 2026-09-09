@@ -1,33 +1,28 @@
 // =============================================================
-// OLSK60 v2 board profile
-// Source: official KLE data (gist 641df3ee125afe1bd4ef41c9a0cded7d)
+// OLSK60 v2 board profiles (QMK 版 / RMK 版)
+//
+// 2 つのファームは USB VID/PID が同一 (0x746D:0x0102) なので、Vial UID が
+// 唯一の判別材料になる。物理配列は同一 (両 vial.json の layouts.keymap を
+// 突合。差は エンコーダのプッシュ位置 QMK (5,13) / RMK (5,12) だけで、
+// ここで扱う「3-Split・エンコーダ無し」構成には現れない) なので、
+// ジオメトリだけを共有し、UID / matrix / customKeycodes を版ごとに持つ。
+//
+// Source (physical layout): official KLE data (gist 641df3ee125afe1bd4ef41c9a0cded7d)
+// Source (QMK 版):  qmk-config techmechkeys/olsk60
+//                   keymaps/vial/config.h (uid) / keyboard.json (matrix)
+//                   keymaps/vial/vial.json (customKeycodes)
+// Source (RMK 版):  rmk-config keyboards/olsk60
+//                   build.rs (uid) / vial.json (matrix, customKeycodes)
 // =============================================================
 "use strict";
 
-const OLSK60_PROFILE = {
-  id: "olsk60v2",
-  name: "OLSK60 v2",
-  match: {
-    uid: [0xC4, 0x37, 0xB8, 0x91, 0x73, 0x93, 0x22, 0xAD],
-    usb: { vendorId: 0x746D, productId: 0x0102 },
-  },
+// 版に依存しない部分。両プロファイルが同じ配列を参照する (読み取り専用)。
+const OLSK60_GEOMETRY = {
   unitsWide: 15,
   unitsHigh: 5,
   // Trackpoint stick sits in the 0.75u center channel at home-row height.
   pointing: { type: "trackpoint", x: 7.125, y: 2.5, image: null },
   autoLayerSim: { layer: 3, delays: [150, 400, 800], defaultDelay: 800 },
-  // Electrical matrix (qmk-config techmechkeys/olsk60 keyboard.json).
-  // Used as the fallback when the vial.json definition cannot be pulled
-  // from the device (browser WebHID mode has no XZ decoder).
-  matrix: { rows: 6, cols: 14 },
-  // Vial customKeycodes short names, in QK_KB_0.. order (vial.json).
-  // Fallback for when the on-device definition is unavailable.
-  customKeycodes: [
-    "Precision", "Balanced", "Fast", "CustPrec", "CustFast",
-    "Spd+", "Spd-", "Acc+", "Acc-", "Dec+", "Dec-",
-    "Snd", "SndMode", "Oct+", "Oct-",
-    "AL 150ms", "AL 400ms", "AL 800ms", "AL Toggle", "Scroll",
-  ],
   // m: [row, col] — bottom row follows the 3-split-space layout option
   // of vial.json ([4,3]/[4,6] are unused in this physical variant).
   keys: [
@@ -107,4 +102,48 @@ const OLSK60_PROFILE = {
   ],
 };
 
-registerBoard(OLSK60_PROFILE);
+// Vial customKeycodes は「短い表示名」を QK_KB_0.. の順に並べたもの。端末から
+// vial.json を取れないとき (ブラウザ/WebHID 経路。XZ 展開が無い) の予備で、
+// 取れたときは端末側の値で上書きされる (app.js の vialOnConnected)。
+// RMK 版の shortName は改行入り ("TP\nSpd1") なので、端末側と同じ正規化
+// (連続空白を 1 個へ) をかけた形で書く。
+
+const OLSK60_QMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
+  id: "olsk60v2-qmk",
+  name: "OLSK60 v2 (QMK)",
+  match: {
+    uid: [0xC4, 0x37, 0xB8, 0x91, 0x73, 0x93, 0x22, 0xAD],
+    usb: { vendorId: 0x746D, productId: 0x0102 },
+  },
+  // qmk-config techmechkeys/olsk60/keyboard.json
+  matrix: { rows: 6, cols: 14 },
+  customKeycodes: [
+    "Precision", "Balanced", "Fast", "CustPrec", "CustFast",
+    "Spd+", "Spd-", "Acc+", "Acc-", "Dec+", "Dec-",
+    "Snd", "SndMode", "Oct+", "Oct-",
+    "AL 150ms", "AL 400ms", "AL 800ms", "AL Toggle", "Scroll",
+  ],
+});
+
+const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
+  id: "olsk60v2-rmk",
+  name: "OLSK60 v2 (RMK)",
+  match: {
+    uid: [0x1E, 0xEB, 0xCB, 0x50, 0x9F, 0x6B, 0x94, 0xEE],
+    usb: { vendorId: 0x746D, productId: 0x0102 },
+  },
+  // rmk-config keyboards/olsk60/vial.json (keyboard.toml と同じ 6x13)
+  matrix: { rows: 6, cols: 13 },
+  customKeycodes: [
+    "TP Spd1", "TP Spd2", "TP Spd3", "TP Spd4", "TP Spd5",
+    "AL 150", "AL 400", "AL 800",
+    "Snd Tog", "Snd Mode", "Oct +", "Oct -",
+    "Base +", "Base -", "Acc +", "Acc -", "Dec +", "Dec -",
+    "AML Tog",
+    "Scrl", "Scrl L1", "Scrl L2", "Scrl L3",
+  ],
+});
+
+// 登録順が既定ボードの順。現行量産は QMK 版なのでそちらを先に置く。
+registerBoard(OLSK60_QMK_PROFILE);
+registerBoard(OLSK60_RMK_PROFILE);

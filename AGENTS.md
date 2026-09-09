@@ -26,7 +26,7 @@ UI は `ui/`（依存なしの HTML/CSS/JS）、Windows キオスクホストは
   ここで推測して書かない**。値は正本から移す。
 - Vial 連携は **Vial プロトコル標準機能のみ**で実装する（ファーム独自パッチに依存しない）。
   RMK 0.9 系との照合結果は `docs/research/2026-09-06_rmk-0.9-vial-integration-check.md`。
-- ガイドツアー（`ui/layouts/olsk60.tours.js`）の文言は OLSK60_v2 の公開ドキュメントと
+- ガイドツアー（`ui/layouts/olsk60-qmk.tours.js` / `olsk60-rmk.tours.js`）の文言は OLSK60_v2 の公開ドキュメントと
   同期する。ファイル冒頭の docs revision を更新時に確認する。
 
 ## External context

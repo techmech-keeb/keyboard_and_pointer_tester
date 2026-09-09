@@ -27,6 +27,7 @@ jobs:
           node --check ui/scroll-content.js
           node --check ui/tours.js
           node --test tools/scroll-input.test.js
+          node --test tools/boards.test.js
 
       - name: Install Playwright and Chromium
         run: |

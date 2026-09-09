@@ -118,7 +118,8 @@ dotnet publish kiosk/TechmechInputLab.csproj -c Release -r win-x64 --self-contai
 `node tools/visual-check.js` を実行できます（`playwright` のインストール環境、または
 `playwright-core` とブラウザを指す `CHROMIUM_PATH` が必要です）。
 
-`node --check ui/app.js` と `node --test tools/scroll-input.test.js` も実行してください。
+`node --check ui/app.js`、`node --test tools/scroll-input.test.js`、
+`node --test tools/boards.test.js`（ボードプロファイルとガイドツアーの整合）も実行してください。
 GPU のない検証環境では `CHROMIUM_DISABLE_GPU=1` を指定できます。
 合成イベント・合成Vial応答による検証は実機検証とは区別します。
 外観の基準候補と実機チェック手順は [SCROLL LAB 設計・検証記録](docs/design/scroll-lab-stage.md) にまとめています。
