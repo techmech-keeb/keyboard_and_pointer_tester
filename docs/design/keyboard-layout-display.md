@@ -100,6 +100,9 @@ Vial 非対応機 / 何も繋がっていない
 
 ## 7. 現行との差分（実装の単位）
 
+実装の依頼書は [`layout-display-implementation-request.md`](layout-display-implementation-request.md)
+（受け入れ条件・やらないこと・推奨順・検証コマンド）。
+
 | 項目 | 状態 | 補足 |
 |---|---|---|
 | UID による製品判定、端末構成の重ね描き、候補の優先、切断時の破棄 | 実装済み | PR #44 / #45 |
