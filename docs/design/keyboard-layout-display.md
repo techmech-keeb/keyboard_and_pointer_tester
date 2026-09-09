@@ -107,8 +107,9 @@ Vial 非対応機 / 何も繋がっていない
 
 ## 7. 現行との差分（実装の単位）
 
-実装の依頼書は [`layout-display-implementation-request.md`](layout-display-implementation-request.md)
-（受け入れ条件・やらないこと・推奨順・検証コマンド）。
+実装の依頼書は役割を終えて凍結した
+（[`../archive/layout-display-implementation-request.md`](../archive/layout-display-implementation-request.md)。
+タスク A・B・C の受け入れ条件と、どの PR で入ったか）。
 
 | 項目 | 状態 | 補足 |
 |---|---|---|
