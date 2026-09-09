@@ -5,6 +5,17 @@
 このファイルは、実装済みの経緯・未完了の実機検証・今後の改善プランを
 引き継ぎ用にまとめたもの。作業を再開するときはまずここを見る。
 
+## docs/ の地図
+
+| 置き場 | 中身 |
+|---|---|
+| 本ファイル | 残課題・**実機確認チェックリスト**・今後のプラン |
+| [`design/`](design/) | 仕様・設計の正本。[表示仕様](design/keyboard-layout-display.md) / [展示画面と SCROLL LAB](design/scroll-lab-stage.md) |
+| [`research/`](research/) | 調査記録（出典つき・調査時点で凍結）。[RMK 0.9 接続経路の点検](research/2026-09-06_rmk-0.9-vial-integration-check.md) / [複数デバイス選択](research/vial-multi-device-selection.md) |
+| [`archive/`](archive/README.md) | 役割を終えた凍結文書（完了した実装依頼書など） |
+
+置き場の使い分けと、依頼書を凍結するときの手順は `AGENTS.md`「Docs」。
+
 ## レビュー中：キーボード中心の展示画面・SCROLL LAB
 
 `main` の `b92b96287aa59e25a730a2cbbabf73d4559e936c` を基点とした外観レビュー段階。
