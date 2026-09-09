@@ -423,6 +423,30 @@ async function recoveryChecks(page, shot) {
         return r;
       });
       assert.deepEqual(restored, { keys: 60, encoders: 0, arrowDown: true }, "profile restored after overlay");
+      // 2026-09-09 に実機で見つかった 2 件の再現。接続すると vialOnConnected が
+      // 製品プロファイルへ切り替えるが、切断してもスタッフが選んだ既定ボードへ
+      // 戻らなかった。またロック中は HID の通信が絶えて抜線を検知できなかった。
+      const afterUnplug = await page.evaluate(() => {
+        localStorage.setItem("olsk60.defaultBoard", "ansi104");
+        applyBoard(BOARDS.find((b) => b.id === "olsk60v2-rmk")); // 接続で切り替わった状態
+        VS.connected = true;
+        VS.deviceName = "OLSK60 v2";
+        applyDeviceName();
+        VS.dev = { readUnlockStatus: async () => { throw new Error("unplugged"); } };
+        vialStartHeartbeat();
+        const armed = VS.beatTimer !== 0;                        // ロック中でも生存確認が動く
+        vialDisconnect("fixture", false);                        // 再接続は張らない
+        const out = {
+          armed, beat: VS.beatTimer, board: BOARD.id, rows: VS.rows, cols: VS.cols,
+          nameShown: !document.getElementById("kbDeviceName").hidden,
+        };
+        localStorage.removeItem("olsk60.defaultBoard");
+        applyBoard(DEFAULT_BOARD);
+        return out;
+      });
+      assert.deepEqual(afterUnplug,
+        { armed: true, beat: 0, board: "ansi104", rows: 0, cols: 0, nameShown: false },
+        "unplug falls back to the staff default board and drops the heartbeat");
       await inputChecks(page);
       await recoveryChecks(page, shot);
       if (size === SIZES[0] && theme === THEMES[0]) await idleCheck(page);

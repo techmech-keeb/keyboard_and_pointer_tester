@@ -252,7 +252,9 @@ function applyBoard(profile) {
   DEVICE_LAYOUT = defaultProfileLayout(BOARD);
   rebuildKeyboardDom();
   practiceInit();
-  if (VS) {
+  // 接続中は端末の vial.json から読んだ値が正。スタッフがボードを切り替えても
+  // 上書きしない（0 を入れるとキーマップの読み出しと刻印が壊れる）。
+  if (VS && !VS.connected) {
     VS.rows = BOARD.matrix ? BOARD.matrix.rows : 0;
     VS.cols = BOARD.matrix ? BOARD.matrix.cols : 0;
     VS.custom = BOARD.customKeycodes || [];
@@ -1254,6 +1256,8 @@ let VS = {
   matrixPrev: [],
   pollTimer: 0,
   pollErrors: 0,
+  beatTimer: 0,        // ロック中の生存確認（vialStartHeartbeat）
+  beatErrors: 0,
   retryTimer: 0,
   unlockTimer: 0,
   unlockKeys: [],
@@ -1540,6 +1544,32 @@ function vialStartPolling() {
   VS.pollTimer = setTimeout(tick, 33);
 }
 
+// ロック中はマトリクスポーリングが走らないので HID の通信が絶える。キオスク
+// ホストは転送が失敗したときにしか取り外しを報告しない（kiosk/VialHidBridge.cs
+// の DropDevice）ため、通信が絶えたままだと抜線に誰も気づけず「接続中」の
+// 表示が残る。低頻度の読み出しを投げ続けて、続けて失敗したら切断として扱う。
+// unlock 済みなら 30 Hz のマトリクスポーリングが同じ役目を果たすので何もしない。
+const VIAL_HEARTBEAT_MS = 2000;
+function vialStartHeartbeat() {
+  clearTimeout(VS.beatTimer);
+  VS.beatErrors = 0;
+  const tick = async () => {
+    VS.beatTimer = 0;
+    if (!VS.connected || !VS.dev) return;
+    // unlock 手続き中は unlockTimer が同じ転送を回しているので譲る。
+    if (!VS.unlocked && !VS.unlocking && !document.hidden) {
+      try {
+        await VS.dev.readUnlockStatus();
+        VS.beatErrors = 0;
+      } catch (_) {
+        if (++VS.beatErrors > 2) { vialDisconnect("heartbeat failed"); return; }
+      }
+    }
+    VS.beatTimer = setTimeout(tick, VIAL_HEARTBEAT_MS);
+  };
+  VS.beatTimer = setTimeout(tick, VIAL_HEARTBEAT_MS);
+}
+
 // 端末が保存している layout options を読み、vial.json（無ければボード
 // プロファイルの layoutLabels）で解釈する。失敗したら null（表示は従来どおり）。
 // `known` = 接続機が登録済みボードプロファイルに一致した（UID か VID/PID）。
@@ -1634,10 +1664,13 @@ async function vialOnConnected() {
     $("kbCaption").textContent =
       "Vial接続中：実際のキーマップを表示 ・ レイヤーはタブで切替（マトリクス検出はunlock後に有効）";
   }
+  vialStartHeartbeat();
 }
 
 function vialDisconnect(reason, scheduleRetry = true) {
   clearTimeout(VS.pollTimer);
+  clearTimeout(VS.beatTimer);
+  VS.beatTimer = 0;
   clearInterval(VS.unlockTimer);
   autoLayerSimCancel();
   if (VS.transport) {
@@ -1652,7 +1685,11 @@ function vialDisconnect(reason, scheduleRetry = true) {
   VS.unlocking = false;
   VS.keymap = null;
   VS.layoutOptions = null;
-  clearDeviceLayout();
+  // 接続時に vialOnConnected が製品プロファイルへ切り替えているので、
+  // スタッフが選んだ既定ボードへ戻す（同じなら端末由来の配置を捨てるだけ）。
+  const fallback = savedDefaultBoard();
+  if (fallback !== BOARD) applyBoard(fallback);
+  else clearDeviceLayout();
   vialRestoreStatic();
   vialStaffRefresh();
   if (window.tourEngine) tourEngine.updateGuideButton();
@@ -1745,6 +1782,8 @@ function savedSelectedDeviceUid() {
 
 function vialSoftTeardown() {
   clearTimeout(VS.pollTimer);
+  clearTimeout(VS.beatTimer);
+  VS.beatTimer = 0;
   clearInterval(VS.unlockTimer);
   autoLayerSimCancel();
   const oldTransport = VS.transport;
