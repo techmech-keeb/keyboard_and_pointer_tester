@@ -57,6 +57,10 @@ WebView2の総合動作、外観の最終承認まで拡張して扱わない。
   **既定オフ**（`app.js` の `JP_INPUT_DEFAULT`）。
 - **例文コンテンツ拡充**（PR #9, merged）: 練習例文を 10→40（PDパングラム＋
   自作＋ローマ字ことわざ）。ライセンス安全・全文字が物理キー対応を検証済み。
+- **キーボード表示の仕様**: 何を描き、どこから取るかを
+  [`docs/design/keyboard-layout-display.md`](design/keyboard-layout-display.md) に整理
+  （製品プロファイル / 端末定義 / 端末状態の 3 層、未登録 Vial 機の扱い、
+  未接続時の既定と構成）。**未実装分を含む仕様書**
 - **バージョン管理＋リリース**: SemVer、単一ソース＝git タグ `vX.Y.Z`（CIが
   `-p:Version` で刻印）。スタッフメニューに版表示。タグ push で
   `release.yml` が GitHub Release を自動作成（win-x64 zip＋自動ノート）。
