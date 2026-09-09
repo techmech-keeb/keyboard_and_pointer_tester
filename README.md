@@ -121,6 +121,8 @@ dotnet publish kiosk/TechmechInputLab.csproj -c Release -r win-x64 --self-contai
 `node --check ui/app.js`、`node --test tools/scroll-input.test.js`、
 `node --test tools/boards.test.js`（ボードプロファイルとガイドツアーの整合）、
 `node --test tools/vial-layout.test.js`（layout options の解釈と KLE の読み取り）も実行してください。
+ボードプロファイルを触ったときは、正本（`qmk-config` / `rmk-config`）が手元にあれば
+`node tools/check-board-sources.js` でずれを確認できます（正本が無ければ何もせず終了します）。
 GPU のない検証環境では `CHROMIUM_DISABLE_GPU=1` を指定できます。
 合成イベント・合成Vial応答による検証は実機検証とは区別します。
 外観の基準候補と実機チェック手順は [SCROLL LAB 設計・検証記録](docs/design/scroll-lab-stage.md) にまとめています。

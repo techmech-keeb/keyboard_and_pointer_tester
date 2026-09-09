@@ -25,6 +25,9 @@ UI は `ui/`（依存なしの HTML/CSS/JS）、Windows キオスクホストは
   `rmk-config`（RMK 版・現行開発）。**ピン・VID/PID・Vial UID・customKeycodes を
   ここで推測して書かない**。値は正本から移す。
 - Vial 連携は **Vial プロトコル標準機能のみ**で実装する（ファーム独自パッチに依存しない）。
+- ボードプロファイル（`ui/layouts/*.js`）の UID・matrix・customKeycodes・KLE を触ったら、
+  正本が手元にある環境で `node tools/check-board-sources.js` を実行してずれを確認する。
+  正本は private なので、この repo へ取り込まない（submodule にしない）。
   RMK 0.9 系との照合結果は `docs/research/2026-09-06_rmk-0.9-vial-integration-check.md`。
 - ガイドツアー（`ui/layouts/olsk60-qmk.tours.js` / `olsk60-rmk.tours.js`）の文言は OLSK60_v2 の公開ドキュメントと
   同期する。ファイル冒頭の docs revision を更新時に確認する。

@@ -116,6 +116,10 @@ Vial 非対応機 / 何も繋がっていない
 - `tools/boards.test.js`: プロファイルの整合（UID・matrix・customKeycodes・ツアー対象）
 - `tools/visual-check.js`: 3 画面サイズ × 両テーマでの実描画と、状態遷移の fixture
 - **合成 fixture の成功を実機確認済みと扱わない**（`AGENTS.md`）。S3 / S9 は実機が要る
+- `tools/check-board-sources.js`: A の写し（UID・matrix・customKeycodes・labels・KLE）が
+  正本と一致しているかを突合する。正本の `qmk-config` / `rmk-config` は private なので
+  **この repo へ取り込まない**（submodule にしない）。実行時にローカルパスを渡すだけで、
+  差分の所在だけを表示する。正本が無ければ未確認として skip するため、CI では走らない
 
 ## 9. 未確認・保留
 
