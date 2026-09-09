@@ -184,3 +184,18 @@ test("composeOverlay keeps profile legends but takes geometry from the device", 
   assert.ok(rmk.keys.every((k) => !("x" in k) && !("y" in k) && !("w" in k) && !("h" in k)));
   assert.deepEqual([at(three, 4, 4).x, at(three, 4, 4).y, at(three, 4, 4).w], [4.25, 4, 2.25]);
 });
+
+test("composeOverlay builds an unlabeled layout without a product profile", () => {
+  const selected = selectLayout(parseKle([
+    [{ a: 4 }, "0,0", { x: 0.25, w: 1.5 }, "0,1"],
+    [{ y: 0.25 }, "1,0"],
+  ]), []);
+  const overlay = composeOverlay([], selected);
+
+  assert.deepEqual(overlay.keys.map((k) => ({ code: k.code, label: k.label, m: k.m, x: k.x, y: k.y, w: k.w })), [
+    { code: "__m0_0", label: "", m: [0, 0], x: 0, y: 0, w: 1 },
+    { code: "__m0_1", label: "", m: [0, 1], x: 1.25, y: 0, w: 1.5 },
+    { code: "__m1_0", label: "", m: [1, 0], x: 0, y: 1.25, w: 1 },
+  ]);
+  assert.deepEqual([overlay.unitsWide, overlay.unitsHigh], [2.75, 2.25]);
+});

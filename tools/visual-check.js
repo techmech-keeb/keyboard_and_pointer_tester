@@ -226,10 +226,10 @@ async function inputChecks(page) {
     const unknown = await vialReadLayoutOptions(dev, foreign, false);
     const mismatch = await vialReadLayoutOptions(dev, foreign, true);
     const own = await vialReadLayoutOptions(dev, null, true);
-    return { unknown: unknown && unknown.keys, unknownFits: unknown && unknown.fits,
+    return { unknown: unknown && unknown.keys.length, unknownFits: unknown && unknown.fits,
       mismatch: mismatch && mismatch.keys, own: own && own.keys.length };
   });
-  assert.deepEqual(guard, { unknown: null, unknownFits: false, mismatch: null, own: 62 }, "device layout guard");
+  assert.deepEqual(guard, { unknown: 3, unknownFits: true, mismatch: null, own: 62 }, "device layout guard");
 
   // unlock の案内は、マウスレイヤー表示中でも刻印（Esc と Enter）で名付ける。
   const unlockHint = await page.evaluate(async () => {
@@ -447,33 +447,52 @@ async function recoveryChecks(page, shot) {
       assert.deepEqual(afterUnplug,
         { armed: true, beat: 0, board: "ansi104", rows: 0, cols: 0, nameShown: false },
         "unplug falls back to the staff default board and drops the heartbeat");
-      // 未登録の Vial 機（OmniTB のようなトラックボール機）を繋いだ状態。端末の
-      // matrix は描いているボードより小さいので、範囲外を読むと落ちていた。
+      // 未登録の Vial 機は、製品プロファイルの絵ではなく端末定義と
+      // 保存 layout options から一時ボードを描き、切断時は既定ボードへ戻す。
       const foreign = await page.evaluate(() => {
-        const cap = (id) => document.querySelector(`.key[data-id="${id}"] .keycap`).textContent.trim();
+        localStorage.setItem("olsk60.defaultBoard", "ansi104");
+        const def = { name: "Fixture 3-key" };
+        const selected = {
+          keys: [
+            { row: 0, col: 0, x: 0, y: 0, w: 1, h: 1 },
+            { row: 0, col: 1, x: 1, y: 0, w: 2, h: 1 },
+          ],
+          encoders: [],
+        };
         VS.connected = true;
-        VS.rows = 2; VS.cols = 3; VS.layers = 2;
-        VS.keymap = [0, 1].map(() => [0, 1].map(() => [0x0004, 0x0005, 0x0006])); // A / B / C
+        VS.known = false; VS.rows = 1; VS.cols = 3; VS.layers = 1;
+        VS.layoutOptions = { value: 1, labels: [], choices: [], keys: selected.keys, encoders: selected.encoders };
+        VS.keymap = [[[0x0004, 0x0005, 0x0006]]]; // A / B / C
+        applyUnregisteredDeviceLayout(def, VS.layoutOptions);
         VS.viewLayer = 0;
-        const run = (known) => {
-          VS.known = known;
-          try { applyLayerView(); return null; } catch (e) { return String(e); }
-        };
-        const unknownThrew = run(false);
-        const unknownEsc = cap("Escape");          // 未登録機では塗らない
-        const knownThrew = run(true);
+        applyLayerView();
+        if (window.tourEngine) tourEngine.updateGuideButton();
+        const caps = Array.from(document.querySelectorAll(".key:not(.encoder) .keycap"), (el) => el.textContent.trim());
         const out = {
-          unknownThrew, knownThrew, unknownEsc,
-          knownEsc: cap("Escape"),                 // [0,0] は端末の範囲内 → A
-          knownOutOfRange: cap("KeyA"),            // [2,1] は範囲外 → 空
+          board: document.getElementById("kbBoardName").textContent,
+          caps,
+          widths: activeKeys().map((key) => key.w),
+          trackpoints: document.querySelectorAll(".pointing").length,
+          guideHidden: document.getElementById("guideBtn").hidden,
+          productPhrases: BOARD.phrases || null,
+          browserCodes: activeKeys().filter((key) => !key.code.startsWith("__m")).length,
         };
-        VS.connected = false; VS.known = false; VS.keymap = null;
-        vialRestoreStatic();
         return out;
       });
       assert.deepEqual(foreign,
-        { unknownThrew: null, knownThrew: null, unknownEsc: "Esc", knownEsc: "A", knownOutOfRange: "" },
-        "a device smaller than the drawn board neither crashes nor repaints an unregistered board");
+        { board: "Fixture 3-key", caps: ["A", "B"], widths: [1, 2], trackpoints: 0,
+          guideHidden: true, productPhrases: null, browserCodes: 0 },
+        "an unregistered device uses only its definition");
+      await settle(page);
+      await shot("unregistered-device");
+      const foreignRestored = await page.evaluate(() => {
+        vialDisconnect("fixture", false);
+        const restored = BOARD.id;
+        localStorage.removeItem("olsk60.defaultBoard");
+        applyBoard(DEFAULT_BOARD);
+        return restored;
+      });
+      assert.equal(foreignRestored, "ansi104", "an unregistered device returns to the default board");
       await inputChecks(page);
       await recoveryChecks(page, shot);
       if (size === SIZES[0] && theme === THEMES[0]) await idleCheck(page);
