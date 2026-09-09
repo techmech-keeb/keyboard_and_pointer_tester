@@ -1479,6 +1479,11 @@ function vialMatrixEdge(r, c, down) {
 
   const eff = vialEffectiveLayer();
   if (eff !== VS.viewLayer) {
+    // 物理キーの押下・解放が表示レイヤーを決めたので、オートレイヤー表示の模擬は
+    // 降ろす。降ろさないと active が残ったまま表示だけ戻り、次に TP を動かしても
+    // 「もう出している」と誤認してマウスレイヤーへ戻らなくなる（模擬の遅延が切れる
+    // まで直らない）。実機の AML も打鍵で解除されるので、挙動としても揃う。
+    autoLayerSimCancel();
     VS.viewLayer = eff;
     applyLayerView();
   }
