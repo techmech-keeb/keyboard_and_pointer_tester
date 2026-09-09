@@ -173,7 +173,7 @@ async function inputChecks(page) {
 
   // The Vial fixture models responses only; it is not a connected-device test.
   const legends = await page.evaluate(() => {
-    VS.connected = true; VS.layers = 4;
+    VS.connected = true; VS.known = true; VS.layers = 4; // 登録機として繋がった想定
     VS.keymap = Array.from({ length: 4 }, () => Array.from({ length: VS.rows }, () => new Array(VS.cols).fill(0x0004)));
     const key = BOARD.keys.find(k => k.code === "KeyA");
     const [r, c] = key.m;
@@ -299,7 +299,7 @@ async function recoveryChecks(page, shot) {
   await layoutCheck(page, "long free input");
   await page.evaluate(() => {
     hiddenInput.value = ""; renderFree();
-    VS.connected = true; VS.unlocked = true; VS.layers = 4;
+    VS.connected = true; VS.known = true; VS.unlocked = true; VS.layers = 4;
     VS.keymap = Array.from({ length: 4 }, () => Array.from({ length: VS.rows }, () => new Array(VS.cols).fill(0x0004)));
     const key = BOARD.keys.find(k => k.code === "__Fn2");
     VS.keymap[0][key.m[0]][key.m[1]] = 0x5222;
@@ -423,6 +423,57 @@ async function recoveryChecks(page, shot) {
         return r;
       });
       assert.deepEqual(restored, { keys: 60, encoders: 0, arrowDown: true }, "profile restored after overlay");
+      // 2026-09-09 に実機で見つかった 2 件の再現。接続すると vialOnConnected が
+      // 製品プロファイルへ切り替えるが、切断してもスタッフが選んだ既定ボードへ
+      // 戻らなかった。またロック中は HID の通信が絶えて抜線を検知できなかった。
+      const afterUnplug = await page.evaluate(() => {
+        localStorage.setItem("olsk60.defaultBoard", "ansi104");
+        applyBoard(BOARDS.find((b) => b.id === "olsk60v2-rmk")); // 接続で切り替わった状態
+        VS.connected = true;
+        VS.deviceName = "OLSK60 v2";
+        applyDeviceName();
+        VS.dev = { readUnlockStatus: async () => { throw new Error("unplugged"); } };
+        vialStartHeartbeat();
+        const armed = VS.beatTimer !== 0;                        // ロック中でも生存確認が動く
+        vialDisconnect("fixture", false);                        // 再接続は張らない
+        const out = {
+          armed, beat: VS.beatTimer, board: BOARD.id, rows: VS.rows, cols: VS.cols,
+          nameShown: !document.getElementById("kbDeviceName").hidden,
+        };
+        localStorage.removeItem("olsk60.defaultBoard");
+        applyBoard(DEFAULT_BOARD);
+        return out;
+      });
+      assert.deepEqual(afterUnplug,
+        { armed: true, beat: 0, board: "ansi104", rows: 0, cols: 0, nameShown: false },
+        "unplug falls back to the staff default board and drops the heartbeat");
+      // 未登録の Vial 機（OmniTB のようなトラックボール機）を繋いだ状態。端末の
+      // matrix は描いているボードより小さいので、範囲外を読むと落ちていた。
+      const foreign = await page.evaluate(() => {
+        const cap = (id) => document.querySelector(`.key[data-id="${id}"] .keycap`).textContent.trim();
+        VS.connected = true;
+        VS.rows = 2; VS.cols = 3; VS.layers = 2;
+        VS.keymap = [0, 1].map(() => [0, 1].map(() => [0x0004, 0x0005, 0x0006])); // A / B / C
+        VS.viewLayer = 0;
+        const run = (known) => {
+          VS.known = known;
+          try { applyLayerView(); return null; } catch (e) { return String(e); }
+        };
+        const unknownThrew = run(false);
+        const unknownEsc = cap("Escape");          // 未登録機では塗らない
+        const knownThrew = run(true);
+        const out = {
+          unknownThrew, knownThrew, unknownEsc,
+          knownEsc: cap("Escape"),                 // [0,0] は端末の範囲内 → A
+          knownOutOfRange: cap("KeyA"),            // [2,1] は範囲外 → 空
+        };
+        VS.connected = false; VS.known = false; VS.keymap = null;
+        vialRestoreStatic();
+        return out;
+      });
+      assert.deepEqual(foreign,
+        { unknownThrew: null, knownThrew: null, unknownEsc: "Esc", knownEsc: "A", knownOutOfRange: "" },
+        "a device smaller than the drawn board neither crashes nor repaints an unregistered board");
       await inputChecks(page);
       await recoveryChecks(page, shot);
       if (size === SIZES[0] && theme === THEMES[0]) await idleCheck(page);
