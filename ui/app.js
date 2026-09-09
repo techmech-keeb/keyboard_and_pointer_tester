@@ -1241,6 +1241,7 @@ let VS = {
   deviceName: "",
   mode: "none",          // none | kiosk | webhid
   connected: false,
+  known: false,          // 接続機が登録済みボードプロファイルに一致したか
   unlocked: false,
   unlocking: false,
   rows: BOARD.matrix.rows,
@@ -1298,6 +1299,11 @@ function vialDescribe(kc) {
 // Display rule: KC_TRNS inherits the legend of the highest lower layer
 // (numeric walk — approximation of QMK's active-layer fallthrough).
 function vialDisplayKeycode(layer, r, c) {
+  // 描いているボードの matrix が接続機より広いことがある（未登録機を繋いだとき、
+  // あるいは定義と食い違う個体）。範囲外を素通しすると undefined を描画しようと
+  // して applyLayerView ごと例外で落ちるので、割り当て無しとして扱う。
+  const row = VS.keymap[0][r];
+  if (!row || row[c] === undefined) return { kc: 0x0000, from: 0 };
   for (let l = layer; l >= 0; l--) {
     const kc = VS.keymap[l][r][c];
     if (kc !== 0x0001) return { kc, from: l };
@@ -1307,7 +1313,9 @@ function vialDisplayKeycode(layer, r, c) {
 }
 
 function applyLayerView() {
-  if (!VS.connected || !VS.keymap) return;
+  // 未登録機のキーマップを既定ボードの絵に塗ると、配列と刻印が食い違った絵に
+  // なる（仕様 S3 は「定義だけで描く」で、まだ未実装）。それまでは塗らない。
+  if (!VS.connected || !VS.keymap || !VS.known) return;
   const layer = VS.viewLayer;
   for (const [pos, el] of matrixEls) {
     const [r, c] = pos.split(",").map(Number);
@@ -1341,7 +1349,7 @@ function autoLayerSimBlocked() {
 
 function autoLayerSimAvailable() {
   const profile = autoLayerSimProfile();
-  if (!profile || !VS.connected || !VS.keymap) return false;
+  if (!profile || !VS.connected || !VS.known || !VS.keymap) return false;
   return (autoLayerSimConfig || autoLayerSimSaved()).on && profile.layer < VS.layers;
 }
 
@@ -1640,6 +1648,7 @@ async function vialOnConnected() {
   } catch (_) { /* older firmware — treat as locked */ }
 
   VS.connected = true;
+  VS.known = !!profile;
   VS.deviceName = (def && def.name) || VS.transport.product || "";
   applyDeviceName();
   VS.unlocked = unlocked;
@@ -1654,7 +1663,11 @@ async function vialOnConnected() {
   vialStaffRefresh();
   if (window.tourEngine) tourEngine.updateGuideButton();
 
-  if (VS.unlocked) {
+  if (!VS.known) {
+    vialBadgeSet("vial-locked", "VIAL 未登録機");
+    $("kbCaption").textContent =
+      "未登録のキーボードです：配列の自動描画は未対応のため、表示は選択中のボードのままです";
+  } else if (VS.unlocked) {
     vialBadgeSet("vial-live", "VIAL LIVE");
     $("kbCaption").textContent =
       "Vial接続中：実際のキーマップを表示 ・ 物理押下を検出（MO/LTキーも光ります） ・ レイヤーは自動追従します";
@@ -1679,6 +1692,7 @@ function vialDisconnect(reason, scheduleRetry = true) {
   VS.transport = null;
   VS.dev = null;
   VS.connected = false;
+  VS.known = false;
   VS.deviceName = "";
   applyDeviceName();
   VS.unlocked = false;
@@ -1789,6 +1803,7 @@ function vialSoftTeardown() {
   const oldTransport = VS.transport;
   if (oldTransport) oldTransport.ondisconnect = null;
   VS.connected = false;
+  VS.known = false;
   VS.dev = null;
   VS.unlocked = false;
   VS.unlocking = false;
@@ -2026,7 +2041,7 @@ async function vialUnlockStart() {
     if (el) {
       el.classList.add("unlock-target");
       const legend = el._key && el._key.label;
-      const base = VS.keymap ? vialDescribe(vialDisplayKeycode(0, r, c)).text : "";
+      const base = VS.keymap ? vialDescribe(vialDisplayKeycode(0, r, c).kc).text : "";
       names.push(legend || base || `(${r},${c})`);
     } else {
       names.push(`(${r},${c})`);
