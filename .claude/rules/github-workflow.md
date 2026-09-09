@@ -12,6 +12,11 @@ paths:
   not `policies` や `fixes`). When one logical change spans multiple repos,
   the same branch name may be shared across them on purpose — say so in each
   PR body so reviewers know they are one unit.
+- **PR / Issue 番号は、どのリポジトリのものか分かる形で書く。** 同じ番号が別の
+  リポジトリに同時に存在するので（2026-09 に TIL #53 と knowledge-base #53 が
+  並んだ）、裸の `#123` は書かない。同じリポジトリ内なら `#123`、別リポジトリなら
+  `owner/repo#123`（会話や報告では `knowledge-base#53` のような短縮も可。ただし
+  リポジトリ名は必ず添える）。ユーザーへ報告するときは URL 付きリンクにする。
 - Commit only when asked; keep commits small and reviewable
   (1ノウハウ = 1コミット).
 - When a change is split across several commits, verify **each commit**, not
