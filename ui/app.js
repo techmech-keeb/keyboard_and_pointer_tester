@@ -1697,7 +1697,9 @@ async function vialOnConnected() {
     $("kbCaption").textContent = unregisteredLayoutApplied
       ? "未登録のキーボードです：端末の定義と実際のキーマップを表示しています"
       : "この機の定義を取得できないため、選択中の既定ボードによる汎用表示です";
-    if (VS.unlocked) vialStartPolling();
+    // 汎用表示へ落とした端末は、絵の matrix 座標が端末のものではない。押下を
+    // 読んでも無関係なキーが光るだけなので、定義から描けたときだけ追う。
+    if (VS.unlocked && unregisteredLayoutApplied) vialStartPolling();
   } else if (VS.unlocked) {
     vialBadgeSet("vial-live", "VIAL LIVE");
     $("kbCaption").textContent =

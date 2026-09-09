@@ -532,6 +532,37 @@ async function recoveryChecks(page, shot) {
         localStorage.removeItem("olsk60.defaultBoard");
         applyBoard(DEFAULT_BOARD);
       });
+      // 汎用表示へ落とした端末は、絵の matrix 座標が端末のものではない。押下を
+      // 追うと既定ボード（既定は OLSK60）の無関係なキーが光るので、unlock 済みでも
+      // マトリクスポーリングを始めないこと。押下を絵へ渡す経路はここだけなので、
+      // ポーリングを止めていることが誤点灯を防いでいる根拠になる。
+      const noDefinitionUnlocked = await page.evaluate(async () => {
+        localStorage.setItem("olsk60.defaultBoard", "olsk60v2-qmk");
+        VS.mode = "webhid";
+        VS.transport = { vendorId: 0x1234, productId: 0x5678, product: "Unknown fixture", close() {} };
+        VS.dev = {
+          uid: new Uint8Array(8),
+          readDefinition: async () => null,
+          readLayerCount: async () => 1,
+          readKeymap: async () => [[[0x0004, 0x0005]]],
+          readUnlockStatus: async () => ({ unlocked: true, keys: [] }),
+          readMatrix: async () => [0b11],
+        };
+        VS.rows = 1; VS.cols = 2;
+        await vialOnConnected();
+        const out = {
+          board: BOARD.id,
+          polling: VS.pollTimer !== 0,
+          matrixEls: matrixEls.size,     // 既定ボードの座標は載っている（＝渡せば光る）
+        };
+        vialDisconnect("fixture", false);
+        localStorage.removeItem("olsk60.defaultBoard");
+        applyBoard(DEFAULT_BOARD);
+        return out;
+      });
+      assert.deepEqual(noDefinitionUnlocked,
+        { board: "olsk60v2-qmk", polling: false, matrixEls: 60 },
+        "a generic fallback does not follow the device matrix");
       // 登録機でも、端末が申告する matrix がプロファイルと食い違えば fits=false に
       // なり、絵はプロファイルのまま・キーマップだけ端末の寸法で読まれる。この
       // ずれた組み合わせで applyLayerView が範囲外を読んで落ちていた（PR #49）。
