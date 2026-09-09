@@ -1532,18 +1532,27 @@ function vialStartPolling() {
 
 // 端末が保存している layout options を読み、vial.json（無ければボード
 // プロファイルの layoutLabels）で解釈する。失敗したら null（表示は従来どおり）。
-async function vialReadLayoutOptions(dev, def) {
-  const labels = (def && def.layouts && Array.isArray(def.layouts.labels) && def.layouts.labels) ||
-    BOARD.layoutLabels || null;
+// `known` = 接続機が登録済みボードプロファイルに一致した（UID か VID/PID）。
+// 一致しない機の定義をプロファイルに重ねると、別製品のキー配置が OLSK60 の絵に
+// 化ける（2026-09-09 に別の Vial 機を同居させたときに再現）ので、その場合は
+// 定義に labels があっても値の読み取りと表示だけにし、絵には反映しない。
+async function vialReadLayoutOptions(dev, def, known) {
+  const defLayouts = def && def.layouts ? def.layouts : {};
+  const labels = (Array.isArray(defLayouts.labels) && defLayouts.labels) ||
+    (known ? BOARD.layoutLabels : null) || null;
   if (!labels || !labels.length) return null;
+  // プロファイルと定義の matrix が食い違うなら、その定義はこのプロファイルの物ではない。
+  const fits = known && !(def && def.matrix && BOARD.matrix &&
+    (def.matrix.rows !== BOARD.matrix.rows || def.matrix.cols !== BOARD.matrix.cols));
   try {
     const value = await dev.readLayoutOptions();
     const choices = VialLayout.decodeOptions(labels, value);
-    const kle = (def && def.layouts && Array.isArray(def.layouts.keymap) && def.layouts.keymap) ||
-      BOARD.layoutKeymap || null;
+    const kle = fits
+      ? (Array.isArray(defLayouts.keymap) && defLayouts.keymap) || BOARD.layoutKeymap || null
+      : null;
     const selected = kle ? VialLayout.selectLayout(VialLayout.parseKle(kle), choices) : null;
     return {
-      value, labels, choices,
+      value, labels, choices, fits,
       keys: selected ? selected.keys : null,
       encoders: selected ? selected.encoders : null,
     };
@@ -1577,7 +1586,7 @@ async function vialOnConnected() {
     }
   } catch (_) { /* definition is optional */ }
 
-  VS.layoutOptions = await vialReadLayoutOptions(dev, def);
+  VS.layoutOptions = await vialReadLayoutOptions(dev, def, !!profile);
   applyDeviceLayout(VS.layoutOptions);
 
   VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
@@ -1652,8 +1661,12 @@ function vialUidHex(uid) {
   return uid ? Array.from(uid, (v) => v.toString(16).padStart(2, "0")).join("") : "";
 }
 
+// 保存済みの選択 → 登録済みボードプロファイルに一致する機 → 先頭、の順。
+// 同じ PC に別の Vial 機（マクロパッド等）が挿さっていても、まず OLSK60 を選ぶ。
 function pickPreferredCandidate(candidates, savedUidHex) {
-  return candidates.find((candidate) => savedUidHex && candidate.uidHex === savedUidHex) || candidates[0] || null;
+  return candidates.find((candidate) => savedUidHex && candidate.uidHex === savedUidHex) ||
+    candidates.find((candidate) => !!findBoard(candidate.uid, candidate.vendorId, candidate.productId)) ||
+    candidates[0] || null;
 }
 window.pickPreferredCandidate = pickPreferredCandidate;
 
@@ -1889,7 +1902,8 @@ function vialStaffRefresh() {
     const line = document.createElement("span");
     line.textContent = "レイアウト設定 0x" + lo.value.toString(16).padStart(8, "0") + ": " +
       VialLayout.describe(lo.labels, lo.choices).join(" / ") +
-      (lo.keys ? "（キー " + lo.keys.length + " / エンコーダ " + lo.encoders.length + "）" : "（vial.json 未取得）");
+      (lo.keys ? "（キー " + lo.keys.length + " / エンコーダ " + lo.encoders.length + "）"
+        : lo.fits === false ? "（未登録の機のため絵には反映しない）" : "（vial.json 未取得）");
     diag.appendChild(document.createElement("br"));
     diag.appendChild(line);
   }

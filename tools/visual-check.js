@@ -193,6 +193,27 @@ async function inputChecks(page) {
   assert.equal(await page.evaluate(() => VS.viewLayer), 3, "auto-layer simulation on wheel");
   await page.waitForTimeout(200);
   assert.equal(await page.evaluate(() => VS.viewLayer), 0, "auto-layer simulation restores view");
+
+  // 同じ PC に別の Vial 機が挿さっていても、登録済みボードの機を先に選ぶ。
+  const picked = await page.evaluate(() => {
+    const rmk = BOARDS.find(b => b.id === "olsk60v2-rmk");
+    const other = { uid: new Uint8Array(8), uidHex: "0000000000000000", vendorId: 0x1234, productId: 0x0001 };
+    const olsk = { uid: Uint8Array.from(rmk.match.uid), uidHex: "1eebcb509f6b94ee", vendorId: 0x746D, productId: 0x0102 };
+    return [pickPreferredCandidate([other, olsk], "").uidHex, pickPreferredCandidate([other, olsk], other.uidHex).uidHex];
+  });
+  assert.deepEqual(picked, ["1eebcb509f6b94ee", "0000000000000000"], "candidate preference");
+
+  // 未登録の機や matrix が食い違う定義は、値は読んでも絵には重ねない。
+  const guard = await page.evaluate(async () => {
+    const dev = { readLayoutOptions: async () => 1 };
+    const foreign = { matrix: { rows: 1, cols: 3 }, layouts: { labels: ["Opt"], keymap: [["0,0", "0,1", "0,2"]] } };
+    const unknown = await vialReadLayoutOptions(dev, foreign, false);
+    const mismatch = await vialReadLayoutOptions(dev, foreign, true);
+    const own = await vialReadLayoutOptions(dev, null, true);
+    return { unknown: unknown && unknown.keys, unknownFits: unknown && unknown.fits,
+      mismatch: mismatch && mismatch.keys, own: own && own.keys.length };
+  });
+  assert.deepEqual(guard, { unknown: null, unknownFits: false, mismatch: null, own: 62 }, "device layout guard");
   await page.evaluate(() => { autoLayerSimCancel(); VS.connected = false; VS.keymap = null; vialRestoreStatic(); setAutoLayerSimConfig({ on: true, delay: 800 }); });
   await reset();
 }
