@@ -1965,13 +1965,20 @@ async function vialUnlockStart() {
     VS.unlockKeys = st.keys;
   } catch (_) { /* keep whatever we had */ }
 
-  // highlight the combo keys on the on-screen keyboard
+  // unlock は物理キーの組み合わせなので、案内は表示中のレイヤーではなく刻印
+  // （プロファイルの label、無ければベース層のキーコード）で名付ける。直前に
+  // TrackPoint を動かしているとマウスレイヤー表示（例: Esc 位置が TO(0)）の
+  // ままになるので、表示もベース層へ戻す。
+  autoLayerSimCancel();
+  if (VS.viewLayer !== 0) { VS.viewLayer = 0; applyLayerView(); }
   const names = [];
   for (const [r, c] of VS.unlockKeys) {
     const el = matrixEls.get(r + "," + c);
     if (el) {
       el.classList.add("unlock-target");
-      names.push(el.querySelector(".keycap")?.textContent || `(${r},${c})`);
+      const legend = el._key && el._key.label;
+      const base = VS.keymap ? vialDescribe(vialDisplayKeycode(0, r, c)).text : "";
+      names.push(legend || base || `(${r},${c})`);
     } else {
       names.push(`(${r},${c})`);
     }

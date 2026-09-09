@@ -214,6 +214,25 @@ async function inputChecks(page) {
       mismatch: mismatch && mismatch.keys, own: own && own.keys.length };
   });
   assert.deepEqual(guard, { unknown: null, unknownFits: false, mismatch: null, own: 62 }, "device layout guard");
+
+  // unlock の案内は、マウスレイヤー表示中でも刻印（Esc と Enter）で名付ける。
+  const unlockHint = await page.evaluate(async () => {
+    const esc = BOARD.keys.find(k => k.code === "Escape").m, enter = BOARD.keys.find(k => k.code === "Enter").m;
+    VS.keymap[3][esc[0]][esc[1]] = 0x5200; // TO(0)
+    VS.viewLayer = 3; applyLayerView();
+    VS.unlocked = false;
+    VS.dev = {
+      readUnlockStatus: async () => ({ unlocked: false, keys: [esc, enter] }),
+      unlockStart: async () => { throw new Error("fixture: stop before polling"); },
+    };
+    await vialUnlockStart();
+    const text = document.getElementById("unlockHint").textContent;
+    const layer = VS.viewLayer;
+    VS.dev = null; VS.keymap[3][esc[0]][esc[1]] = 0x0004; VS.viewLayer = 0; applyLayerView();
+    return { text, layer };
+  });
+  assert.ok(unlockHint.text.includes("Esc と Enter"), "unlock hint names the legends: " + unlockHint.text);
+  assert.equal(unlockHint.layer, 0, "unlock resets the view to the base layer");
   await page.evaluate(() => { autoLayerSimCancel(); VS.connected = false; VS.keymap = null; vialRestoreStatic(); setAutoLayerSimConfig({ on: true, delay: 800 }); });
   await reset();
 }
