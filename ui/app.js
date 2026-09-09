@@ -240,6 +240,29 @@ function applyDeviceLayout(layout) {
   rebuildKeyboardDom();
 }
 
+// 登録プロファイルの無い端末は、vial.json の製品名・KLE と端末に保存された
+// layout options だけで一時ボードを作る。製品固有情報（TP・ツアー・練習文・
+// KeyboardEvent.code）は持たせず、切断時には savedDefaultBoard() へ戻す。
+function applyUnregisteredDeviceLayout(def, layout) {
+  if (!layout || !layout.keys || !layout.keys.length) return false;
+  const composed = VialLayout.composeOverlay([], layout);
+  BOARD = {
+    id: "__vial-unregistered",
+    name: String((def && def.name) || (VS.transport && VS.transport.product) || "Vial キーボード"),
+    keys: [],
+    unitsWide: composed.unitsWide,
+    unitsHigh: composed.unitsHigh,
+    matrix: { rows: VS.rows, cols: VS.cols },
+    customKeycodes: VS.custom,
+  };
+  DEVICE_LAYOUT = composed;
+  rebuildKeyboardDom();
+  practiceInit();
+  if (window.tourEngine) tourEngine.updateGuideButton();
+  applyAutoLayerSimControls();
+  return true;
+}
+
 function clearDeviceLayout() {
   DEVICE_LAYOUT = defaultProfileLayout(BOARD);
   rebuildKeyboardDom();
@@ -1313,9 +1336,10 @@ function vialDisplayKeycode(layer, r, c) {
 }
 
 function applyLayerView() {
-  // 未登録機のキーマップを既定ボードの絵に塗ると、配列と刻印が食い違った絵に
-  // なる（仕様 S3 は「定義だけで描く」で、まだ未実装）。それまでは塗らない。
-  if (!VS.connected || !VS.keymap || !VS.known) return;
+  // 未登録機も端末定義から一時ボードを作れた場合だけキーマップを塗る。
+  // 定義を取れない経路で、既定ボードへ別製品の刻印を塗ることはしない。
+  if (!VS.connected || !VS.keymap ||
+      (!VS.known && !(VS.layoutOptions && VS.layoutOptions.keys && VS.layoutOptions.keys.length))) return;
   const layer = VS.viewLayer;
   for (const [pos, el] of matrixEls) {
     const [r, c] = pos.split(",").map(Number);
@@ -1581,24 +1605,20 @@ function vialStartHeartbeat() {
 // 端末が保存している layout options を読み、vial.json（無ければボード
 // プロファイルの layoutLabels）で解釈する。失敗したら null（表示は従来どおり）。
 // `known` = 接続機が登録済みボードプロファイルに一致した（UID か VID/PID）。
-// 一致しない機の定義をプロファイルに重ねると、別製品のキー配置が OLSK60 の絵に
-// 化ける（2026-09-09 に別の Vial 機を同居させたときに再現）ので、その場合は
-// 定義に labels があっても値の読み取りと表示だけにし、絵には反映しない。
 async function vialReadLayoutOptions(dev, def, known) {
   const defLayouts = def && def.layouts ? def.layouts : {};
-  const labels = (Array.isArray(defLayouts.labels) && defLayouts.labels) ||
-    (known ? BOARD.layoutLabels : null) || null;
-  if (!labels || !labels.length) return null;
+  const labels = Array.isArray(defLayouts.labels) ? defLayouts.labels :
+    (known && Array.isArray(BOARD.layoutLabels) ? BOARD.layoutLabels : []);
+  const kle = (Array.isArray(defLayouts.keymap) && defLayouts.keymap) ||
+    (known ? BOARD.layoutKeymap : null) || null;
+  if (!kle) return null;
   // プロファイルと定義の matrix が食い違うなら、その定義はこのプロファイルの物ではない。
-  const fits = known && !(def && def.matrix && BOARD.matrix &&
+  const fits = !known || !(def && def.matrix && BOARD.matrix &&
     (def.matrix.rows !== BOARD.matrix.rows || def.matrix.cols !== BOARD.matrix.cols));
   try {
     const value = await dev.readLayoutOptions();
     const choices = VialLayout.decodeOptions(labels, value);
-    const kle = fits
-      ? (Array.isArray(defLayouts.keymap) && defLayouts.keymap) || BOARD.layoutKeymap || null
-      : null;
-    const selected = kle ? VialLayout.selectLayout(VialLayout.parseKle(kle), choices) : null;
+    const selected = fits ? VialLayout.selectLayout(VialLayout.parseKle(kle), choices) : null;
     return {
       value, labels, choices, fits,
       keys: selected ? selected.keys : null,
@@ -1635,7 +1655,8 @@ async function vialOnConnected() {
   } catch (_) { /* definition is optional */ }
 
   VS.layoutOptions = await vialReadLayoutOptions(dev, def, !!profile);
-  applyDeviceLayout(VS.layoutOptions);
+  if (profile) applyDeviceLayout(VS.layoutOptions);
+  else applyUnregisteredDeviceLayout(def, VS.layoutOptions);
 
   VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
   VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
@@ -1666,7 +1687,8 @@ async function vialOnConnected() {
   if (!VS.known) {
     vialBadgeSet("vial-locked", "VIAL 未登録機");
     $("kbCaption").textContent =
-      "未登録のキーボードです：配列の自動描画は未対応のため、表示は選択中のボードのままです";
+      "未登録のキーボードです：端末の定義と実際のキーマップを表示しています";
+    if (VS.unlocked) vialStartPolling();
   } else if (VS.unlocked) {
     vialBadgeSet("vial-live", "VIAL LIVE");
     $("kbCaption").textContent =
