@@ -194,6 +194,22 @@ async function inputChecks(page) {
   await page.waitForTimeout(200);
   assert.equal(await page.evaluate(() => VS.viewLayer), 0, "auto-layer simulation restores view");
 
+  // 打鍵でマウスレイヤー表示から抜けたあと、TP を動かせばまた戻る。模擬が
+  // active のまま残ると、遅延が切れるまで戻らなくなる（2026-09-09 実機で観測）。
+  const simRearm = await page.evaluate(async () => {
+    const seen = [];
+    const move = () => autoLayerSimPointerInput();
+    setAutoLayerSimConfig({ on: true, delay: 800 });
+    move(); seen.push(VS.viewLayer);                 // TP → マウスレイヤー
+    vialMatrixEdge(2, 1, true); seen.push(VS.viewLayer);   // 素のキーを打つ → 抜ける
+    vialMatrixEdge(2, 1, false);
+    move(); seen.push(VS.viewLayer);                 // TP → 戻る
+    autoLayerSimCancel(); VS.viewLayer = 0; applyLayerView();
+    setAutoLayerSimConfig({ on: true, delay: 150 });
+    return seen;
+  });
+  assert.deepEqual(simRearm, [3, 0, 3], "auto-layer simulation re-arms after a keypress");
+
   // 同じ PC に別の Vial 機が挿さっていても、登録済みボードの機を先に選ぶ。
   const picked = await page.evaluate(() => {
     const rmk = BOARDS.find(b => b.id === "olsk60v2-rmk");
