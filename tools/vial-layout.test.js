@@ -42,7 +42,7 @@ test("the last label sits in the low bits, the first in the high bits", () => {
   assert.deepEqual(decodeOptions(OLSK60_LABELS, 0xFFFFFFF8 | 0b011), [1, 1]);
 });
 
-test("KLE walk yields the same geometry the board profile hard-codes", () => {
+test("KLE walk yields the expected OLSK60 geometry", () => {
   const keys = parseKle(OLSK60_KEYMAP);
   const at = (row, col, choice) => keys.find((k) => k.row === row && k.col === col &&
     (choice === undefined ? !k.option : k.option && k.option.choice === choice));
@@ -173,11 +173,14 @@ test("composeOverlay keeps profile legends but takes geometry from the device", 
   assert.deepEqual(enc.encoders.map((e) => [e.index, e.direction, e.x, e.y]), [[0, 0, 12.5, 5.25], [0, 1, 13.5, 5.25]]);
   assert.deepEqual([enc.unitsWide, enc.unitsHigh], [15, 6.25]);
 
-  // 3-Split・エンコーダ無し = 2 はプロファイルそのものと同じ配置になる
+  // 3-Split・エンコーダ無し = 2 はプロファイルの既定配置。
   const three = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 2)));
   assert.equal(three.keys.length, rmk.keys.length);
   for (const k of rmk.keys) {
     const d = at(three, k.m[0], k.m[1]);
-    assert.deepEqual([d.x, d.y, d.w, d.code], [k.x, k.y, k.w, k.code], k.code);
+    assert.equal(d.code, k.code);
   }
+  assert.equal(rmk.defaultLayoutOptions, 2);
+  assert.ok(rmk.keys.every((k) => !("x" in k) && !("y" in k) && !("w" in k) && !("h" in k)));
+  assert.deepEqual([at(three, 4, 4).x, at(three, 4, 4).y, at(three, 4, 4).w], [4.25, 4, 2.25]);
 });

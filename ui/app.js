@@ -8,9 +8,15 @@
 
 const $ = (id) => document.getElementById(id);
 let BOARD = DEFAULT_BOARD;
-// 接続中の端末が保存している物理レイアウト（Space の分割・エンコーダ有無）を
-// プロファイルに重ねたもの。無ければ BOARD.keys をそのまま描く。切断で捨てる。
-let DEVICE_LAYOUT = null;
+// KLE のある製品プロファイルは、未接続時も既定 option の物理配置を
+// matrix 対応表に重ねる。KLE のない汎用プロファイルは keys をそのまま描く。
+function defaultProfileLayout(profile) {
+  if (!profile.layoutKeymap || profile.defaultLayoutOptions === undefined) return null;
+  const parsed = VialLayout.parseKle(profile.layoutKeymap);
+  const choices = VialLayout.decodeOptions(profile.layoutLabels || [], profile.defaultLayoutOptions);
+  return VialLayout.composeOverlay(profile.keys, VialLayout.selectLayout(parsed, choices));
+}
+let DEVICE_LAYOUT = defaultProfileLayout(BOARD);
 function activeKeys() { return DEVICE_LAYOUT ? DEVICE_LAYOUT.keys : BOARD.keys; }
 function activeUnits() {
   return DEVICE_LAYOUT
@@ -235,8 +241,7 @@ function applyDeviceLayout(layout) {
 }
 
 function clearDeviceLayout() {
-  if (!DEVICE_LAYOUT) return;
-  DEVICE_LAYOUT = null;
+  DEVICE_LAYOUT = defaultProfileLayout(BOARD);
   rebuildKeyboardDom();
 }
 
@@ -244,7 +249,7 @@ function applyBoard(profile) {
   if (!profile || profile === BOARD) return;
   autoLayerSimCancel();
   BOARD = profile;
-  DEVICE_LAYOUT = null;
+  DEVICE_LAYOUT = defaultProfileLayout(BOARD);
   rebuildKeyboardDom();
   practiceInit();
   if (VS) {
