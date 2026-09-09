@@ -244,7 +244,14 @@ function applyDeviceLayout(layout) {
 // layout options だけで一時ボードを作る。製品固有情報（TP・ツアー・練習文・
 // KeyboardEvent.code）は持たせず、切断時には savedDefaultBoard() へ戻す。
 function applyUnregisteredDeviceLayout(def, layout) {
-  if (!layout || !layout.keys || !layout.keys.length) return false;
+  if (!layout || !layout.keys || !layout.keys.length) {
+    // WebHID では端末の vial.json を展開できず、未登録機の配置を組み立てられない。
+    // 直前の製品プロファイルを残さず、スタッフが選んだ既定ボードで汎用表示する。
+    const fallback = savedDefaultBoard();
+    if (fallback !== BOARD) applyBoard(fallback);
+    else clearDeviceLayout();
+    return false;
+  }
   const composed = VialLayout.composeOverlay([], layout);
   BOARD = {
     id: "__vial-unregistered",
@@ -1655,8 +1662,9 @@ async function vialOnConnected() {
   } catch (_) { /* definition is optional */ }
 
   VS.layoutOptions = await vialReadLayoutOptions(dev, def, !!profile);
+  let unregisteredLayoutApplied = false;
   if (profile) applyDeviceLayout(VS.layoutOptions);
-  else applyUnregisteredDeviceLayout(def, VS.layoutOptions);
+  else unregisteredLayoutApplied = applyUnregisteredDeviceLayout(def, VS.layoutOptions);
 
   VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
   VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
@@ -1686,9 +1694,12 @@ async function vialOnConnected() {
 
   if (!VS.known) {
     vialBadgeSet("vial-locked", "VIAL 未登録機");
-    $("kbCaption").textContent =
-      "未登録のキーボードです：端末の定義と実際のキーマップを表示しています";
-    if (VS.unlocked) vialStartPolling();
+    $("kbCaption").textContent = unregisteredLayoutApplied
+      ? "未登録のキーボードです：端末の定義と実際のキーマップを表示しています"
+      : "この機の定義を取得できないため、選択中の既定ボードによる汎用表示です";
+    // 汎用表示へ落とした端末は、絵の matrix 座標が端末のものではない。押下を
+    // 読んでも無関係なキーが光るだけなので、定義から描けたときだけ追う。
+    if (VS.unlocked && unregisteredLayoutApplied) vialStartPolling();
   } else if (VS.unlocked) {
     vialBadgeSet("vial-live", "VIAL LIVE");
     $("kbCaption").textContent =

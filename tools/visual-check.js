@@ -493,6 +493,76 @@ async function recoveryChecks(page, shot) {
         return restored;
       });
       assert.equal(foreignRestored, "ansi104", "an unregistered device returns to the default board");
+      // WebHID などで定義を取得できない未登録機は、直前のボードを残さず
+      // スタッフが選んだ既定ボードへ戻し、利用者向けキャプションに理由を出す。
+      const noDefinition = await page.evaluate(async () => {
+        localStorage.setItem("olsk60.defaultBoard", "ansi104");
+        applyBoard(BOARDS.find((b) => b.id === "olsk60v2-rmk"));
+        VS.mode = "webhid";
+        VS.transport = { vendorId: 0x1234, productId: 0x5678, product: "Unknown fixture", close() {} };
+        VS.dev = {
+          uid: new Uint8Array(8),
+          readDefinition: async () => null,
+          readLayerCount: async () => 1,
+          readKeymap: async () => [[[0x0004]]],
+          readUnlockStatus: async () => ({ unlocked: false, keys: [] }),
+        };
+        VS.rows = 1; VS.cols = 1;
+        await vialOnConnected();
+        const out = {
+          board: BOARD.id,
+          keys: activeKeys().length,
+          caption: document.getElementById("kbCaption").textContent,
+          deviceName: document.getElementById("kbDeviceName").textContent,
+        };
+        clearTimeout(VS.beatTimer);
+        VS.beatTimer = 0;
+        return out;
+      });
+      assert.deepEqual(noDefinition, {
+        board: "ansi104",
+        keys: 104,
+        caption: "この機の定義を取得できないため、選択中の既定ボードによる汎用表示です",
+        deviceName: "接続中: Unknown fixture",
+      }, "an unregistered device without a definition uses the selected generic board");
+      await settle(page);
+      await shot("unregistered-no-definition");
+      await page.evaluate(() => {
+        vialDisconnect("fixture", false);
+        localStorage.removeItem("olsk60.defaultBoard");
+        applyBoard(DEFAULT_BOARD);
+      });
+      // 汎用表示へ落とした端末は、絵の matrix 座標が端末のものではない。押下を
+      // 追うと既定ボード（既定は OLSK60）の無関係なキーが光るので、unlock 済みでも
+      // マトリクスポーリングを始めないこと。押下を絵へ渡す経路はここだけなので、
+      // ポーリングを止めていることが誤点灯を防いでいる根拠になる。
+      const noDefinitionUnlocked = await page.evaluate(async () => {
+        localStorage.setItem("olsk60.defaultBoard", "olsk60v2-qmk");
+        VS.mode = "webhid";
+        VS.transport = { vendorId: 0x1234, productId: 0x5678, product: "Unknown fixture", close() {} };
+        VS.dev = {
+          uid: new Uint8Array(8),
+          readDefinition: async () => null,
+          readLayerCount: async () => 1,
+          readKeymap: async () => [[[0x0004, 0x0005]]],
+          readUnlockStatus: async () => ({ unlocked: true, keys: [] }),
+          readMatrix: async () => [0b11],
+        };
+        VS.rows = 1; VS.cols = 2;
+        await vialOnConnected();
+        const out = {
+          board: BOARD.id,
+          polling: VS.pollTimer !== 0,
+          matrixEls: matrixEls.size,     // 既定ボードの座標は載っている（＝渡せば光る）
+        };
+        vialDisconnect("fixture", false);
+        localStorage.removeItem("olsk60.defaultBoard");
+        applyBoard(DEFAULT_BOARD);
+        return out;
+      });
+      assert.deepEqual(noDefinitionUnlocked,
+        { board: "olsk60v2-qmk", polling: false, matrixEls: 60 },
+        "a generic fallback does not follow the device matrix");
       // 登録機でも、端末が申告する matrix がプロファイルと食い違えば fits=false に
       // なり、絵はプロファイルのまま・キーマップだけ端末の寸法で読まれる。この
       // ずれた組み合わせで applyLayerView が範囲外を読んで落ちていた（PR #49）。
