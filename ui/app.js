@@ -1259,6 +1259,7 @@ let VS = {
   // { value, labels, choices, keys, encoders } / 未取得なら null。
   // 描画への反映はまだ行わず、スタッフ画面で確認できるだけ。
   layoutOptions: null,
+  lastEdge: "",  // 直近に押されたマトリクス位置と解釈（スタッフ画面の診断用）
 };
 
 const SELECTED_DEVICE_UID_KEY = "olsk60.selectedDeviceUid";
@@ -1443,7 +1444,17 @@ function vialMatrixEdge(r, c, down) {
 
   if (down) {
     const d = vialDescribe(vialResolveKeycode(r, c));
-    if (d.kind === "layer" && typeof d.layer === "number") {
+    VS.lastEdge = "(" + r + "," + c + ") " + (d.text || d.kind);
+    const lastEdgeEl = $("vialLastEdge");
+    if (lastEdgeEl) lastEdgeEl.textContent = "直近の押下: " + VS.lastEdge;
+    // 押している間だけ層を有効にするカスタムキー（OLSK60 RMK 版の Scrl L1 等）は
+    // MO(n) と同じ扱い。名前はプロファイルの customLayerKeys で宣言する。
+    const customLayer = d.kind === "custom" && BOARD.customLayerKeys
+      ? BOARD.customLayerKeys[(VS.custom || [])[d.index]] : undefined;
+    if (Number.isInteger(customLayer)) {
+      autoLayerSimCancel();
+      VS.momentary.set(pos, customLayer);
+    } else if (d.kind === "layer" && typeof d.layer === "number") {
       switch (d.hold) {
         case "mo": case "lt": case "tt": case "lm":
           autoLayerSimCancel();
@@ -1881,6 +1892,13 @@ function vialStaffRefresh() {
       (lo.keys ? "（キー " + lo.keys.length + " / エンコーダ " + lo.encoders.length + "）" : "（vial.json 未取得）");
     diag.appendChild(document.createElement("br"));
     diag.appendChild(line);
+  }
+  if (VS.connected && VS.unlocked) {
+    const edge = document.createElement("span");
+    edge.id = "vialLastEdge";
+    edge.textContent = "直近の押下: " + (VS.lastEdge || "—");
+    diag.appendChild(document.createElement("br"));
+    diag.appendChild(edge);
   }
   if (!VS.connected) {
     line.textContent = "未接続（静的レイアウト表示中）" +

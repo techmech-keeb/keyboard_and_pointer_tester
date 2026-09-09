@@ -159,6 +159,10 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   // rmk-config keyboards/olsk60/vial.json (keyboard.toml と同じ 6x13)
   matrix: { rows: 6, cols: 13 },
   layoutKeymap: OLSK60_KLE_RMK,
+  // 押している間だけレイヤーを有効にするカスタムキー (正本: rmk-config
+  // keyboards/olsk60/src/scroll_keys.rs — User20/21/22 = Scroll + Layer 1/2/3)。
+  // TIL は MO(n) と同じ扱いで表示レイヤーを追従させる。単体の "Scrl" は層なし。
+  customLayerKeys: { "Scrl L1": 1, "Scrl L2": 2, "Scrl L3": 3 },
   customKeycodes: [
     "TP Spd1", "TP Spd2", "TP Spd3", "TP Spd4", "TP Spd5",
     "AL 150", "AL 400", "AL 800",

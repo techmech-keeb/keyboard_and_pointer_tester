@@ -90,3 +90,13 @@ test("every tour targets a custom keycode its own firmware actually has", () => 
     }
   }
 });
+
+test("custom layer keys name custom keycodes the RMK firmware really has", () => {
+  const rmk = byId("olsk60v2-rmk");
+  for (const [name, layer] of Object.entries(rmk.customLayerKeys)) {
+    assert.ok(rmk.customKeycodes.includes(name), name + " が customKeycodes に無い");
+    assert.ok(Number.isInteger(layer) && layer >= 1 && layer <= 3, name);
+  }
+  assert.equal(byId("olsk60v2-qmk").customLayerKeys, undefined); // QMK 版の Scroll は層を持たない
+  assert.equal(byId("olsk60v2-qmk").layoutLabels, byId("olsk60v2-rmk").layoutLabels);
+});
