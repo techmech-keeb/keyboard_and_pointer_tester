@@ -493,6 +493,30 @@ async function recoveryChecks(page, shot) {
         return restored;
       });
       assert.equal(foreignRestored, "ansi104", "an unregistered device returns to the default board");
+      // 登録機でも、端末が申告する matrix がプロファイルと食い違えば fits=false に
+      // なり、絵はプロファイルのまま・キーマップだけ端末の寸法で読まれる。この
+      // ずれた組み合わせで applyLayerView が範囲外を読んで落ちていた（PR #49）。
+      const shortKeymap = await page.evaluate(() => {
+        applyBoard(BOARDS.find((b) => b.id === "olsk60v2-rmk"));
+        VS.connected = true; VS.known = true;
+        VS.rows = 2; VS.cols = 3; VS.layers = 1;
+        VS.keymap = [[[0x0004, 0x0005, 0x0006], [0x0004, 0x0005, 0x0006]]]; // A / B / C
+        VS.layoutOptions = null;
+        VS.viewLayer = 0;
+        let threw = null;
+        try { applyLayerView(); } catch (e) { threw = String(e); }
+        const cap = (id) => document.querySelector(`.key[data-id="${id}"] .keycap`).textContent.trim();
+        const out = {
+          threw,
+          inRange: cap("Escape"),   // [0,0] は端末の範囲内 → A
+          outOfRange: cap("KeyA"),  // [2,1] は範囲外 → 割り当て無し
+        };
+        vialDisconnect("fixture", false);
+        applyBoard(DEFAULT_BOARD);
+        return out;
+      });
+      assert.deepEqual(shortKeymap, { threw: null, inRange: "A", outOfRange: "" },
+        "a keymap smaller than the drawn board renders as unassigned instead of throwing");
       await inputChecks(page);
       await recoveryChecks(page, shot);
       if (size === SIZES[0] && theme === THEMES[0]) await idleCheck(page);
