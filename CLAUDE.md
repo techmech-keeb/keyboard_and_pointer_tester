@@ -9,6 +9,9 @@
 - **実機（OLSK60 / 展示 PC）で確かめていないことを「動作確認済み」と書かない。**
 - Vial UID・VID/PID・matrix 次元・customKeycodes は `qmk-config` / `rmk-config` の
   正本から移す。推測で埋めない。
+- **TIL 起動中は Vial が繋がらない**（TIL が 30Hz でポーリングしている入力レポートが
+  Vial 側の未初期化グローバル参照を踏む。Vial のバグでファームは無関係）。一方を
+  終了してから開く。詳細は `README.md`「同時起動できない: TIL と Vial」。
 - `ui/` はオフライン動作・外部依存なしを維持する。
 - Git 運用は `.claude/rules/github-workflow.md`。PR は依頼されたときだけ作る。
 
