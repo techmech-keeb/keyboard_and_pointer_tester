@@ -53,7 +53,7 @@ dotnet publish kiosk/TechmechInputLab.csproj -c Release -r win-x64 --self-contai
 ## UI ビジュアルチェック
 
 `ui/`、`tools/`、または visual-check ワークフローが変わる対象ブランチへの push / PR では、CI の
-`visual-check` が **3 画面サイズ × 両テーマ × 13 状態（78 枚）**を撮影します。
+`visual-check` が **3 画面サイズ × 両テーマ × 15 状態（90 枚）**を撮影します（2026-09-13 に実行して確認）。
 先頭・中間・終端、打鍵、ポインター、クリック、精密／高速入力fixture、自由入力、アトラクトを含み、
 長い練習文とガイド表示、端末のレイアウト設定（5-Split＋エンコーダ）を重ねた表示も撮影し、overflow、全画面wheel、混合入力、小数delta、リセット、Vial表示fixtureを検証します。
 結果とブラウザ版は Actions の Artifact `visual-check-screenshots` として 14 日間保存されます。ローカルでは

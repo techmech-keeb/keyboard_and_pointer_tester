@@ -25,3 +25,4 @@
 |---|---|---|
 | [`layout-display-implementation-request.md`](layout-display-implementation-request.md) | キーボード表示仕様の残タスク（A・B・C）を Codex へ依頼したもの。PR #48 / #50 / #51 で完了 | 2026-09-09 |
 | [`implementation-log.md`](implementation-log.md) | 2026-09 までに完了した実装の記録。`docs/roadmap.md` が履歴で膨らんだため分離。実機確認が残る項目は roadmap 側 | 2026-09-13 |
+| [`scroll-lab-review-log.md`](scroll-lab-review-log.md) | 展示画面・SCROLL LAB の試作／外観レビューの経緯（基点 SHA と戻り先、当時の自動検証、[外観画像](scroll-lab-images/)）。現在の仕様は `docs/design/scroll-lab-stage.md` | 2026-09-13 |
