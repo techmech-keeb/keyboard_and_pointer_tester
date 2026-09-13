@@ -1,6 +1,6 @@
 # docs/archive/ — 凍結文書置き場
 
-更新: 2026-09-09（JST）。
+更新: 2026-09-13（JST）。
 
 役割を終えた文書の保管場所。**内容は更新しない**（凍結）。
 
@@ -8,6 +8,7 @@
 
 - 完了した**実装依頼書**（`*-implementation-request.md` など）
 - 置き換え済みの調査・設計メモで、経緯として残す価値があるもの
+- 完了した作業の**記録**（実装ログなど）。現在進行中の課題は `roadmap.md` に残す
 
 ## 運用
 
@@ -23,3 +24,4 @@
 | 文書 | 役割 | 凍結 |
 |---|---|---|
 | [`layout-display-implementation-request.md`](layout-display-implementation-request.md) | キーボード表示仕様の残タスク（A・B・C）を Codex へ依頼したもの。PR #48 / #50 / #51 で完了 | 2026-09-09 |
+| [`implementation-log.md`](implementation-log.md) | 2026-09 までに完了した実装の記録。`docs/roadmap.md` が履歴で膨らんだため分離。実機確認が残る項目は roadmap 側 | 2026-09-13 |
