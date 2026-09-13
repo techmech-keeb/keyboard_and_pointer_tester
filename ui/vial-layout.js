@@ -6,8 +6,8 @@
 //  - 選択済みの option でキー集合を絞る
 //
 // bit の詰め方と KLE ラベルの読み方は vial-gui（editor/layout_editor.py /
-// protocol/keyboard_comm.py）と kle-serial の deserialize に揃えてある。
-// ここでは仕様（入出力の形）だけを写し、コードは独自に書いている。
+// protocol/keyboard_comm.py。GPL-2.0）と kle-serial（MIT）の deserialize に
+// 揃えてある。ここでは仕様（入出力の形）だけを写し、コードは独自に書いている。
 "use strict";
 
 const VialLayout = (() => {

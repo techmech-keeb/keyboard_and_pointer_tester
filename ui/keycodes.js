@@ -6,7 +6,10 @@
 //   - protocol <  6 : legacy QMK keycodes (old vial-qmk)
 // A future RMK+Vial firmware is expected to speak protocol >= 6;
 // only this table needs to change if its numbering ever differs.
-// Source of truth: vial-gui keycodes_v5.py / keycodes_v6.py.
+// The numbers and range boundaries are interface facts, cross-checked
+// against the tables in vial-gui keycodes_v5.py / keycodes_v6.py
+// (GPL-2.0) — a reference for the numbering only. The labels below are
+// our own keycap shorthand.
 // =============================================================
 "use strict";
 
