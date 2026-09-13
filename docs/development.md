@@ -57,7 +57,9 @@ dotnet publish kiosk/TechmechInputLab.csproj -c Release -r win-x64 --self-contai
 ローカルでの所要時間は約204秒（Chromium 150.0.7871.100、GPU 無効）。CI の所要時間は実行環境により変わります。
 先頭・中間・終端、打鍵、ポインター、クリック、精密／高速入力fixture、自由入力、アトラクトを含み、
 長い練習文とガイド表示、端末のレイアウト設定（5-Split＋エンコーダ）を重ねた表示も撮影し、overflow、全画面wheel、混合入力、小数delta、リセット、Vial表示fixtureを検証します。
-結果とブラウザ版は Actions の Artifact `visual-check-screenshots` として 14 日間保存されます。ローカルでは
+結果とブラウザ版は Actions の Artifact `visual-check-screenshots` として 14 日間保存されます。
+README の 4 テーマ一覧（`docs/themes.png`）は、この撮影結果の `1368x912-<テーマ>-start.png` を
+半分に縮小して 2×2 に並べたもの。テーマを足したら撮り直します。ローカルでは
 `node tools/visual-check.js` を実行できます（`playwright` のインストール環境、または
 `playwright-core` とブラウザを指す `CHROMIUM_PATH` が必要です）。
 

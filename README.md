@@ -11,7 +11,9 @@
 
 ![Techmech keys INPUT LAB](./docs/screenshot.png)
 
-![アトラクト画面](./docs/attract.png)
+![同梱の4テーマ。左上から スタンダード / レトロ液晶 / ミニマル / ポップ](./docs/themes.png)
+
+同梱テーマ（左上から スタンダード / レトロ液晶 / ミニマル / ポップ）。スタッフメニューで切り替えます。
 
 ## 実行方法
 
