@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");

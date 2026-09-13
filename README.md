@@ -295,4 +295,18 @@ GPU のない検証環境では `CHROMIUM_DISABLE_GPU=1` を指定できます�
 
 ## ライセンス
 
-このプロジェクトは個人利用・学習目的で自由に使用できます。
+コードは [Apache License 2.0](LICENSE) です。**改変・再配布・商用利用ができます**。条件は
+Apache-2.0 の定めどおりで、要点は次の2つです。
+
+- **当方の権利表示を残すこと**: 再配布する成果物に `LICENSE` と [`NOTICE`](NOTICE) の内容
+  （`Copyright 2025-2026 Techmech keys`）を含め、変更したファイルには変更した旨を書く。
+- **当方の商標は使えないこと**（Apache-2.0 第6条）: 「Techmech keys」「Techmech keys INPUT LAB」
+  「OLSK60」「Platyx」などの名称・ロゴ、および `docs/` 配下の製品画像は許諾に含みません。
+  フォークを配布するときは名称と画像を差し替えてください。
+
+詳細と除外対象の一覧は [`NOTICE`](NOTICE) にあります。
+
+同梱する第三者コンポーネント（WebView2 SDK / SharpCompress / .NET ランタイム）の表示は
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) にまとめてあります。`LICENSE` /
+`NOTICE` / `THIRD-PARTY-NOTICES.md` の3ファイルは exe と同じ場所に出力されるので、
+配布 zip や `publish/` フォルダにもそのまま入ります。
