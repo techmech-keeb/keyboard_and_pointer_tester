@@ -14,7 +14,7 @@ const SIZES = [
   { tag: "2560x1440", width: 2560, height: 1440 },
   { tag: "1024x768", width: 1024, height: 768 },
 ];
-const THEMES = ["default", "lcd"];
+const THEMES = ["default", "lcd", "minimal", "pop"];
 const settle = (page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
 async function wheel(page, values, target = "kbPanel") {

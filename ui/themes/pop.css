@@ -1,0 +1,254 @@
+/* SPDX-FileCopyrightText: 2025-2026 Techmech keys */
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Pop: six functional hues, solid color fields and ink outlines. */
+html[data-theme="pop"] {
+  --bg: #fff1ad;
+  --panel: #fffdf2;
+  --panel-solid: #fff1ad;
+  --line: #171b2b;
+  --txt: #171b2b;
+  --dim: #434658;
+  --txt-faint: var(--dim);
+  --txt-cursor: var(--txt);
+  --txt-on-accent: #ffffff;
+  --txt-vial-inherit: var(--dim);
+  --txt-vial-inherit-sub: var(--dim);
+  --red: #b60068;
+  --red-deep: #b60068;
+  --red-soft: #b60068;
+  --red-bright: #b60068;
+  --red-cap: #b60068;
+  --red-cap-deep: #b60068;
+  --red-key-border: var(--line);
+  --red-cap-shadow: var(--line);
+  --cyan: #00675e;
+  --amber: #a33f00;
+  --green: #00675e;
+  --scroll-ink: #244cda;
+  --scroll-paper: #e4f6ef;
+  --stage-soft: #ffd43b;
+  --sans: -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
+  --mono: "Cascadia Mono", Consolas, "Courier New", monospace;
+  --blur-panel: 0;
+  --blur-attract: 0;
+  --blur-osd: 0;
+  --blur-menu: 0;
+  --radius-panel: 18px;
+  --radius-key: 12px;
+  --radius-control: 12px;
+  --osd-color: var(--txt);
+  --osd-glow: none;
+  --osd-font: var(--sans);
+  --osd-plate-bg: var(--stage-soft);
+  --osd-plate-border: var(--line);
+  --osd-plate-shadow: none;
+  --keycap-bg: #fffdf2;
+  --keycap-border: var(--line);
+  --keycap-border-top: var(--line);
+  --keycap-shadow: 0 3px 0 var(--line);
+  --keycap-txt: var(--txt);
+  --keycap-layer-bg: var(--stage-soft);
+  --keycap-layer-txt: var(--txt);
+  --keycap-layer-label: var(--dim);
+  --mission-done-border: var(--cyan);
+  --mission-done-bg: var(--scroll-paper);
+  --mission-flash-rgb: 0, 103, 94;
+  --tour-scrim-bg: rgba(23, 27, 43, 0.68);
+  --tour-spot-bg: transparent;
+  --tour-spot-ring: var(--scroll-ink);
+  --tour-spot-ring-strong: var(--red);
+  --tour-spot-shadow: transparent;
+  --tour-spot-shadow-strong: transparent;
+  /* CSS colors for buttons; comma-separated channels for rgba() consumers. */
+  --fx-btn-l: #00675e;
+  --fx-btn-m: #a33f00;
+  --fx-btn-r: #b60068;
+  --fx-scroll-rgb: 36, 76, 218;
+  --fx-halo-rgb: 118, 38, 206;
+  --fx-trail-hue-start: 285;
+  --fx-trail-hue-end: 30;
+  --fx-trail-fixed-rgb: ;
+  --fx-compass-rgb: 118, 38, 206;
+  --fx-compass-needle-start-rgb: 118, 38, 206;
+  --fx-compass-needle: #7626ce;
+  --fx-compass-hub: #7626ce;
+
+  /* As in lcd.css, scoped skin rules cover fixed values in the base styles. */
+  body {
+    background: var(--bg);
+    font-weight: 600;
+  }
+
+  .panel,
+  .staff-box,
+  .tour-card {
+    background: var(--panel);
+    border: 2px solid var(--line);
+    border-radius: var(--radius-panel);
+    box-shadow: none;
+  }
+
+  #kbPanel {
+    background: var(--stage-soft);
+    border-color: var(--line);
+  }
+
+  #scrollPanel {
+    background: var(--scroll-paper);
+  }
+
+  .kb-device-name { background: var(--panel); }
+
+  /* Paint the second pixel inward so the fixed-height typing band keeps its space. */
+  #typePanel {
+    border-width: 1px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .keycap {
+    border-width: 2px;
+    border-radius: var(--radius-key);
+    font-weight: 700;
+  }
+
+  /* Switch ink and fill together, avoiding white text on an in-between light fill. */
+  .keycap, .pill, .tab { transition: none; }
+
+  /* Heat remains visible as a solid yellow tint without the default red gradient. */
+  .keycap::before {
+    background: var(--stage-soft);
+  }
+
+  .key.homing .keycap::after {
+    background: currentColor;
+  }
+
+  .key.down .keycap {
+    background: var(--red);
+    color: var(--txt-on-accent);
+    box-shadow: none;
+  }
+
+  .key.down .keycap::before {
+    opacity: 0;
+  }
+
+  .key.down .sub,
+  .key.down.layer .keycap::after {
+    color: var(--txt-on-accent);
+  }
+
+  .key.vial-none:not(.down) .keycap {
+    background: var(--panel);
+    border-color: var(--line);
+  }
+
+  .tab,
+  .pill,
+  .badge,
+  button,
+  select,
+  :is(#resetBtn, #guideBtn, #tourCloseBtn, #tourStopBtn, #tourNextBtn,
+    #autoLayerSimToggleBtn, #autoLayerSimDelaySelect, #scrollDebugToggle, #scrollDebugClear) {
+    border: 2px solid var(--line);
+    border-radius: var(--radius-control);
+    box-shadow: none;
+  }
+
+  .tab.active,
+  #staffExitBtn,
+  #tourNextBtn {
+    background: var(--red);
+    color: var(--txt-on-accent);
+    border-color: var(--line);
+    box-shadow: none;
+  }
+
+  #pill-L,
+  #pill-M,
+  #pill-R {
+    background: var(--panel);
+    box-shadow: none;
+  }
+
+  #pill-L.active { background: var(--cyan); }
+  #pill-M.active { background: var(--amber); }
+  #pill-R.active { background: var(--red); }
+  :is(#pill-L, #pill-M, #pill-R).active :is(b, span) {
+    color: var(--txt-on-accent);
+  }
+
+  .scroll-arrow.hot,
+  .input-feed-item.scroll-up,
+  .input-feed-item.scroll-down {
+    color: var(--scroll-ink);
+  }
+
+  #scrollBarFill,
+  #unlockBarFill {
+    background: var(--scroll-ink);
+  }
+
+  #staffMenu { background: var(--tour-scrim-bg); }
+  #attract,
+  #missionDone {
+    background: var(--panel-solid);
+    border: 2px solid var(--line);
+    border-radius: var(--radius-control);
+  }
+
+  #clearFlash { background: var(--panel); }
+  .brand-dot,
+  #tpCap,
+  .attract-dot span {
+    background: var(--red);
+    border: 2px solid var(--line);
+    box-shadow: none;
+    animation: none;
+  }
+
+  .pointing.pad {
+    background: var(--stage-soft);
+    border: 2px solid var(--line);
+  }
+
+  .attract-dot::before,
+  .attract-dot::after {
+    border-color: var(--scroll-ink);
+    box-shadow: none;
+  }
+
+  .badge.kiosk,
+  #vialBadge.vial-live {
+    background: var(--cyan);
+    color: var(--txt-on-accent);
+    border-color: var(--line);
+    box-shadow: none;
+  }
+
+  #vialBadge.vial-locked {
+    background: var(--stage-soft);
+    color: var(--txt);
+    border-color: var(--line);
+    box-shadow: none;
+  }
+
+  .key.unlock-target .keycap {
+    box-shadow: 0 0 0 2px var(--cyan);
+    animation: none;
+  }
+
+  .key.tour-target { filter: none; }
+  .key.tour-target .keycap {
+    box-shadow: 0 0 0 3px var(--scroll-ink);
+    animation: none;
+  }
+
+  #clearFlash,
+  .scroll-arrow.hot,
+  #phraseLine span.cur::after,
+  #freeDisplay .caret {
+    text-shadow: none;
+    box-shadow: none;
+  }
+}
