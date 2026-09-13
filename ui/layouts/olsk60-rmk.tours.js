@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // RMK 版 (rmk-config 3.0.0-rc.1) 用のガイドツアー。QMK 版は olsk60-qmk.tours.js。
 //
 // QMK 版とは設定キーの名前と一部の意味が違う。

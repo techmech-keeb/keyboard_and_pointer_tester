@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // Vial の物理レイアウト情報を、DOM や端末に依存せず解釈する。
 //  - layout options: VIA GetKeyboardValue(LayoutOptions) が返す u32 と
 //    vial.json の layouts.labels から「どの選択肢が選ばれているか」を取り出す

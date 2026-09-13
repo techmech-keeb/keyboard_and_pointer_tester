@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // Wheel arithmetic shared by the exhibition UI and dependency-free Node tests.
 // No board, DOM, animation, or device-identity assumptions belong here.
 "use strict";

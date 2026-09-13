@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // =============================================================
 // QMK/Vial keycode -> display label conversion
 // Number scheme is selected by the Vial protocol version reported

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // Original exhibition copy. No external articles or unpublished product facts.
 "use strict";
 

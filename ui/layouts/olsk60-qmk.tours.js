@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // QMK 版 (qmk-config) 用のガイドツアー。RMK 版は olsk60-rmk.tours.js。
 // Source: techmech-keeb/olsk60_v2 docs/OLSK60_user_guide.md「レイヤー2：設定レイヤー」
 // docs revision: 8990e7c (2026-07-18)

@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // A focus-free vertical reading surface. Input arithmetic is independent of DOM.
 "use strict";
 

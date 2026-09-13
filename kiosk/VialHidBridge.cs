@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 using System.Text;
 using System.Text.Json;
 using Microsoft.Web.WebView2.Core;

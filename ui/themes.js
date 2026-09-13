@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // =============================================================
 // UI themes
 // Classic script so the tester continues to run directly from file://.

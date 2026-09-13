@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // Capture actual browser output and assert layout/input behavior.
 // Synthetic wheel/Vial fixtures verify UI logic, not hardware capability.
 "use strict";

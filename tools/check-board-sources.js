@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // ボードプロファイル（ui/layouts/*.js）が、正本リポジトリの値と一致しているか調べる。
 //
 // TIL は public、正本の qmk-config / rmk-config は private なので、正本を

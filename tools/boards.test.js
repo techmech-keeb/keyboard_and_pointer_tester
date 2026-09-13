@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2025-2026 Techmech keys
+// SPDX-License-Identifier: Apache-2.0
 // ボードプロファイルとガイドツアーの整合を、ブラウザ無しで検査する。
 // ui/ はモジュールを持たない素のスクリプトなので、node:vm の同一コンテキストで
 // 読み込んでから、そこに現れた変数と関数を取り出して検査する。
