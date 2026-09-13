@@ -9,6 +9,7 @@
 const THEMES = [
   { id: "default", name: "スタンダード" },
   { id: "lcd", name: "レトロ液晶" },
+  { id: "minimal", name: "ミニマル" },
 ];
 const THEME_KEY = "olsk60.theme";
 

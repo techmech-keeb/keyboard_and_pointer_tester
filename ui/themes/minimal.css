@@ -1,0 +1,159 @@
+/* SPDX-FileCopyrightText: 2025-2026 Techmech keys */
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Less but better: quiet surfaces, clear states, no decorative glow. */
+html[data-theme="minimal"] {
+  --bg: #f0efed;
+  --panel: #f8f7f5;
+  --panel-solid: #f8f7f5;
+  --line: #c5c3bf;
+  --txt: #1a1a1a;
+  --dim: #62615f;
+  --txt-faint: var(--dim);
+  --txt-cursor: var(--txt);
+  --txt-on-accent: #faf9f7;
+  --txt-vial-inherit: var(--dim);
+  --txt-vial-inherit-sub: var(--dim);
+  /* Orange denotes interaction; green denotes completion or connection. */
+  --red: #a84408;
+  --red-deep: #a84408;
+  --red-soft: #a84408;
+  --red-bright: #a84408;
+  --red-key-border: #a84408;
+  --red-cap: #a34e46;
+  --red-cap-deep: #a34e46;
+  --red-cap-shadow: #a34e46;
+  --cyan: #a84408;
+  --amber: #a84408;
+  --green: #326b4c;
+  --scroll-ink: var(--txt);
+  --scroll-paper: var(--panel);
+  --stage-soft: #e5e3df;
+  --sans: -apple-system, "Segoe UI", "Noto Sans JP", sans-serif;
+  --mono: var(--sans);
+  --blur-panel: 0;
+  --blur-attract: 0;
+  --blur-osd: 0;
+  --blur-menu: 0;
+  --radius-panel: 4px;
+  --radius-key: 3px;
+  --radius-control: 3px;
+  --osd-color: var(--txt);
+  --osd-glow: none;
+  --osd-font: var(--sans);
+  --osd-plate-bg: var(--panel);
+  --osd-plate-border: var(--line);
+  --osd-plate-shadow: none;
+  --keycap-bg: #faf9f7;
+  --keycap-border: #aaa7a2;
+  --keycap-border-top: #aaa7a2;
+  --keycap-shadow: none;
+  --keycap-txt: var(--txt);
+  --keycap-layer-bg: var(--stage-soft);
+  --keycap-layer-txt: var(--txt);
+  --keycap-layer-label: var(--dim);
+  --mission-done-border: var(--green);
+  --mission-done-bg: var(--panel);
+  --mission-flash-rgb: 50, 107, 76;
+  --tour-scrim-bg: rgba(26, 26, 26, 0.64);
+  --tour-spot-bg: var(--keycap-bg);
+  --tour-spot-ring: var(--red);
+  --tour-spot-ring-strong: var(--red);
+  --tour-spot-shadow: transparent;
+  --tour-spot-shadow-strong: transparent;
+  /* Canvas parses hex colors and literal RGB triplets, not var() aliases. */
+  --fx-btn-l: #a84408;
+  --fx-btn-m: #a84408;
+  --fx-btn-r: #a84408;
+  --fx-scroll-rgb: 168, 68, 8;
+  --fx-halo-rgb: 98, 97, 95;
+  --fx-trail-hue-start: 0;
+  --fx-trail-hue-end: 0;
+  --fx-trail-fixed-rgb: 98, 97, 95;
+  --fx-compass-rgb: 98, 97, 95;
+  --fx-compass-needle-start-rgb: 168, 68, 8;
+  --fx-compass-needle: #a84408;
+  --fx-compass-hub: #a84408;
+
+  /* Scope the same surface overrides as LCD without changing geometry. */
+  body { background: var(--bg); }
+  .panel, .staff-box, .pointing.pad {
+    background: var(--panel);
+    box-shadow: none;
+  }
+  #kbPanel { background: transparent; }
+  #scrollPanel { background: var(--scroll-paper); }
+  #staffMenu { background: var(--tour-scrim-bg); }
+  #attract, #missionDone, #clearFlash { background: var(--panel-solid); }
+  #attract { border: 1px solid var(--line); transition: none; }
+  #freeDisplay { background: transparent; }
+  .pointing.pad { border-color: var(--keycap-border); }
+
+  .keycap, .pill, .badge, #attract, #resetBtn, #guideBtn,
+  #freeDisplay, #staffVial, #staffOptions, .staff-actions button {
+    border-radius: var(--radius-control);
+  }
+  /* Retain heat as a subtle neutral density change, separate from key-down. */
+  .keycap { transition: none; }
+  .keycap::before { background: rgba(26, 26, 26, 0.08); }
+  .key.homing .keycap::after { background: var(--dim); }
+  .key.vial-none .keycap {
+    background: var(--stage-soft);
+    border-color: var(--line);
+  }
+  .key.down .keycap {
+    background: var(--txt);
+    border-color: var(--txt);
+    color: var(--txt-on-accent);
+    box-shadow: none;
+  }
+  .key.down .sub, .key.down.layer .keycap::after { color: var(--txt-on-accent); }
+  .key.down.homing .keycap::after { background: var(--txt-on-accent); }
+
+  .tab.active {
+    background: var(--txt);
+    color: var(--txt-on-accent);
+    border-color: var(--txt);
+    box-shadow: none;
+  }
+  #staffExitBtn, #tourNextBtn { background: var(--red); box-shadow: none; }
+  #resetBtn:hover { border-color: var(--red); background: var(--stage-soft); }
+  #pill-L.active, #pill-M.active, #pill-R.active {
+    background: var(--stage-soft);
+    border-color: var(--red);
+    box-shadow: none;
+  }
+  .badge.kiosk, #vialBadge.vial-live {
+    color: var(--green);
+    border-color: var(--green);
+    box-shadow: none;
+  }
+  #vialBadge.vial-locked {
+    color: var(--red);
+    border-color: var(--red);
+    box-shadow: none;
+  }
+  #unlockBtn { color: var(--red); border-color: var(--red); background: var(--panel); }
+  #unlockBar { background: var(--line); }
+  #unlockBarFill { background: var(--red); }
+
+  .brand-dot, #tpCap, .attract-dot span {
+    background: var(--red-cap);
+    box-shadow: none;
+    animation: none;
+  }
+  .attract-dot::before, .attract-dot::after { content: none; }
+  #tpRing { border-width: 1px; }
+  .key.unlock-target .keycap, .key.tour-target .keycap {
+    border-color: var(--red);
+    box-shadow: none;
+    outline: 1px solid var(--red);
+    outline-offset: 1px;
+    animation: none;
+  }
+  .key.tour-target { filter: none; }
+  .tour-dots i.active, #phraseLine span.cur::after, #freeDisplay .caret,
+  #keyOsd, #clearFlash, .scroll-arrow.hot {
+    box-shadow: none;
+    text-shadow: none;
+  }
+}
