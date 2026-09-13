@@ -14,7 +14,7 @@ UI は `ui/`（依存なしの HTML/CSS/JS）、Windows キオスクホストは
 - 説明・報告は日本語で行う。コード・識別子・コミットメッセージは既存の慣習に合わせる。
 - 変更前に目的、影響範囲、作業方針を簡潔に整理する。
 - 既存のファイル構成、命名規則、文体、運用ルールを優先する。無関係な変更や大規模な整形を避ける。
-- 不明点は `README.md`、`docs/roadmap.md`、既存ファイルを確認してから判断する。
+- 不明点は `README.md`、`docs/INDEX.md` から辿れる文書、既存ファイルを確認してから判断する。
   推測で断定せず、根拠、前提、不明点（`要確認`）を明記する。
 - **実機（OLSK60 / 展示 PC）で確かめていないことを「動作確認済み」と書かない**。
   実機確認が要る項目は `docs/roadmap.md` のチェックリストに残す。
@@ -28,7 +28,8 @@ UI は `ui/`（依存なしの HTML/CSS/JS）、Windows キオスクホストは
 - ボードプロファイル（`ui/layouts/*.js`）の UID・matrix・customKeycodes・KLE を触ったら、
   正本が手元にある環境で `node tools/check-board-sources.js` を実行してずれを確認する。
   正本は private なので、この repo へ取り込まない（submodule にしない）。
-  RMK 0.9 系との照合結果は `docs/research/2026-09-06_rmk-0.9-vial-integration-check.md`。
+  RMK 0.9 系との照合結果は `docs/research/2026-09-06_rmk-0.9-vial-integration-check.md`、
+  連携仕様の正本は `docs/design/vial-integration.md`。
 - ガイドツアー（`ui/layouts/olsk60-qmk.tours.js` / `olsk60-rmk.tours.js`）の文言は OLSK60_v2 の公開ドキュメントと
   同期する。ファイル冒頭の docs revision を更新時に確認する。
 
@@ -65,12 +66,15 @@ UI は `ui/`（依存なしの HTML/CSS/JS）、Windows キオスクホストは
 
 ## Docs
 
-`docs/` の置き場は 4 つ。迷ったら `roadmap.md` から辿れるようにする。
+目次は [`docs/INDEX.md`](docs/INDEX.md)。新しい文書は必ずそこから辿れるようにする。
+置き場は 5 つ。
 
 | 置き場 | 中身 |
 |---|---|
+| `docs/guide/` | 使う人・展示する人向けの説明（機能一覧、展示運用） |
+| `docs/development.md` | ビルド・CI・リリース・リポジトリ構成 |
 | `docs/roadmap.md` | 残課題と**実機確認チェックリスト**。未確認事項はここに残す |
-| `docs/design/` | 仕様・設計の正本（表示仕様、展示画面など） |
+| `docs/design/` | 仕様・設計の正本（表示仕様、Vial 連携、展示画面など） |
 | `docs/research/` | 調査記録（出典つき。結論は design 側へ反映する） |
 | `docs/archive/` | 役割を終えた凍結文書。運用は [`docs/archive/README.md`](docs/archive/README.md) |
 
@@ -81,7 +85,7 @@ UI は `ui/`（依存なしの HTML/CSS/JS）、Windows キオスクホストは
   文書を作る。
 - `docs/archive/` の文書は**削除しない**。「なぜそう作ったか」「何を見送ったか」は
   実装だけを読んでも分からず、後から必要になる。
-- 鮮度の書き方は置き場で違う。`design/` と `roadmap.md` は冒頭の更新日行
+- 鮮度の書き方は置き場で違う。`guide/`・`design/`・`development.md`・`roadmap.md` は冒頭の更新日行
   （`更新:` / `最終更新:`）を、**内容を確認・編集したときだけ**書き換える
   （日付だけの空更新はしない）。`research/` は調査時点の記録なので `調査日` /
   `作成` を残したまま更新しない。結論が変わったら design 側へ反映する。
