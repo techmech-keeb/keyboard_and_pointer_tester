@@ -61,9 +61,11 @@ html[data-theme="minimal"] {
   --tour-spot-shadow: transparent;
   --tour-spot-shadow-strong: transparent;
   /* Canvas parses hex colors and literal RGB triplets, not var() aliases. */
+  /* 左=アクセント / 中=中間グレー / 右=インク。色相は増やさず、テーマが既に持つ
+     インクの濃さだけで 3 つを見分ける（lcd.css と同じ考え方）。 */
   --fx-btn-l: #a84408;
-  --fx-btn-m: #a84408;
-  --fx-btn-r: #a84408;
+  --fx-btn-m: #62615f;
+  --fx-btn-r: #1a1a1a;
   --fx-scroll-rgb: 168, 68, 8;
   --fx-halo-rgb: 98, 97, 95;
   --fx-trail-hue-start: 0;
@@ -117,6 +119,11 @@ html[data-theme="minimal"] {
   }
   #staffExitBtn, #tourNextBtn { background: var(--red); box-shadow: none; }
   #resetBtn:hover { border-color: var(--red); background: var(--stage-soft); }
+  /* 波紋と同じ対応をカウンタとライブフィードにも通す。left は --cyan が
+     このテーマではアクセント色なので、そのままで揃う。 */
+  #pill-M b, .input-feed-item.click-M { color: var(--dim); }
+  #pill-R b, .input-feed-item.click-R { color: var(--txt); }
+
   #pill-L.active, #pill-M.active, #pill-R.active {
     background: var(--stage-soft);
     border-color: var(--red);
