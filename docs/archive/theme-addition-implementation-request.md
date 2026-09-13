@@ -1,15 +1,20 @@
 ---
-status: active
+status: deprecated
 last_verified: 2026-09-13
 ---
 
 # 実装依頼: デザインテーマを2つ追加する（ミニマル / ポップ）
 
-作成: 2026-09-13（JST）。依頼者: Techmech keys。実施: 外部エージェント（ChatGPT Work モード）。
-作業ブランチ: `design/themes-minimal-and-pop`（このファイルが載っているブランチ）。
+> **完了（2026-09-13）。** 対応 PR: [#66](https://github.com/techmech-keeb/keyboard_and_pointer_tester/pull/66)
+> 「ミニマルとポップを追加し、同梱デザインテーマを4種類にする」。
+> ミニマル・ポップとも `ui/themes/` に入り、スタッフメニューで 4 テーマを選べる。
+> 撮影は 3 サイズ × 4 テーマ × 15 状態 = 180 枚に増え、CI の `screenshots` は 2 分程度で完了する
+> （削減案は採らなかった）。
+> **実機確認は残っている**（OLSK60 / 展示 PC の WebView2 での描画。`../roadmap.md`「実機確認」A のテーマ項目）。
+> 凍結済みのため**追記しない**。続きは新しい文書を作る。
 
-役割を終えたら、冒頭に完了印（日付・対応 PR・実機確認の残り）を書いて
-[`../archive/`](../archive/README.md) へ `git mv` する。
+作成: 2026-09-13（JST）。依頼者: Techmech keys。実施: 外部エージェント（ChatGPT Work モード）。
+作業ブランチ: `design/themes-minimal-and-pop`（マージ済み）。
 
 ## 1. 何を作るか
 
