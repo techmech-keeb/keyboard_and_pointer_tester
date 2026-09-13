@@ -18,7 +18,7 @@ keyboard_and_pointer_tester/
 │   ├── boards.js              # ボードプロファイルのレジストリと自動判別（UID / USB ID）
 │   ├── layouts/               # ボードプロファイル（olsk60 / generic-ansi60 / generic-fullsize）
 │   ├── themes.js              # テーマのレジストリと切替・保存
-│   ├── themes/                # テーマ上書きCSS（lcd.css = レトロ液晶）
+│   ├── themes/                # テーマ上書きCSS（lcd.css / minimal.css / pop.css）
 │   ├── layout.js              # 共通のタイピング練習例文
 │   ├── keycodes.js            # QMKキーコード→刻印変換（Vialプロトコル版数で分岐）
 │   └── vial.js                # Vial/VIAプロトコル実装（キオスクブリッジ / WebHID 両対応）
@@ -53,7 +53,8 @@ dotnet publish kiosk/TechmechInputLab.csproj -c Release -r win-x64 --self-contai
 ## UI ビジュアルチェック
 
 `ui/`、`tools/`、または visual-check ワークフローが変わる対象ブランチへの push / PR では、CI の
-`visual-check` が **3 画面サイズ × 両テーマ × 15 状態（90 枚）**を撮影します（2026-09-13 に実行して確認）。
+`visual-check` が **3 画面サイズ × 4 テーマ × 15 状態（180 枚）**を撮影します（2026-09-13 に実行して確認）。
+ローカルでの所要時間は約204秒（Chromium 150.0.7871.100、GPU 無効）。CI の所要時間は実行環境により変わります。
 先頭・中間・終端、打鍵、ポインター、クリック、精密／高速入力fixture、自由入力、アトラクトを含み、
 長い練習文とガイド表示、端末のレイアウト設定（5-Split＋エンコーダ）を重ねた表示も撮影し、overflow、全画面wheel、混合入力、小数delta、リセット、Vial表示fixtureを検証します。
 結果とブラウザ版は Actions の Artifact `visual-check-screenshots` として 14 日間保存されます。ローカルでは
