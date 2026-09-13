@@ -1,0 +1,34 @@
+Techmech keys INPUT LAB
+Copyright 2025-2026 Techmech keys
+
+Licensed under the Apache License, Version 2.0 (the "License").
+The full text is in the LICENSE file next to this one.
+
+--------------------------------------------------------------------
+Trademarks and brand assets are NOT licensed
+--------------------------------------------------------------------
+
+Section 6 of the License grants no permission to use the trade names,
+trademarks, or product names of the licensor. For this project that
+means the following are excluded from the grant:
+
+  * The names "Techmech keys", "Techmech keys INPUT LAB", "OLSK60",
+    "OLSK60 v2" and "Platyx", and any logo or wordmark built from them.
+  * The product images under docs/ (docs/screenshot.png,
+    docs/attract.png).
+
+You may fork, modify and redistribute the code, including commercially.
+When you do, replace the product names and the images with your own so
+that your build is not presented as a Techmech keys product.
+
+商標・ブランド資産はライセンスの対象外です。コードの改変・再配布・商用利用は
+できますが、上記の名称・ロゴ・製品画像は許諾に含みません。フォークを配布する
+ときは、自分の名称・画像に差し替えてください。
+
+--------------------------------------------------------------------
+Credits
+--------------------------------------------------------------------
+
+An earlier version of this tester was based on a CodePen pen by
+@mass-work (https://codepen.io/mass-work/pen/MYaMKzo). The current
+version is a full rewrite; the credit is kept.
