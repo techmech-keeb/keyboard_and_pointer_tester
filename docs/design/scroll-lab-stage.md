@@ -10,7 +10,7 @@
 タイピング帯、中央の大きなキーボード、長文スクロール面、下部の計測帯を同時表示する。
 長文を読むこと自体より、触っている実機と画面の反応の関係を明確にすることを優先した。
 キーボードをタブやモーダルへ隠さず、スクロールも第三の入力モードにはしない。
-スタンダードは落ち着いた暗色と赤いTrackPoint、LCDは紙色と黒い輪郭で構成する。
+ダークは落ち着いた暗色と赤いTrackPoint、モノクロは紙色と黒い輪郭で構成する。
 
 ## 画面寸法
 
@@ -24,9 +24,9 @@
 Windowsのフォント・表示倍率・WebView2では再測定が必要。少し離れた位置での判読性も要確認。
 
 代表的な外観（実ブラウザ撮影・合成入力のため実機操作の証明ではない）:
-[1368×912 スタンダード](scroll-lab-images/1368x912-default-start.png) /
-[1368×912 LCD](scroll-lab-images/1368x912-lcd-start.png) /
-[2560×1440 スタンダード](scroll-lab-images/2560x1440-default-start.png)。
+[1368×912 ダーク](scroll-lab-images/1368x912-default-start.png) /
+[1368×912 モノクロ](scroll-lab-images/1368x912-lcd-start.png) /
+[2560×1440 ダーク](scroll-lab-images/2560x1440-default-start.png)。
 全 90 状態は `tools/visual-check.js` で再撮影でき、CI では Artifact に保存する。
 
 ## 入力と描画
