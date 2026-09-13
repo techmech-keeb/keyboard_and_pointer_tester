@@ -305,3 +305,8 @@ Apache-2.0 の定めどおりで、要点は次の2つです。
   フォークを配布するときは名称と画像を差し替えてください。
 
 詳細と除外対象の一覧は [`NOTICE`](NOTICE) にあります。
+
+同梱する第三者コンポーネント（WebView2 SDK / SharpCompress / .NET ランタイム）の表示は
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) にまとめてあります。`LICENSE` /
+`NOTICE` / `THIRD-PARTY-NOTICES.md` の3ファイルは exe と同じ場所に出力されるので、
+配布 zip や `publish/` フォルダにもそのまま入ります。
