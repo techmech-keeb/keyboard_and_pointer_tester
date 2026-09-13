@@ -6,9 +6,12 @@
 // =============================================================
 "use strict";
 
+// 表示名は「見た目を一語で言う」で揃えてある。id は localStorage の保存値
+// (THEME_KEY) とスクリーンショットのファイル名に使うので、表示名を変えても
+// 据え置く: default=ダーク, lcd=モノクロ。
 const THEMES = [
-  { id: "default", name: "スタンダード" },
-  { id: "lcd", name: "レトロ液晶" },
+  { id: "default", name: "ダーク" },
+  { id: "lcd", name: "モノクロ" },
   { id: "minimal", name: "ミニマル" },
   { id: "pop", name: "ポップ" },
 ];
