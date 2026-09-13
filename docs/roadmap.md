@@ -8,52 +8,74 @@
 
 docs/ 全体の目次は [`INDEX.md`](INDEX.md)。
 
-## 展示画面・SCROLL LAB：実機レビュー待ち
-
-実装と CI 上の検証は済んでいる（内訳は
-[実装ログ](archive/implementation-log.md)「展示画面・SCROLL LAB」）。
-2026-09-09（JST）に Windows 側で新 UI の起動・表示をユーザーが確認した。
-確認に使った Artifact/run は `要確認` であり、この確認を OLSK60 入力・
-WebView2 の総合動作・外観の最終承認まで拡張して扱わない。
-設計と戻り先は [設計・検証記録](design/scroll-lab-stage.md)。
-
-残っているのは次の実機確認・判断。
-
-- [ ] ユーザーによる新しい外観・キーボードの大きさ・情報密度のレビュー
-- [ ] 通常マウスの1ノッチと連続入力で標準判定を維持するか、OSの行数設定を含めて実機確認
-- [ ] ThinkPad X9 Precision Touchpad、OLSK60、通常マウスを同一条件で比較。X9の方が
-      滑らかで精緻かつ高速域も広いという初期的な体感はあるが、定量計測はユーザー判断で保留
-- [ ] OLSK60＋展示PC＋WebView2で精密～高速移動、Vial接続・レジェンド・レイヤー・IMEを同時確認
-- [ ] 実機でdeltaY / deltaMode / wheelDeltaY / 頻度 / 実scrollTopを一時観測。Windows表示倍率とWebView2版も記録
-- [ ] ネイティブキオスクの離脱防止、無操作復帰、長時間連続入力・消費電力の実機確認
-- [ ] 横方向の体験UI（別課題）。Platyxの仕様確定・プロファイル追加、Bluetoothハイレゾは未確認
-
-関連する正本は、[knowledge-base PR #54](https://github.com/techmech-keeb/knowledge-base/pull/54)
-（Precision TouchpadとX9実機証跡）、
-[rmk-config PR #227](https://github.com/techmech-keeb/rmk-config/pull/227)
-（USB／Bluetoothを含むfirmware候補設計）、
-[AI-agent-playbook PR #50](https://github.com/techmech-keeb/AI-agent-playbook/pull/50)
-（CI成果物の来歴確認）。各PRの実装済み／未確認範囲をTIL側で拡張解釈しない。
-
-## 残課題：実機検証（実機がある側でのみ可能）
+## 実機確認（実機がある側でのみ可能）
 
 > 状態: **中断（2026-07-09）** — 実機（キーボード／展示PC）が未整備のため保留。
-> 環境が整ったら再開する。以下は再開時のチェックリスト。
+> 環境が整ったら再開する。2026-09-09（JST）に Windows 側で新 UI の**起動・表示だけ**を
+> ユーザーが確認した（使用した Artifact/run の対応付けは `要確認`）。それ以外は未実施。
+
+合成入力・合成 Vial 応答による CI 検証は、ここでいう実機確認には数えない。
+操作手順の詳細は [設計・検証記録](design/scroll-lab-stage.md)「実機確認の手順」。
+場面ごとにまとめてあるので、実機に触れる回ごとに A〜D の単位で消化する。
+
+### 0. 毎回最初に記録する
+
+- [ ] 展示 PC・OLSK60 のファーム版・接続方式（USB / Bluetooth）・WebView2 版・
+      Windows 表示倍率・OS のスクロール行数設定・使用した Artifact と run URL
+      （アプリ内のビルド表示と `BUILD-INFO.json` を突き合わせる）
+
+### A. 展示機の起動・表示オプション・離脱防止（OLSK60 なしで進む）
 
 - [ ] **日本語トグル 既定オフ**で起動 → 自由入力タブが出ず練習モードのみで正常
 - [ ] トグルを**オンに切替** → 日本語が打てる／**変換候補ウィンドウの見え方**
-      （全画面・最前面で裏に隠れないか）。※ここが唯一のIME環境依存の確認点
-- [ ] 再起動後もトグル設定が保持される（localStorage 永続）
-- [ ] **WebHID 単体接続**（ブラウザで ui/index.html を開き、バッジクリックで接続）
-- [ ] **75秒自動リセット**と切断→自動再接続の長時間安定性
-- [ ] **OLSK60 実機の Vial 自動判別**（UID 一致でボード表示が切り替わるか）
+      （全画面・最前面で裏に隠れないか）。※ここが唯一の IME 環境依存の確認点
+- [ ] **テーマ切替**（WebView2 でレトロ液晶テーマが意図どおり描画されるか）
+- [ ] **再起動後も端末設定が残る**（日本語トグル／テーマ／既定ボードの localStorage 永続）
+- [ ] **キオスクの離脱防止**（Win / Alt+Tab / Alt+F4 等）、**75 秒無操作リセット**、
+      長時間連続入力での安定性と消費電力
+
+### B. OLSK60 を挿しての Vial 連携
+
+- [ ] **Vial 自動判別**（UID 一致で表示ボードが切り替わるか）
+- [ ] **unlock 後のマトリクス点灯**と、切断 → 自動再接続の長時間安定性
 - [ ] **未登録 Vial 機の定義表示**（端末 KLE と保存 layout options に合う配置、
       実キーマップの刻印、unlock 後の押下点灯、抜線後の既定ボード復帰）
-- [ ] **テーマ切替の実機確認**（WebView2 でレトロ液晶テーマの描画・localStorage 永続）
-- [ ] **ガイドツアーの実機確認**（マトリクス検知でのステップ進行・前提誘導の
-      戻り・LED 案内と実機の一致・Enter/Esc ショートカット）
+- [ ] **ガイドツアー**（マトリクス検知でのステップ進行・前提誘導の戻り・
+      LED 案内と実機の一致・Enter/Esc ショートカット）
 - [ ] **オートレイヤー表示シミュレーションの体感**（実機の切替感覚とディレイ設定が
       合うか。合わなければスタッフメニューで調整 or OFF）
+- [ ] **ブラウザ単体の WebHID 接続**（`ui/index.html` を開き、バッジクリックで接続）
+
+### C. スクロールとポインターの手触り
+
+- [ ] **通常マウス**の 1 ノッチと連続入力で標準判定を維持するか（OS の行数設定を含む）
+- [ ] **OLSK60 で精密〜高速移動**（目標線を固定線へ合わせる／章をまたぐ移動／反転・端・再開）。
+      アプリ側で速さを補正していないことを確認する
+- [ ] **一時観測**（スタッフメニュー → スクロールの一時観測）で deltaY / deltaMode /
+      wheelDeltaY / 頻度 / 論理位置と実 `scrollTop` / 端で制限された量を読む
+- [ ] **展示 PC＋WebView2 で同時確認**（スクロール、Vial 接続、レジェンド、レイヤー、IME）
+
+### D. 外観の最終判断（ユーザー）
+
+- [ ] 新しい外観・キーボードの大きさ・情報密度のレビュー（両テーマ・全サイズ・
+      少し離れた距離での判読性を含む）。合わなければ
+      [外観レビュー記録](archive/scroll-lab-review-log.md)の戻り先から再検討する
+
+### 保留・別課題（この一覧では追わない）
+
+- **ThinkPad X9 Precision Touchpad との定量比較**: ユーザー判断で保留。初期の体感比較と
+  一次情報は [knowledge-base PR #54](https://github.com/techmech-keeb/knowledge-base/pull/54)。
+  比較試験を再開するまで、SCROLL LAB 側に独自の加速や平滑化を加えて差を覆い隠さない
+- **横方向の体験 UI / Platyx プロファイル / Bluetooth ハイレゾ**: 別課題（「今後のプラン 4」）
+- **RMK 版追従の実機確認**（WebView2 での `AudioVolumeUp` keydown、hi-res 時の `wheel` 値）:
+  実装とセットなので「今後のプラン 5」に残す
+
+関連する正本は、[knowledge-base PR #54](https://github.com/techmech-keeb/knowledge-base/pull/54)
+（Precision Touchpad と X9 実機証跡）、
+[rmk-config PR #227](https://github.com/techmech-keeb/rmk-config/pull/227)
+（USB／Bluetooth を含む firmware 候補設計）、
+[AI-agent-playbook PR #50](https://github.com/techmech-keeb/AI-agent-playbook/pull/50)
+（CI 成果物の来歴確認）。各 PR の実装済み／未確認範囲を TIL 側で拡張解釈しない。
 
 ## 今後のプラン
 
