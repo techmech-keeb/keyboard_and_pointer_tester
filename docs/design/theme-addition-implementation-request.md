@@ -145,9 +145,42 @@ node tools/visual-check.js        # playwright または CHROMIUM_PATH が必要
 - `README.md`「できること」表のデザインテーマ行（現在「ダーク HUD とレトロ液晶を同梱」）
 - `docs/guide/features.md`「デザインテーマ」節（同梱テーマの説明）
 - `docs/development.md` の visual-check 枚数（実測値へ）
-- `docs/roadmap.md`「実機確認」A のテーマ確認項目（2 テーマ前提 → 4 テーマへ）
 
-## 8. 作法
+`docs/roadmap.md` は**触らない**。テーマが増える前提の書き方に更新済み
+（「実機確認」A のテーマ項目、および「今後のプラン 6」）。
+
+## 8. 並行作業のルール（別の作業が同時に進む）
+
+このテーマ追加と並行して、TIL 本体の残タスク（`docs/roadmap.md`「今後のプラン」）が
+進む可能性がある。衝突を避けるため、**触ってよいファイルを次に限定する**。
+
+| 触ってよい | 触らない |
+|---|---|
+| `ui/themes/minimal.css`（新規）、`ui/themes/pop.css`（新規） | `ui/app.js`、`ui/vial.js`、`ui/layout.js`、`ui/layouts/**` |
+| `ui/themes.js`（`THEMES` 配列に 2 行足すだけ） | `ui/style.css`、`ui/stage.css` |
+| `ui/index.html`（`<link>` を 2 行足すだけ） | `kiosk/**`、`.github/workflows/**` |
+| `tools/visual-check.js`（`const THEMES` の 1 行だけ） | `tools/visual-check.js` のそれ以外（撮影状態の追加・変更） |
+| `README.md`・`docs/guide/features.md`・`docs/development.md`（テーマと枚数の記述） | `docs/roadmap.md`、他の docs |
+
+- `tools/visual-check.js` は**別タスク（横スクロールの方向表示）も触る予定**のファイル。
+  こちらは `THEMES` の 1 行だけに留めること。撮影状態を足したくなったら、PR 本文で提案する。
+- PR を出す前に **`git merge origin/main` で最新の main を取り込む**。競合したら、
+  片方を捨てずに両方の変更を活かして解決する。
+- 進め方に迷う変更が出てきたら、勝手に広げず PR 本文か依頼者への報告に書く。
+
+## 9. サブエージェントを使わないこと
+
+**この作業は単一のエージェントが最初から最後まで通しで行う。サブエージェントへ
+分割・委譲しない。** 理由:
+
+- 上の「触ってよいファイル」の制限と、`--fx-*` 変数の書式（JS が
+  `getComputedStyle` で読む）という契約が、分割すると片方にしか伝わらず破られやすい。
+- テーマは全体の調和が成果物そのもので、パーツごとに別個体が作ると、
+  色・形・質感の判断がばらつく。
+- スクリーンショットの目視判定は、**同じ目**で 2 テーマを見比べる必要がある。
+- 誰が何を書いたか追えないと、検証結果の正直さ（実機未確認を `要確認` と書く）を担保できない。
+
+## 10. 作法
 
 - Git 運用は [`../../.claude/rules/github-workflow.md`](../../.claude/rules/github-workflow.md) に従う。
 - コミットは**テーマ1つにつき1コミット**（`minimal` と `pop` を分ける）。
@@ -157,10 +190,11 @@ node tools/visual-check.js        # playwright または CHROMIUM_PATH が必要
 - リポジトリは Apache-2.0。新規ファイルには SPDX ヘッダを付ける。
 - `ui/` は**外部依存なし・オフライン動作**を維持する（CDN・npm・Web フォントを足さない）。
 
-## 9. やってはいけないこと
+## 11. やってはいけないこと
 
 - `ui/style.css` `ui/stage.css` の構造変更、既存2テーマの見た目の変更
 - 画面構成・入力処理・Vial 連携・キオスク挙動の変更
 - Web フォントや画像アセットの追加（テーマは CSS 変数だけで表現する）
 - 背景アニメーションなど、常時描画が増える演出の追加
 - 実機で確かめていないことを「確認済み」と書くこと
+- サブエージェントへの分割・委譲（上記 9）
