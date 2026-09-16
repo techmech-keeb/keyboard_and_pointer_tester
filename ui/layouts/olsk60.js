@@ -165,6 +165,8 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   // 押している間だけレイヤーを有効にするカスタムキー (正本: rmk-config
   // keyboards/olsk60/src/scroll_keys.rs — User20/21/22 = Scroll + Layer 1/2/3)。
   // TIL は MO(n) と同じ扱いで表示レイヤーを追従させる。単体の "Scrl" は層なし。
+  // User23 ("Scrl Crv") はスクロールの非線形カーブを切り替えるトグルで、層は持たない
+  // (2026-09-16 追加。rmk-config keyboards/olsk60/src/settings_keys.rs の id 23)。
   customLayerKeys: { "Scrl L1": 1, "Scrl L2": 2, "Scrl L3": 3 },
   customKeycodes: [
     "TP Spd1", "TP Spd2", "TP Spd3", "TP Spd4", "TP Spd5",
@@ -172,7 +174,7 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
     "Snd Tog", "Snd Mode", "Oct +", "Oct -",
     "Base +", "Base -", "Acc +", "Acc -", "Dec +", "Dec -",
     "AML Tog",
-    "Scrl", "Scrl L1", "Scrl L2", "Scrl L3",
+    "Scrl", "Scrl L1", "Scrl L2", "Scrl L3", "Scrl Crv",
   ],
 });
 
