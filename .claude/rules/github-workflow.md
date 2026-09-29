@@ -1,14 +1,12 @@
----
-paths:
-  - "**"
----
-<!-- playbook-meta: status=active; derived_from=tools/claude-code/rules/github-workflow.md; last_verified=2026-09-06 -->
+<!-- playbook-meta: status=active; derived_from=tools/claude-code/rules/github-workflow.md; last_verified=2026-09-29 -->
+<!-- from ai-agent-playbook@27c8d1f (2026-09-29): 正本から作り直し -->
+<!-- paths を付けない: 付けると「ファイルを読んだとき」だけ読み込まれ、git / PR だけの作業で効かない（code.claude.com/docs/en/memory、2026-09-29 確認） -->
 
 # GitHub workflow rule
 
 - Develop on a feature branch; never push directly to the default branch
   without explicit permission.
-- Name the branch after the task, not vaguely (`til-rmk-uid-profile`,
+- Name the branch after the task, not vaguely (`keyboard-vial-integration`,
   not `policies` や `fixes`). When one logical change spans multiple repos,
   the same branch name may be shared across them on purpose — say so in each
   PR body so reviewers know they are one unit.
@@ -23,8 +21,8 @@ paths:
   just the branch tip: extract every commit and build/test it before
   submitting. A commit that removes something a *later* commit stops using
   still has to compile on its own, otherwise reviewers cannot read the commits
-  separately and `git bisect` breaks. Full rule: ai-agent-playbook
-  `common/verification-policy.md`「コード変更」.
+  separately and `git bisect` breaks. 詳細と先例は
+  `common/verification-policy.md`「コード変更」。
 - Scope each PR to one reviewable theme; do not bundle unrelated concerns
   (例: 導入 + doc 修正 + 実装修正) into one PR just because they share a
   branch or session. When the branch name is fixed (harness-mandated), still
@@ -82,7 +80,8 @@ another session's work:
   conflicts. If the conflict is a **generated file** (tag index, lockfile),
   regenerate it from source rather than hand-merging. If two sessions changed
   the **same content two different ways**, integrate both — never discard one
-  side to make the merge pass.
+  side to make the merge pass (先例: 2026-07 の `domains/keyboard/vial.md`
+  で、一方の全面ポインタ化と他方の Raw HID 節追加を統合した).
 - After a force-with-lease rebase, verify the remote tip is still your own
   commit (the lease target) before pushing, so you don't overwrite a push
   that landed in between.
