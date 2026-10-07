@@ -25,7 +25,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
     steps: [
       {
         title: "1. Fn2 を押しつづけます",
-        body: "設定レイヤーは、キーボード上の Fn2（MO(2)）を押している間だけ有効です。光っているキーだけを押してね。",
+        body: "設定レイヤーは、キーボード上の Fn2（Delete の右の設定キー）を押している間だけ有効です。光っているキーだけを押してね。",
         target: { mo: 2 },
         cond: { type: "hold" },
       },
@@ -62,7 +62,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
     steps: [
       {
         title: "1. Fn2 を押しつづけます",
-        body: "設定レイヤーは、Fn2（MO(2)）を押している間だけ有効です。9 の位置は保存内容の消去なので、光っているキーだけを押してね。",
+        body: "設定レイヤーは、Fn2（Delete の右の設定キー）を押している間だけ有効です。9 の位置は保存内容の消去なので、光っているキーだけを押してね。",
         target: { mo: 2 },
         cond: { type: "hold" },
       },
@@ -99,7 +99,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
     steps: [
       {
         title: "1. Fn2 を押しつづけます",
-        body: "設定レイヤーは、キーボード上の Fn2（MO(2)）を押している間だけ有効です。光っているキーだけを押してね。",
+        body: "設定レイヤーは、キーボード上の Fn2（Delete の右の設定キー）を押している間だけ有効です。光っているキーだけを押してね。",
         target: { mo: 2 },
         cond: { type: "hold" },
       },
@@ -136,7 +136,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
     steps: [
       {
         title: "1. Fn2 を押しつづけます",
-        body: "設定レイヤーは、キーボード上の Fn2（MO(2)）を押している間だけ有効です。光っているキーだけを押してね。",
+        body: "設定レイヤーは、キーボード上の Fn2（Delete の右の設定キー）を押している間だけ有効です。光っているキーだけを押してね。",
         target: { mo: 2 },
         cond: { type: "hold" },
       },

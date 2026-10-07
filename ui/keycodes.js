@@ -110,7 +110,7 @@ const VialKeycodes = (() => {
     if (kc >= 0x52A0 && kc <= 0x52BF) return { kind: "other", text: "OSM", sub: modText(kc & 0x1F) };
     if (kc >= 0x52C0 && kc <= 0x52DF) return layerRes("tt", kc & 0x1F);
     if (kc >= 0x52E0 && kc <= 0x52FF) return layerRes("df", kc & 0x1F); // PDF(n)
-    if (kc >= 0x5700 && kc <= 0x57FF) return { kind: "other", text: "TD" + (kc & 0xFF) };
+    if (kc >= 0x5700 && kc <= 0x57FF) return { kind: "other", text: "TD" + (kc & 0xFF), td: kc & 0xFF };
     if (kc >= 0x7700 && kc <= 0x777F) return { kind: "macro", text: "M" + (kc & 0x7F) };
     if (kc === 0x7C00) return { kind: "other", text: "Boot" };
     if (kc === 0x7C01) return { kind: "other", text: "Reboot" }; // QK_REBOOT
@@ -133,7 +133,7 @@ const VialKeycodes = (() => {
     if (kc >= 0x5300 && kc <= 0x53FF) return layerRes("tg", kc & 0xFF);
     if (kc >= 0x5400 && kc <= 0x54FF) return layerRes("osl", kc & 0xFF);
     if (kc >= 0x5500 && kc <= 0x55FF) return { kind: "other", text: "OSM", sub: modText(kc & 0x1F) };
-    if (kc >= 0x5700 && kc <= 0x57FF) return { kind: "other", text: "TD" + (kc & 0xFF) };
+    if (kc >= 0x5700 && kc <= 0x57FF) return { kind: "other", text: "TD" + (kc & 0xFF), td: kc & 0xFF };
     if (kc >= 0x5800 && kc <= 0x58FF) return layerRes("tt", kc & 0xFF);
     if (kc >= 0x5900 && kc <= 0x59FF) return Object.assign(layerRes("lm", (kc >> 4) & 0xF), { sub: modText(kc & 0xF) });
     if (kc === 0x5C00) return { kind: "other", text: "Boot" };
