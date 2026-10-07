@@ -178,9 +178,11 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
     "AL 150", "AL 400", "AL 800",
     "Snd Tog", "Snd Mode", "Oct +", "Oct -",
     // User12..17 は 2026-10-07 に汎用 ± へ付け替え (rmk-config keyboards/olsk60/vial.json)。
-    "Adj +", "Adj -", "Adj >", "Adj <", "Reset 2s", "Spare",
+    "Adj +", "Adj -", "Adj >", "Adj <", "Reset 2s", "Adj Spd",
     "AML Tog",
     "Scrl", "Scrl L1", "Scrl L2", "Scrl L3", "Scrl Crv", "Scrl Ms",
+    // User25..27: ↑↓ の対象を直接選ぶ (加速 / 減速 / AML 遅延。速度は User17)。
+    "Adj Acc", "Adj Dec", "Adj Dly",
   ],
 });
 
