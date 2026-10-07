@@ -176,6 +176,16 @@
       <select id="autoLayerSimDelaySelect"></select>
       <p class="staff-note">実機側のオートレイヤー設定と表示が合わない場合は、オフにすると従来表示に戻ります。</p>
     </div>
+    <div id="kbSettings" hidden>
+      <h4>キーボード設定（RMK 版）</h4>
+      <p class="staff-note">接続中のキーボードの設定を読み書きします。変更は 2 秒後にキーボードへ保存されます。ファームウェアを更新すると初期化されます。</p>
+      <div id="kbSettingsBody"></div>
+      <div class="kb-actions">
+        <button id="kbSettingsReloadBtn" type="button">再読込</button>
+        <button id="kbSettingsSaveBtn" type="button">いますぐ保存</button>
+      </div>
+      <p class="staff-note" id="kbSettingsStatus">未読込</p>
+    </div>
     <details id="scrollDiagnostics"><summary>スクロールの一時観測</summary>
       <p class="staff-note">wheelと描画位置のみを端末内で観測します。キー入力は記録しません。</p>
       <button id="scrollDebugToggle" type="button">観測を開始</button>
@@ -236,6 +246,7 @@
 <script src="keycodes.js"></script>
 <script src="vial-layout.js"></script>
 <script src="vial.js"></script>
+<script src="kb-settings.js"></script>
 <script src="scroll-input.js"></script>
 <script src="scroll-content.js"></script>
 <script src="scroll-lab.js"></script>

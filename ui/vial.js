@@ -246,6 +246,12 @@ class VialDevice {
     return ((r[2] << 24) | (r[3] << 16) | (r[4] << 8) | r[5]) >>> 0;
   }
 
+  // --- VIA custom values (0x07 set / 0x08 get / 0x09 save) on a vendor channel ---
+  // 値の表と符号化は kb-settings.js。応答 32 バイトをそのまま返す。
+  async customGet(channel, id) { return this.cmd([0x08, channel, id]); }
+  async customSet(channel, id, payload) { return this.cmd([0x07, channel, id, ...payload]); }
+  async customSave(channel) { return this.cmd([0x09, channel, 0]); }
+
   async readLayerCount() {
     const r = await this.cmd([0x11]);
     this.layers = r[1];
