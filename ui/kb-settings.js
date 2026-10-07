@@ -22,10 +22,10 @@ const KbSettings = (() => {
         { id: 0x01, key: "speedLevel", label: "速度レベル", type: "u8", kind: "select",
           // 出荷時の基本速度は 1 = 192 / 2 = 384 / 3 = 640。4・5 は調整枠 (初期値は 1・3 と同じ)。
           options: [["1 (遅い)", 0], ["2 (中間)", 1], ["3 (速い・既定)", 2], ["4 (調整枠 4)", 3], ["5 (調整枠 5)", 4]] },
-        { id: 0x02, key: "custom4Base", label: "調整枠 4: 基本速度", type: "i16", kind: "range", min: 64, max: 1024, step: 32 },
+        { id: 0x02, key: "custom4Base", label: "調整枠 4: 基本速度", type: "i16", kind: "range", min: 64, max: 1536, step: 32 },
         { id: 0x03, key: "custom4Acceleration", label: "調整枠 4: 加速", type: "i16", kind: "range", min: 16, max: 256, step: 16 },
         { id: 0x04, key: "custom4Deceleration", label: "調整枠 4: 減速", type: "i16", kind: "range", min: 32, max: 512, step: 16 },
-        { id: 0x05, key: "custom5Base", label: "調整枠 5: 基本速度", type: "i16", kind: "range", min: 64, max: 1024, step: 32 },
+        { id: 0x05, key: "custom5Base", label: "調整枠 5: 基本速度", type: "i16", kind: "range", min: 64, max: 1536, step: 32 },
         { id: 0x06, key: "custom5Acceleration", label: "調整枠 5: 加速", type: "i16", kind: "range", min: 16, max: 256, step: 16 },
         { id: 0x07, key: "custom5Deceleration", label: "調整枠 5: 減速", type: "i16", kind: "range", min: 32, max: 512, step: 16 },
       ],
