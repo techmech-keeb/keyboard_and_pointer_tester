@@ -9,6 +9,7 @@ test("value table matches the firmware protocol (ids, types, ranges)", () => {
     [0x01, "u8", 0, 4], [0x02, "i16", 64, 1024], [0x03, "i16", 16, 256], [0x04, "i16", 32, 512],
     [0x05, "i16", 64, 1024], [0x06, "i16", 16, 256], [0x07, "i16", 32, 512],
     [0x08, "u8", 0, 1], [0x09, "u16", 100, 2000], [0x0A, "u8", 0, 1], [0x0B, "u8", 0, 1], [0x0C, "u8", 0, 1],
+    [0x0D, "u8", 0, 1],
   ];
   assert.equal(K.VALUES.length, expected.length);
   for (const [id, type, min, max] of expected) {
