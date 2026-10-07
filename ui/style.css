@@ -794,7 +794,10 @@ body.kiosk .key.encoder .keycap { border-radius: 50%; }
 .kb-row { display: grid; grid-template-columns: 1fr 160px 72px; gap: 8px; align-items: center; margin: 4px 0; font-size: 13px; }
 .kb-row label { font-weight: 600; }
 .kb-row input[type=range] { width: 100%; }
-.kb-row .kb-num, .kb-row select { font-family: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--radius-control); background: transparent; color: var(--txt); }
+/* 既定ボードの select と同じく不透明な背景にする。透明だと、暗いテーマで
+   ネイティブのドロップダウン (WebView2 / Chromium) が白地に白文字で描かれて読めない。 */
+.kb-row .kb-num, .kb-row select { font-family: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-solid); color: var(--txt); }
+.kb-row select option { background: var(--panel-solid); color: var(--txt); }
 .kb-row .kb-toggle, .kb-actions button {
   font-family: inherit; font-size: 13px; font-weight: 700; padding: 6px 12px;
   border-radius: var(--radius-control); cursor: pointer; border: 1px solid var(--line);
