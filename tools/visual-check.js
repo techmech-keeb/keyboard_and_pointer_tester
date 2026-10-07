@@ -223,7 +223,7 @@ async function inputChecks(page) {
 
   // 未登録の機や matrix が食い違う定義は、値は読んでも絵には重ねない。
   const guard = await page.evaluate(async () => {
-    const dev = { readLayoutOptions: async () => 1 };
+    const dev = { readLayoutOptions: async () => 1 }; // 既定ボード（QMK 版）の並びで 5-Split・エンコーダ有り
     const foreign = { matrix: { rows: 1, cols: 3 }, layouts: { labels: ["Opt"], keymap: [["0,0", "0,1", "0,2"]] } };
     const unknown = await vialReadLayoutOptions(dev, foreign, false);
     const mismatch = await vialReadLayoutOptions(dev, foreign, true);
@@ -405,12 +405,12 @@ async function recoveryChecks(page, shot) {
       await settle(page);
       await shot("free-input");
       await layoutCheck(page, tag + "-free");
-      // 端末が保存しているレイアウト（5-Split・エンコーダ有り = 1）を重ねた状態。
+      // 端末が保存しているレイアウト（5-Split・エンコーダ有り = RMK 版の並びで 3）を重ねた状態。
       // 応答の合成だけで、接続機の検証ではない。
       const overlay = await page.evaluate(() => {
         applyBoard(BOARDS.find(b => b.id === "olsk60v2-rmk")); // 既定は QMK 版（プッシュは 5,13）
         const parsed = VialLayout.parseKle(BOARD.layoutKeymap);
-        applyDeviceLayout(VialLayout.selectLayout(parsed, VialLayout.decodeOptions(BOARD.layoutLabels, 1)));
+        applyDeviceLayout(VialLayout.selectLayout(parsed, VialLayout.decodeOptions(BOARD.layoutLabels, 3)));
         return { push: matrixEls.has("5,12"), arrowDown: matrixEls.has("4,11"),
           encoders: document.querySelectorAll(".key.encoder").length, keys: activeKeys().length };
       });

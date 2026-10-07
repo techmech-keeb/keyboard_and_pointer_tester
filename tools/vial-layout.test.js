@@ -7,8 +7,8 @@ const { bitsFor, decodeOptions, encodeOptions, parseKle, selectLayout, composeOv
 
 // 正本: rmk-config keyboards/olsk60/vial.json の layouts（labels / keymap）。
 // QMK 版（qmk-config keymaps/vial/vial.json）との差はエンコーダのプッシュ位置
-// 5,13 → 5,12 だけで、labels と option の付け方は同じ。
-const OLSK60_LABELS = [["Spacebar", "5-Split Space", "3-Split Space", "6.25U Space"], "RotaryEncoder"];
+// 5,13 → 5,12 と、Spacebar の並び（RMK 版は 2026-10-07 に 3-Split を 0 番にした）。
+const OLSK60_LABELS = [["Spacebar", "3-Split Space", "5-Split Space", "6.25U Space"], "RotaryEncoder"];
 
 // rmk-config keyboards/olsk60/vial.json の layouts.keymap（KLE 生データ）
 const OLSK60_KEYMAP = [
@@ -17,8 +17,8 @@ const OLSK60_KEYMAP = [
     [{"c": "#aaaaaa", "w": 1.75}, "2,0", {"c": "#cccccc"}, "2,1", "2,2", "2,3", "2,4", "2,5", {"x": 0.75}, "2,6", "2,7", "2,8", "2,9", "2,10", {"c": "#777777", "w": 2.25}, "2,11"],
     [{"c": "#aaaaaa", "w": 1.75}, "3,0", {"c": "#cccccc"}, "3,1", "3,2", "3,3", "3,4", "3,5", {"x": 0.75}, "3,6", "3,7", "3,8", "3,9", "3,10", {"c": "#777777"}, "3,11", {"c": "#aaaaaa", "w": 1.25}, "3,12"],
     [{"x": 0.5, "w": 1.25}, "4,0", {"w": 1.25}, "4,1", {"x": 7.5, "c": "#aaaaaa"}, "4,9", {"c": "#777777"}, "4,10", "4,11\n\n\n1,0", "4,12"],
-    [{"y": -1, "x": 3, "w": 1.5, "c": "#aaaaaa"}, "4,2\n\n\n0,0", {"c": "#cccccc", "w": 1}, "4,3\n\n\n0,0", {"w": 1}, "4,4\n\n\n0,0", {"w": 1.25}, "4,5\n\n\n0,0", {"w": 1}, "4,6\n\n\n0,0", {"w": 1.75}, "4,7\n\n\n0,0"],
-    [{"y": -1, "x": 3, "w": 1.25, "c": "#aaaaaa"}, "4,2\n\n\n0,1", {"c": "#cccccc", "w": 2.25}, "4,4\n\n\n0,1", {"c": "#aaaaaa", "w": 1.25}, "4,5\n\n\n0,1", {"c": "#cccccc", "w": 2.75}, "4,7\n\n\n0,1"],
+    [{"y": -1, "x": 3, "w": 1.5, "c": "#aaaaaa"}, "4,2\n\n\n0,1", {"c": "#cccccc", "w": 1}, "4,3\n\n\n0,1", {"w": 1}, "4,4\n\n\n0,1", {"w": 1.25}, "4,5\n\n\n0,1", {"w": 1}, "4,6\n\n\n0,1", {"w": 1.75}, "4,7\n\n\n0,1"],
+    [{"y": -1, "x": 3, "w": 1.25, "c": "#aaaaaa"}, "4,2\n\n\n0,0", {"c": "#cccccc", "w": 2.25}, "4,4\n\n\n0,0", {"c": "#aaaaaa", "w": 1.25}, "4,5\n\n\n0,0", {"c": "#cccccc", "w": 2.75}, "4,7\n\n\n0,0"],
     [{"y": -1, "x": 3, "w": 1.25, "c": "#aaaaaa"}, "4,2\n\n\n0,2", {"c": "#cccccc", "w": 6.25}, "4,5\n\n\n0,2"],
     [{"y": -1, "x": 12.5, "c": "#777777"}, "5,12\n\n\n1,1"],
     [{"y": 0.25, "x": 12.5, "c": "#cccccc"}, "0,0\n\n\n1,1\n\n\n\n\n\ne", "0,1\n\n\n1,1\n\n\n\n\n\ne"],
@@ -53,9 +53,11 @@ test("KLE walk yields the expected OLSK60 geometry", () => {
   assert.deepEqual([at(1, 0).x, at(1, 0).w], [0.15, 1.5]);
   assert.deepEqual([at(2, 11).x, at(2, 11).w], [12.5, 2.25]);
   assert.deepEqual([at(3, 12).x, at(3, 12).w], [13.5, 1.25]);
-  // 3-Split の Space: {y:-1, x:3} で行を戻してから並ぶ
-  assert.deepEqual([at(4, 4, 1).x, at(4, 4, 1).y, at(4, 4, 1).w], [4.25, 4, 2.25]);
-  assert.deepEqual([at(4, 7, 1).x, at(4, 7, 1).w], [7.75, 2.75]);
+  // 3-Split（choice 0）の Space: {y:-1, x:3} で行を戻してから並ぶ
+  assert.deepEqual([at(4, 4, 0).x, at(4, 4, 0).y, at(4, 4, 0).w], [4.25, 4, 2.25]);
+  assert.deepEqual([at(4, 7, 0).x, at(4, 7, 0).w], [7.75, 2.75]);
+  // 5-Split（choice 1）の Space
+  assert.deepEqual([at(4, 3, 1).x, at(4, 3, 1).w], [4.5, 1]);
   // 6.25U の Space
   assert.deepEqual([at(4, 5, 2).x, at(4, 5, 2).w], [4.25, 6.25]);
   // w は次のキーで 1 に戻る
@@ -78,12 +80,12 @@ test("selecting options keeps common keys and only the matching variant", () => 
   const keys = parseKle(OLSK60_KEYMAP);
   const cols = (sel) => sel.keys.filter((k) => k.row === 4).map((k) => k.col).sort((a, b) => a - b);
 
-  const fiveNoEnc = selectLayout(keys, decodeOptions(OLSK60_LABELS, 0));
+  const fiveNoEnc = selectLayout(keys, decodeOptions(OLSK60_LABELS, 0b010)); // Spacebar 1 = 5-Split
   assert.deepEqual(cols(fiveNoEnc), [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12]);
   assert.equal(fiveNoEnc.encoders.length, 0);
   assert.ok(!fiveNoEnc.keys.some((k) => k.row === 5));
 
-  const threeEnc = selectLayout(keys, decodeOptions(OLSK60_LABELS, 0b011));
+  const threeEnc = selectLayout(keys, decodeOptions(OLSK60_LABELS, 0b001)); // Spacebar 0 = 3-Split / エンコーダ有り
   assert.deepEqual(cols(threeEnc), [0, 1, 2, 4, 5, 7, 9, 10, 12]);
   assert.ok(threeEnc.keys.some((k) => k.row === 5 && k.col === 12));
   assert.equal(threeEnc.encoders.length, 2);
@@ -97,7 +99,7 @@ test("selecting options keeps common keys and only the matching variant", () => 
 });
 
 test("describe() renders the choice names for the staff readout", () => {
-  assert.deepEqual(describe(OLSK60_LABELS, [1, 0]), ["Spacebar: 3-Split Space", "RotaryEncoder: なし"]);
+  assert.deepEqual(describe(OLSK60_LABELS, [1, 0]), ["Spacebar: 5-Split Space", "RotaryEncoder: なし"]);
   assert.deepEqual(describe(OLSK60_LABELS, [2, 1]), ["Spacebar: 6.25U Space", "RotaryEncoder: あり"]);
 });
 
@@ -120,7 +122,7 @@ test("VialDevice.readLayoutOptions decodes the big-endian u32 after [cmd, value 
     async send(buf) {
       sent.push(Array.from(buf.slice(0, 2)));
       const r = new Uint8Array(32);
-      r.set([0x02, 0x02, 0x00, 0x00, 0x00, 0x03]); // 0b011 = Spacebar 1 (3-Split) / RotaryEncoder あり
+      r.set([0x02, 0x02, 0x00, 0x00, 0x00, 0x03]); // 0b011 = Spacebar 1 (5-Split) / RotaryEncoder あり
       return r;
     },
   });
@@ -157,8 +159,8 @@ test("composeOverlay keeps profile legends but takes geometry from the device", 
   const parsed = parseKle(OLSK60_KEYMAP);
   const at = (o, r, c) => o.keys.find((k) => k.m && k.m[0] === r && k.m[1] === c);
 
-  // Holy: 5-Split・エンコーダ無し = 0
-  const five = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 0)));
+  // Holy: 5-Split・エンコーダ無し = 2（Spacebar 1 / RotaryEncoder 0）
+  const five = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 2)));
   assert.equal(five.keys.length, 62);
   assert.equal(five.encoders.length, 0);
   assert.deepEqual([five.unitsWide, five.unitsHigh], [15, 5]);
@@ -167,22 +169,22 @@ test("composeOverlay keeps profile legends but takes geometry from the device", 
   assert.deepEqual([at(five, 4, 4).code, at(five, 4, 4).w], ["Space", 1]); // 寸法は端末側
   assert.equal(at(five, 5, 12), undefined);
 
-  // 5-Split・エンコーダ有り = 1
-  const enc = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 1)));
+  // 5-Split・エンコーダ有り = 3
+  const enc = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 3)));
   assert.equal(enc.keys.length, 62);
   assert.equal(at(enc, 4, 11), undefined);
   assert.deepEqual([at(enc, 5, 12).x, at(enc, 5, 12).y], [12.5, 4]);
   assert.deepEqual(enc.encoders.map((e) => [e.index, e.direction, e.x, e.y]), [[0, 0, 12.5, 5.25], [0, 1, 13.5, 5.25]]);
   assert.deepEqual([enc.unitsWide, enc.unitsHigh], [15, 6.25]);
 
-  // 3-Split・エンコーダ無し = 2 はプロファイルの既定配置。
-  const three = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 2)));
+  // 3-Split・エンコーダ無し = 0 はプロファイルの既定配置（書き込み直後の端末もこの値）。
+  const three = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 0)));
   assert.equal(three.keys.length, rmk.keys.length);
   for (const k of rmk.keys) {
     const d = at(three, k.m[0], k.m[1]);
     assert.equal(d.code, k.code);
   }
-  assert.equal(rmk.defaultLayoutOptions, 2);
+  assert.equal(rmk.defaultLayoutOptions, 0);
   assert.ok(rmk.keys.every((k) => !("x" in k) && !("y" in k) && !("w" in k) && !("h" in k)));
   assert.deepEqual([at(three, 4, 4).x, at(three, 4, 4).y, at(three, 4, 4).w], [4.25, 4, 2.25]);
 });
