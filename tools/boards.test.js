@@ -55,7 +55,7 @@ test("each profile carries its own matrix and custom keycode list", () => {
   assert.equal(byId("olsk60v2-rmk").matrix.rows, 6);
   assert.equal(byId("olsk60v2-rmk").matrix.cols, 13);
   assert.equal(byId("olsk60v2-qmk").customKeycodes.length, 20);
-  assert.equal(byId("olsk60v2-rmk").customKeycodes.length, 24);
+  assert.equal(byId("olsk60v2-rmk").customKeycodes.length, 25);
 });
 
 test("both profiles render the same physical layout", () => {
@@ -97,7 +97,8 @@ test("custom layer keys name custom keycodes the RMK firmware really has", () =>
   const rmk = byId("olsk60v2-rmk");
   for (const [name, layer] of Object.entries(rmk.customLayerKeys)) {
     assert.ok(rmk.customKeycodes.includes(name), name + " が customKeycodes に無い");
-    assert.ok(Number.isInteger(layer) && layer >= 1 && layer <= 3, name);
+    // 番号は予備層まで（1..3）。マウスレイヤーは層の数で番号が動くので "top" で指す。
+    assert.ok((Number.isInteger(layer) && layer >= 1 && layer <= 3) || layer === "top", name);
   }
   assert.equal(byId("olsk60v2-qmk").customLayerKeys, undefined); // QMK 版の Scroll は層を持たない
   assert.equal(byId("olsk60v2-qmk").layoutLabels, byId("olsk60v2-rmk").layoutLabels);
