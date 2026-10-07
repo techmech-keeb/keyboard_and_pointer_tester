@@ -984,10 +984,17 @@ function setJpInput(on) {
 
 $("jpToggleBtn").addEventListener("click", () => setJpInput(!jpInputEnabled()));
 
+// プロファイルの層指定を番号にする。"top" は最上位の層（端末が返す層の数 - 1）。
+function profileLayer(layer) {
+  if (layer === "top") return VS.layers - 1;
+  return Number.isInteger(layer) ? layer : undefined;
+}
+
 function autoLayerSimProfile() {
   if (!BOARD || !BOARD.autoLayerSim) return null;
   const sim = BOARD.autoLayerSim;
-  if (!Number.isInteger(sim.layer) || !Array.isArray(sim.delays) || !sim.delays.length) return null;
+  if (!(sim.layer === "top" || Number.isInteger(sim.layer))) return null;
+  if (!Array.isArray(sim.delays) || !sim.delays.length) return null;
   return sim;
 }
 
@@ -1387,7 +1394,8 @@ function autoLayerSimBlocked() {
 function autoLayerSimAvailable() {
   const profile = autoLayerSimProfile();
   if (!profile || !VS.connected || !VS.known || !VS.keymap) return false;
-  return (autoLayerSimConfig || autoLayerSimSaved()).on && profile.layer < VS.layers;
+  const layer = profileLayer(profile.layer);
+  return (autoLayerSimConfig || autoLayerSimSaved()).on && layer >= 0 && layer < VS.layers;
 }
 
 function autoLayerSimCancel() {
@@ -1432,8 +1440,9 @@ function autoLayerSimPointerInput() {
   if (!AUTO_LAYER_SIM.active) {
     AUTO_LAYER_SIM.active = true;
     AUTO_LAYER_SIM.baseLayer = VS.viewLayer;
-    if (VS.viewLayer !== profile.layer) {
-      VS.viewLayer = profile.layer;
+    const layer = profileLayer(profile.layer);
+    if (VS.viewLayer !== layer) {
+      VS.viewLayer = layer;
       applyLayerView();
     }
   }
@@ -1504,7 +1513,7 @@ function vialMatrixEdge(r, c, down) {
     // 押している間だけ層を有効にするカスタムキー（OLSK60 RMK 版の Scrl L1 等）は
     // MO(n) と同じ扱い。名前はプロファイルの customLayerKeys で宣言する。
     const customLayer = d.kind === "custom" && BOARD.customLayerKeys
-      ? BOARD.customLayerKeys[(VS.custom || [])[d.index]] : undefined;
+      ? profileLayer(BOARD.customLayerKeys[(VS.custom || [])[d.index]]) : undefined;
     if (Number.isInteger(customLayer)) {
       autoLayerSimCancel();
       VS.momentary.set(pos, customLayer);

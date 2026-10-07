@@ -45,7 +45,10 @@ const OLSK60_GEOMETRY = {
   defaultLayoutOptions: 2,
   // Trackpoint stick sits in the 0.75u center channel at home-row height.
   pointing: { type: "trackpoint", x: 7.125, y: 2.5, image: null },
-  autoLayerSim: { layer: 3, delays: [150, 400, 800], defaultDelay: 800 },
+  // マウスレイヤーはどちらの版も最上位の層（QMK 版 4 層 = 3、RMK 版は 2026-10-06 の 5 層化で 4。
+  // rmk-config は keyboard.toml の層名 "mouse" が最上位でなければビルドを止める）。
+  // 番号を書かず "top" とし、端末が返す層の数から決める。
+  autoLayerSim: { layer: "top", delays: [150, 400, 800], defaultDelay: 800 },
   // vial.json の layouts.labels（QMK 版・RMK 版とも同じ）。端末から vial.json を
   // 取れない経路でも、端末が返す layout options（u32）を解釈できるようにする。
   layoutLabels: [["Spacebar", "5-Split Space", "3-Split Space", "6.25U Space"], "RotaryEncoder"],
@@ -167,14 +170,16 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   // TIL は MO(n) と同じ扱いで表示レイヤーを追従させる。単体の "Scrl" は層なし。
   // User23 ("Scrl Crv") はスクロールの非線形カーブを切り替えるトグルで、層は持たない
   // (2026-09-16 追加。rmk-config keyboards/olsk60/src/settings_keys.rs の id 23)。
-  customLayerKeys: { "Scrl L1": 1, "Scrl L2": 2, "Scrl L3": 3 },
+  // User24 ("Scrl Ms") は Scroll + マウスレイヤー（2026-10-06 追加。rmk-config
+  // keyboards/olsk60/src/scroll_keys.rs）。マウスレイヤーは最上位の層なので "top"。
+  customLayerKeys: { "Scrl L1": 1, "Scrl L2": 2, "Scrl L3": 3, "Scrl Ms": "top" },
   customKeycodes: [
     "TP Spd1", "TP Spd2", "TP Spd3", "TP Spd4", "TP Spd5",
     "AL 150", "AL 400", "AL 800",
     "Snd Tog", "Snd Mode", "Oct +", "Oct -",
     "Base +", "Base -", "Acc +", "Acc -", "Dec +", "Dec -",
     "AML Tog",
-    "Scrl", "Scrl L1", "Scrl L2", "Scrl L3", "Scrl Crv",
+    "Scrl", "Scrl L1", "Scrl L2", "Scrl L3", "Scrl Crv", "Scrl Ms",
   ],
 });
 
