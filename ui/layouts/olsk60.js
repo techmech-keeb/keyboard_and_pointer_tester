@@ -179,24 +179,24 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   layoutLabels: [["Spacebar", "3-Split Space", "5-Split Space", "6.25U Space"], "RotaryEncoder"],
   defaultLayoutOptions: 0,
   // 押している間だけレイヤーを有効にするカスタムキー (正本: rmk-config
-  // keyboards/olsk60/src/scroll_keys.rs — User20/21/22 = Scroll + Layer 1/2/3)。
+  // keyboards/olsk60/logic/src/custom_keys.rs — "Scrl L1".."Scrl L3" = Scroll + Layer 1..3)。
   // TIL は MO(n) と同じ扱いで表示レイヤーを追従させる。単体の "Scrl" は層なし。
-  // User23 ("Scrl Crv") はスクロールの非線形カーブを切り替えるトグルで、層は持たない
-  // (2026-09-16 追加。rmk-config keyboards/olsk60/src/settings_keys.rs の id 23)。
-  // User24 ("Scrl Ms") は Scroll + マウスレイヤー（2026-10-06 追加。rmk-config
-  // keyboards/olsk60/src/scroll_keys.rs）。マウスレイヤーは最上位の層なので "top"。
+  // "Scrl Crv" はスクロールの非線形カーブを切り替えるトグルで、層は持たない。
+  // "Scrl Ms" は Scroll + マウスレイヤー。マウスレイヤーは最上位の層なので "top"。
+  // TIL はキーを名前で引くので、番号の並べ替え (rc.4) の影響を受けない。
   customLayerKeys: { "Scrl L1": 1, "Scrl L2": 2, "Scrl L3": 3, "Scrl Ms": "top" },
+  // 並びは rmk-config keyboards/olsk60/vial.json の customKeycodes（= User 番号）。rc.4 (2026-10-07) で
+  // 機能別に並べ替えた: 速度 / 調整の対象選択 / 汎用 ± / 出荷時に戻す / TrackPoint の切替 /
+  // スクロール / 自動マウス層 / 音。以後は末尾追加のみ。
   customKeycodes: [
     "TP Spd1", "TP Spd2", "TP Spd3", "TP Spd4", "TP Spd5",
-    "AL 150", "AL 400", "AL 800",
+    "Adj Spd", "Adj Acc", "Adj Dec", "Adj Dly",
+    "Adj +", "Adj -", "Adj <", "Adj >",
+    "Reset 2s",
+    "Scrl Crv", "ZTap Tog",
+    "Scrl", "Scrl L1", "Scrl L2", "Scrl L3", "Scrl Ms",
+    "AML Tog", "AL 150", "AL 400", "AL 800",
     "Snd Tog", "Snd Mode", "Oct +", "Oct -",
-    // User12..17 は 2026-10-07 に汎用 ± へ付け替え (rmk-config keyboards/olsk60/vial.json)。
-    "Adj +", "Adj -", "Adj >", "Adj <", "Reset 2s", "Adj Spd",
-    "AML Tog",
-    "Scrl", "Scrl L1", "Scrl L2", "Scrl L3", "Scrl Crv", "Scrl Ms",
-    // User25..27: ↑↓ の対象を直接選ぶ (加速 / 減速 / AML 遅延。速度は User17)。
-    "Adj Acc", "Adj Dec", "Adj Dly",
-    "ZTap Tog",
   ],
 });
 

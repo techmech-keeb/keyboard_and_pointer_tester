@@ -7,13 +7,9 @@
 //   - target.custom は端末の vial.json の shortName を空白正規化した名前と一致させる
 //     (例 "TP\nSpd1" → "TP Spd1")。fallback は layouts/olsk60.js の customKeycodes。
 //
-// Source (キー位置): rmk-config keyboards/olsk60/keyboard.toml の control レイヤー
-//   L2 row0 col1..5 = User0..4 / row1 col1,2 = User12,13 / row1 col6..9 = User5,6,7,18
-//   row2 col1..4 = User14..17 / row3 col1,2 = User8,9
-// Source (LED): rmk-config keyboards/olsk60/src/settings_keys.rs
-//   FEEDBACK_BLINK = (60,40,2) = 2 回点滅 / REJECTED_BLINK = (45,35,3) = 赤 3 回
-//   LEVEL_COLORS = 青 緑 赤 紫 橙 / DELAY_PRESETS = 150 赤 400 緑 800 青
-//   および docs/led_feedback_reference.md
+// Source (キー位置): rmk-config keyboards/olsk60/keyboard.toml の control レイヤー。
+//   ツアーはキーを名前 (target.custom) で引くので、User 番号には依存しない。
+// Source (LED): rmk-config docs/led_feedback_reference.md（色と点滅の正本）
 // 実機での見え方は未確認 (RMK 版の実機でツアーを通していない)。
 "use strict";
 
