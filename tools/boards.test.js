@@ -55,7 +55,7 @@ test("each profile carries its own matrix and custom keycode list", () => {
   assert.equal(byId("olsk60v2-rmk").matrix.rows, 6);
   assert.equal(byId("olsk60v2-rmk").matrix.cols, 13);
   assert.equal(byId("olsk60v2-qmk").customKeycodes.length, 20);
-  assert.equal(byId("olsk60v2-rmk").customKeycodes.length, 25);
+  assert.equal(byId("olsk60v2-rmk").customKeycodes.length, 28);
 });
 
 test("both profiles render the same physical layout", () => {
