@@ -781,15 +781,27 @@ body.kiosk .key.encoder .keycap { border-radius: 50%; }
   50% { box-shadow: 0 0 5px rgba(63, 217, 255, 0.3); }
 }
 
-#staffVial, #staffOptions {
+#staffVial, #staffOptions, #kbSettings {
   margin: 4px 0 18px;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: calc(var(--radius-control) + 3px);
   text-align: left;
 }
-#staffVial h4, #staffOptions h4 { font-size: 11px; letter-spacing: .16em; color: var(--dim); margin-bottom: 6px; }
-#staffVial p, #staffOptions p { font-size: 13px !important; font-weight: 600 !important; }
+#staffVial h4, #staffOptions h4, #kbSettings h4 { font-size: 11px; letter-spacing: .16em; color: var(--dim); margin-bottom: 6px; }
+#staffVial p, #staffOptions p, #kbSettings p { font-size: 13px !important; font-weight: 600 !important; }
+#kbSettings h5 { font-size: 12px; color: var(--dim); margin: 10px 0 4px; }
+.kb-row { display: grid; grid-template-columns: 1fr 160px 72px; gap: 8px; align-items: center; margin: 4px 0; font-size: 13px; }
+.kb-row label { font-weight: 600; }
+.kb-row input[type=range] { width: 100%; }
+.kb-row .kb-num, .kb-row select { font-family: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--radius-control); background: transparent; color: var(--txt); }
+.kb-row .kb-toggle, .kb-actions button {
+  font-family: inherit; font-size: 13px; font-weight: 700; padding: 6px 12px;
+  border-radius: var(--radius-control); cursor: pointer; border: 1px solid var(--line);
+  background: transparent; color: var(--txt);
+}
+.kb-row .kb-toggle { grid-column: 2 / 4; }
+.kb-actions { display: flex; gap: 8px; margin-top: 8px; }
 #jpToggleBtn, #windowSizeControls button {
   font-family: inherit; font-size: 13px; font-weight: 700;
   margin-top: 6px; padding: 8px 16px;

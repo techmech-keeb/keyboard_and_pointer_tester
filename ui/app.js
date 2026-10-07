@@ -1054,6 +1054,139 @@ $("autoLayerSimDelaySelect").addEventListener("change", (event) => {
   setAutoLayerSimConfig({ on: config.on, delay: Number(event.target.value) });
 });
 
+// ---- キーボード設定 (RMK 版の VIA custom value。値の表は ui/kb-settings.js) ----
+// 口の無いファーム (QMK 版・古い RMK 版) は 0xFF を返すのでパネルを出さない。
+// 変更はキーボード側が 2 秒後に保存する。応答は「反映後の実際の値」なので、
+// 要求と違えば範囲外として捨てられたと分かる。
+const KB = { supported: null, busy: false };
+
+function kbSettingsSetStatus(text) {
+  const el = $("kbSettingsStatus");
+  if (el) el.textContent = text;
+}
+
+function kbSettingsHide() {
+  const panel = $("kbSettings");
+  if (panel) panel.hidden = true;
+  KB.supported = null;
+}
+
+function kbSettingsBuild() {
+  const root = $("kbSettingsBody");
+  if (!root || root.dataset.built) return;
+  root.dataset.built = "1";
+  for (const group of KbSettings.GROUPS) {
+    const h = document.createElement("h5");
+    h.textContent = group.title;
+    root.appendChild(h);
+    for (const e of group.values) {
+      const row = document.createElement("div");
+      row.className = "kb-row";
+      const label = document.createElement("label");
+      label.textContent = e.label;
+      label.htmlFor = "kb_" + e.key;
+      row.appendChild(label);
+      let control;
+      if (e.kind === "range") {
+        control = document.createElement("input");
+        control.type = "range";
+        control.min = e.min; control.max = e.max; control.step = e.step;
+        const num = document.createElement("input");
+        num.type = "number";
+        num.min = e.min; num.max = e.max; num.step = e.step;
+        num.className = "kb-num";
+        num.id = "kb_" + e.key + "_n";
+        control.addEventListener("input", () => { num.value = control.value; });
+        control.addEventListener("change", () => kbSettingsWrite(e, control.value));
+        num.addEventListener("change", () => kbSettingsWrite(e, num.value));
+        row.appendChild(control);
+        row.appendChild(num);
+      } else if (e.kind === "toggle") {
+        control = document.createElement("button");
+        control.type = "button";
+        control.className = "kb-toggle";
+        control.addEventListener("click", () => kbSettingsWrite(e, control.dataset.value === "1" ? 0 : 1));
+        row.appendChild(control);
+      } else {
+        control = document.createElement("select");
+        for (const [text, v] of e.options) {
+          const o = document.createElement("option");
+          o.value = String(v);
+          o.textContent = text;
+          control.appendChild(o);
+        }
+        control.addEventListener("change", () => kbSettingsWrite(e, control.value));
+        row.appendChild(control);
+      }
+      control.id = "kb_" + e.key;
+      root.appendChild(row);
+    }
+  }
+}
+
+function kbSettingsShow(e, value) {
+  const c = $("kb_" + e.key);
+  if (!c) return;
+  if (e.kind === "toggle") {
+    c.dataset.value = value ? "1" : "0";
+    c.textContent = value ? "オン" : "オフ";
+  } else {
+    c.value = String(value);
+    const n = $("kb_" + e.key + "_n");
+    if (n) n.value = String(value);
+  }
+}
+
+async function kbSettingsRefresh() {
+  const panel = $("kbSettings");
+  if (!panel) return;
+  if (!VS.connected || !VS.dev) { kbSettingsHide(); return; }
+  kbSettingsBuild();
+  try {
+    const ver = KbSettings.parseProtocol(await VS.dev.customGet(KbSettings.CHANNEL, KbSettings.PROTOCOL_ID));
+    KB.supported = ver !== null;
+    panel.hidden = !KB.supported;
+    if (!KB.supported) return;
+    for (const e of KbSettings.VALUES) {
+      const r = KbSettings.parseReply(await VS.dev.customGet(KbSettings.CHANNEL, e.id), e);
+      if (!r.unhandled) kbSettingsShow(e, r.value);
+    }
+    kbSettingsSetStatus("読み込み済み（設定線路 v" + ver + "）");
+  } catch (err) {
+    kbSettingsSetStatus("読み込みに失敗: " + ((err && err.message) || err));
+  }
+}
+
+async function kbSettingsWrite(e, raw) {
+  if (!VS.connected || !VS.dev || KB.busy) return;
+  const wanted = KbSettings.clamp(e, raw);
+  KB.busy = true;
+  try {
+    const reply = await VS.dev.customSet(KbSettings.CHANNEL, e.id, KbSettings.encode(e, wanted));
+    const r = KbSettings.parseReply(reply, e);
+    if (r.unhandled) { kbSettingsSetStatus("このファームウェアは対応していません"); return; }
+    kbSettingsShow(e, r.value);
+    kbSettingsSetStatus(r.value === wanted
+      ? e.label + " を " + r.value + " にしました（2 秒後に保存）"
+      : e.label + ": 範囲外のため " + r.value + " のままです");
+  } catch (err) {
+    kbSettingsSetStatus("書き込みに失敗: " + ((err && err.message) || err));
+  } finally {
+    KB.busy = false;
+  }
+}
+
+$("kbSettingsReloadBtn").addEventListener("click", () => { kbSettingsRefresh(); });
+$("kbSettingsSaveBtn").addEventListener("click", async () => {
+  if (!VS.connected || !VS.dev) return;
+  try {
+    await VS.dev.customSave(KbSettings.CHANNEL);
+    kbSettingsSetStatus("保存を要求しました");
+  } catch (err) {
+    kbSettingsSetStatus("保存に失敗: " + ((err && err.message) || err));
+  }
+});
+
 function savedDefaultBoard() {
   try {
     const stored = localStorage.getItem(DEFAULT_BOARD_KEY);
@@ -1216,6 +1349,7 @@ document.querySelector(".brand").addEventListener("pointerdown", () => {
   if (brandTaps.length >= 5) {
     brandTaps = [];
     $("staffMenu").hidden = false;
+    kbSettingsRefresh();
   }
 });
 
@@ -1763,6 +1897,7 @@ function vialDisconnect(reason, scheduleRetry = true) {
   VS.transport = null;
   VS.dev = null;
   VS.connected = false;
+  kbSettingsHide();
   VS.known = false;
   VS.deviceDrawn = false;
   VS.deviceName = "";
@@ -1877,6 +2012,7 @@ function vialSoftTeardown() {
   const oldTransport = VS.transport;
   if (oldTransport) oldTransport.ondisconnect = null;
   VS.connected = false;
+  kbSettingsHide();
   VS.known = false;
   VS.deviceDrawn = false;
   VS.dev = null;

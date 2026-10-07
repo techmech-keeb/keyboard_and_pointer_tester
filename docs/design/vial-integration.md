@@ -1,6 +1,6 @@
 # Vial 連携の仕様
 
-更新: 2026-09-13（JST）。どの経路で何を取得し、どこまで動くかの正本。
+更新: 2026-10-07（JST）。どの経路で何を取得し、どこまで動くかの正本。
 展示中に踏む「TIL と Vial は同時に開けない」は
 [`../guide/exhibition.md`](../guide/exhibition.md)。
 
@@ -39,3 +39,20 @@
 - Vialプロトコル版数とキーコード番号体系（`ui/keycodes.js` の分岐で吸収）→ **protocol 6・modern QMK と同じ番号**
 - 未更新の 3 点（Vial UID / matrix 6×13 / customKeycodes）と、詳細スクロール・ロータリーエンコーダの
   表現案は [`research/2026-09-06_rmk-0.9-vial-integration-check.md`](../research/2026-09-06_rmk-0.9-vial-integration-check.md)
+
+## キーボード設定の読み書き（RMK 版・2026-10-07）
+
+RMK 版 OLSK60 は、VIA 標準の custom value コマンド（0x07 Set / 0x08 Get / 0x09 Save）を
+**チャネル 0x10** で受け、Vial の画面に出ない設定（TrackPoint の速度レベル・調整枠 4/5 の
+基本速度／加速／減速・オートマウスレイヤーの ON/OFF と解除までの時間 ms・スクロールの加速カーブ・
+キー音の ON/OFF とモード）を読み書きできる。線路の正本（番号・型・範囲）は rmk-config の
+`docs/host_settings_protocol.md`。TIL 側の写しは `ui/kb-settings.js`（`tools/kb-settings.test.js` が固定）。
+
+- 入口: スタッフメニュー「キーボード設定（RMK 版）」。メニューを開いたときに番号 0x00（線路の版）を
+  読み、`0xFF`（Unhandled）が返る端末（QMK 版・口の無い古い RMK 版）ではパネルを出さない。
+- 書き込み: 入力の `change` ごとに Set を送り、応答の**実際の値**で表示を上書きする。要求と違えば
+  範囲外として捨てられたので、その旨を表示する。保存はキーボード側が 2 秒後に行う
+  （「いますぐ保存」は Save を送るだけ）。
+- 刻み: 基本速度 32・加速／減速 16・解除時間 10 ms は UI 側の都合で、ファームは範囲だけを見る。
+- unlock は要らない。両トランスポート（kiosk host / WebHID）とも生の 32 バイトを通すので追加の実装は無い。
+- 実機未確認（`roadmap.md` B 節）。
