@@ -177,7 +177,8 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
     "TP Spd1", "TP Spd2", "TP Spd3", "TP Spd4", "TP Spd5",
     "AL 150", "AL 400", "AL 800",
     "Snd Tog", "Snd Mode", "Oct +", "Oct -",
-    "Base +", "Base -", "Acc +", "Acc -", "Dec +", "Dec -",
+    // User12..17 は 2026-10-07 に汎用 ± へ付け替え (rmk-config keyboards/olsk60/vial.json)。
+    "Adj +", "Adj -", "Adj >", "Adj <", "Reset 2s", "Spare",
     "AML Tog",
     "Scrl", "Scrl L1", "Scrl L2", "Scrl L3", "Scrl Crv", "Scrl Ms",
   ],
