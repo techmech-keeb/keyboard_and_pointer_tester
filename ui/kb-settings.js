@@ -46,6 +46,13 @@ const KbSettings = (() => {
           options: [["ランダム", 0], ["ピアノ", 1]] },
       ],
     },
+    {
+      // 番号順を保つため末尾の群に置く（2026-10-07 追加。rmk-config docs/host_settings_protocol.md 0x0D）。
+      title: "TrackPoint の押し込み",
+      values: [
+        { id: 0x0D, key: "zTapEnabled", label: "押し込みクリック (Z-Tap)", type: "u8", kind: "toggle" },
+      ],
+    },
   ];
   const VALUES = GROUPS.flatMap((g) => g.values);
   const byKey = Object.fromEntries(VALUES.map((v) => [v.key, v]));

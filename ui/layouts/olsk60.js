@@ -196,6 +196,7 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
     "Scrl", "Scrl L1", "Scrl L2", "Scrl L3", "Scrl Crv", "Scrl Ms",
     // User25..27: ↑↓ の対象を直接選ぶ (加速 / 減速 / AML 遅延。速度は User17)。
     "Adj Acc", "Adj Dec", "Adj Dly",
+    "ZTap Tog",
   ],
 });
 
