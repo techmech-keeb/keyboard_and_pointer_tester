@@ -246,6 +246,40 @@ class VialDevice {
     return ((r[2] << 24) | (r[3] << 16) | (r[4] << 8) | r[5]) >>> 0;
   }
 
+  // --- Vial dynamic entries: tap dance (RMK では morse) -------------------
+  // 0xFE 0x0D 0x00 = 件数（r[0] = tap dance の数）、0xFE 0x0D 0x01 idx = 1 件読み出し。
+  // 応答は r[0] = 戻り値（0 = 成功）、r[1..9] = on_tap / on_hold / on_double_tap /
+  // on_tap_hold（各 LE u16）、r[9..11] = tapping term ms。読み出しに unlock は要らない
+  // （書き込みには要る。ここでは読むだけ）。RMK 版 OLSK60 の設定キー TD(0) は
+  // ホールド = MO(2) / タップ後ホールド = MO(3)。
+  async readTapDanceCount() {
+    const r = await this.cmd([0xFE, 0x0D, 0x00]);
+    return r[0];
+  }
+  async readTapDance(index) {
+    const r = await this.cmd([0xFE, 0x0D, 0x01, index & 0xFF]);
+    if (r[0] !== 0) return null;
+    const u16 = (i) => r[i] | (r[i + 1] << 8);
+    return { tap: u16(1), hold: u16(3), doubleTap: u16(5), tapHold: u16(7), term: u16(9) };
+  }
+
+  // --- Vial dynamic entries: tap dance (RMK では morse) -------------------
+  // 0xFE 0x0D 0x00 = 件数（r[0] = tap dance の数）、0xFE 0x0D 0x01 idx = 1 件読み出し。
+  // 応答は r[0] = 戻り値（0 = 成功）、r[1..9] = on_tap / on_hold / on_double_tap /
+  // on_tap_hold（各 LE u16）、r[9..11] = tapping term ms。読み出しに unlock は要らない
+  // （書き込みには要る。ここでは読むだけ）。RMK 版 OLSK60 の設定キー TD(0) は
+  // ホールド = MO(2) / タップ後ホールド = MO(3)。
+  async readTapDanceCount() {
+    const r = await this.cmd([0xFE, 0x0D, 0x00]);
+    return r[0];
+  }
+  async readTapDance(index) {
+    const r = await this.cmd([0xFE, 0x0D, 0x01, index & 0xFF]);
+    if (r[0] !== 0) return null;
+    const u16 = (i) => r[i] | (r[i + 1] << 8);
+    return { tap: u16(1), hold: u16(3), doubleTap: u16(5), tapHold: u16(7), term: u16(9) };
+  }
+
   // --- VIA custom values (0x07 set / 0x08 get / 0x09 save) on a vendor channel ---
   // 値の表と符号化は kb-settings.js。応答 32 バイトをそのまま返す。
   async customGet(channel, id) { return this.cmd([0x08, channel, id]); }

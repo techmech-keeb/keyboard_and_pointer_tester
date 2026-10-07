@@ -1446,6 +1446,9 @@ let VS = {
   // { value, labels, choices, keys, encoders } / 未取得なら null。
   // 描画への反映はまだ行わず、スタッフ画面で確認できるだけ。
   layoutOptions: null,
+  // キーマップにある Tap Dance（RMK の morse）の中身。{ index: { tap, hold, doubleTap, tapHold, term } }。
+  // 設定キー TD(0)（ホールド = MO(2)）をツアーと層の模擬で MO(2) と同じに扱うために読む。
+  tapDance: null,
   lastEdge: "",  // 直近に押されたマトリクス位置と解釈（スタッフ画面の診断用）
 };
 
@@ -1622,6 +1625,22 @@ function vialEffectiveLayer() {
 }
 
 // behavior rule: resolve KC_TRNS through the currently active layer
+// キーマップに現れる TD(n) だけ端末から読む（Vial の Tap Dance = RMK の morse）。
+// 読めなければ null（古いファームや Rynk 版）。その場合 TD キーは層を持たない扱い。
+async function vialReadTapDances(dev, keymap) {
+  const used = new Set();
+  for (const layer of keymap || []) for (const row of layer) for (const kc of row) {
+    const d = vialDescribe(kc);
+    if (d && typeof d.td === "number") used.add(d.td);
+  }
+  if (!used.size) return null;
+  const out = {};
+  try {
+    for (const i of used) out[i] = await dev.readTapDance(i);
+  } catch (_) { return null; }
+  return out;
+}
+
 // stack, highest active layer first (QMK fallthrough approximation)
 function vialResolveKeycode(r, c) {
   let mask = 1 | (1 << VS.defaultLayer) | VS.toggleMask;
@@ -1648,6 +1667,10 @@ function vialMatrixEdge(r, c, down) {
     // MO(n) と同じ扱い。名前はプロファイルの customLayerKeys で宣言する。
     const customLayer = d.kind === "custom" && BOARD.customLayerKeys
       ? profileLayer(BOARD.customLayerKeys[(VS.custom || [])[d.index]]) : undefined;
+    // Tap Dance（RMK の morse）はホールド側の動作で近似する。設定キー TD(0) はホールドで
+    // MO(2)。タップ後ホールドの MO(3) は押下だけでは見分けられないので L2 として扱う。
+    const td = typeof d.td === "number" && VS.tapDance ? VS.tapDance[d.td] : null;
+    const held = td ? vialDescribe(td.hold) : null;
     if (Number.isInteger(customLayer)) {
       autoLayerSimCancel();
       VS.momentary.set(pos, customLayer);
@@ -1669,6 +1692,9 @@ function vialMatrixEdge(r, c, down) {
           break;
         // osl: ignored (one-shot state not tracked in this approximation)
       }
+    } else if (held && held.kind === "layer" && held.hold === "mo") {
+      autoLayerSimCancel();
+      VS.momentary.set(pos, held.layer);
     }
   } else {
     VS.momentary.delete(pos);
@@ -1864,6 +1890,7 @@ async function vialOnConnected() {
 
   VS.layers = Math.max(1, Math.min(await dev.readLayerCount(), 16));
   VS.keymap = await dev.readKeymap(VS.layers, VS.rows, VS.cols);
+  VS.tapDance = await vialReadTapDances(dev, VS.keymap);
 
   let unlocked = false;
   try {
@@ -1914,6 +1941,7 @@ function vialDisconnect(reason, scheduleRetry = true) {
   VS.unlocked = false;
   VS.unlocking = false;
   VS.keymap = null;
+  VS.tapDance = null;
   VS.layoutOptions = null;
   // 接続時に vialOnConnected が製品プロファイルへ切り替えているので、
   // スタッフが選んだ既定ボードへ戻す（同じなら端末由来の配置を捨てるだけ）。
@@ -2028,6 +2056,7 @@ function vialSoftTeardown() {
   VS.unlocked = false;
   VS.unlocking = false;
   VS.keymap = null;
+  VS.tapDance = null;
   return oldTransport;
 }
 

@@ -129,13 +129,23 @@ const tourEngine = (() => {
     return null;
   }
 
+  // { mo: n } は MO(n) そのもののほか、ホールド側が MO(n) の Tap Dance（RMK 版 OLSK60 の
+  // 設定キー TD(0)）にも一致させる。中身は接続時に端末から読んである（VS.tapDance）。
+  function matchesTarget(kc, target, want) {
+    if (kc === want) return true;
+    if (typeof target.mo !== "number" || !VS.tapDance) return false;
+    if (kc < 0x5700 || kc > 0x57FF) return false;
+    const td = VS.tapDance[kc & 0xFF];
+    return !!td && td.hold === want;
+  }
+
   function resolveTarget(target) {
     const kc = keycodeForTarget(target);
     if (kc === null || !VS.keymap) return null;
     for (let l = 0; l < VS.keymap.length; l++) {
       for (let r = 0; r < VS.keymap[l].length; r++) {
         for (let c = 0; c < VS.keymap[l][r].length; c++) {
-          if (VS.keymap[l][r][c] === kc) return { layer: l, row: r, col: c, key: r + "," + c };
+          if (matchesTarget(VS.keymap[l][r][c], target, kc)) return { layer: l, row: r, col: c, key: r + "," + c };
         }
       }
     }
