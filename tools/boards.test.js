@@ -101,5 +101,10 @@ test("custom layer keys name custom keycodes the RMK firmware really has", () =>
     assert.ok((Number.isInteger(layer) && layer >= 1 && layer <= 3) || layer === "top", name);
   }
   assert.equal(byId("olsk60v2-qmk").customLayerKeys, undefined); // QMK 版の Scroll は層を持たない
-  assert.equal(byId("olsk60v2-qmk").layoutLabels, byId("olsk60v2-rmk").layoutLabels);
+  // Spacebar の並びだけ版で違う（RMK 版は 3-Split を 0 番 = 書き込み直後の表示にした）
+  const labels = (id) => JSON.parse(JSON.stringify(byId(id).layoutLabels[0]));
+  assert.deepEqual(labels("olsk60v2-qmk"), ["Spacebar", "5-Split Space", "3-Split Space", "6.25U Space"]);
+  assert.deepEqual(labels("olsk60v2-rmk"), ["Spacebar", "3-Split Space", "5-Split Space", "6.25U Space"]);
+  assert.equal(byId("olsk60v2-qmk").defaultLayoutOptions, 2); // 3-Split・エンコーダ無し
+  assert.equal(byId("olsk60v2-rmk").defaultLayoutOptions, 0); // 同じ構成。並びが違うので値も違う
 });

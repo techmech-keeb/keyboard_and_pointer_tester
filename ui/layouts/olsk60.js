@@ -27,16 +27,23 @@ const OLSK60_KLE_RMK = [
   [{"c": "#aaaaaa", "w": 1.75}, "2,0", {"c": "#cccccc"}, "2,1", "2,2", "2,3", "2,4", "2,5", {"x": 0.75}, "2,6", "2,7", "2,8", "2,9", "2,10", {"c": "#777777", "w": 2.25}, "2,11"],
   [{"c": "#aaaaaa", "w": 1.75}, "3,0", {"c": "#cccccc"}, "3,1", "3,2", "3,3", "3,4", "3,5", {"x": 0.75}, "3,6", "3,7", "3,8", "3,9", "3,10", {"c": "#777777"}, "3,11", {"c": "#aaaaaa", "w": 1.25}, "3,12"],
   [{"x": 0.5, "w": 1.25}, "4,0", {"w": 1.25}, "4,1", {"x": 7.5, "c": "#aaaaaa"}, "4,9", {"c": "#777777"}, "4,10", "4,11\n\n\n1,0", "4,12"],
-  [{"y": -1, "x": 3, "w": 1.5, "c": "#aaaaaa"}, "4,2\n\n\n0,0", {"c": "#cccccc", "w": 1}, "4,3\n\n\n0,0", {"w": 1}, "4,4\n\n\n0,0", {"w": 1.25}, "4,5\n\n\n0,0", {"w": 1}, "4,6\n\n\n0,0", {"w": 1.75}, "4,7\n\n\n0,0"],
-  [{"y": -1, "x": 3, "w": 1.25, "c": "#aaaaaa"}, "4,2\n\n\n0,1", {"c": "#cccccc", "w": 2.25}, "4,4\n\n\n0,1", {"c": "#aaaaaa", "w": 1.25}, "4,5\n\n\n0,1", {"c": "#cccccc", "w": 2.75}, "4,7\n\n\n0,1"],
+  [{"y": -1, "x": 3, "w": 1.5, "c": "#aaaaaa"}, "4,2\n\n\n0,1", {"c": "#cccccc", "w": 1}, "4,3\n\n\n0,1", {"w": 1}, "4,4\n\n\n0,1", {"w": 1.25}, "4,5\n\n\n0,1", {"w": 1}, "4,6\n\n\n0,1", {"w": 1.75}, "4,7\n\n\n0,1"],
+  [{"y": -1, "x": 3, "w": 1.25, "c": "#aaaaaa"}, "4,2\n\n\n0,0", {"c": "#cccccc", "w": 2.25}, "4,4\n\n\n0,0", {"c": "#aaaaaa", "w": 1.25}, "4,5\n\n\n0,0", {"c": "#cccccc", "w": 2.75}, "4,7\n\n\n0,0"],
   [{"y": -1, "x": 3, "w": 1.25, "c": "#aaaaaa"}, "4,2\n\n\n0,2", {"c": "#cccccc", "w": 6.25}, "4,5\n\n\n0,2"],
   [{"y": -1, "x": 12.5, "c": "#777777"}, "5,12\n\n\n1,1"],
   [{"y": 0.25, "x": 12.5, "c": "#cccccc"}, "0,0\n\n\n1,1\n\n\n\n\n\ne", "0,1\n\n\n1,1\n\n\n\n\n\ne"],
 ];
 // QMK 版 (qmk-config keymaps/vial/vial.json) との差はエンコーダのプッシュ位置だけ
 // (RMK 5,12 / QMK 5,13。QMK の matrix が 6x14 のため)。
+// QMK 版はエンコーダのプッシュが 5,13 で、Spacebar の並びは 5-Split / 3-Split / 6.25U のまま
+// （RMK 版は 2026-10-07 に 3-Split を 0 番へ）。option 注記 0,0 ↔ 0,1 を戻して導く。
 const OLSK60_KLE_QMK = OLSK60_KLE_RMK.map((row) =>
-  row.map((item) => (item === "5,12\n\n\n1,1" ? "5,13\n\n\n1,1" : item)));
+  row.map((item) => {
+    if (item === "5,12\n\n\n1,1") return "5,13\n\n\n1,1";
+    if (typeof item === "string" && item.endsWith("\n\n\n0,0")) return item.slice(0, -3) + "0,1";
+    if (typeof item === "string" && item.endsWith("\n\n\n0,1")) return item.slice(0, -3) + "0,0";
+    return item;
+  }));
 
 // 版に依存しない部分。両プロファイルが同じ配列を参照する (読み取り専用)。
 const OLSK60_GEOMETRY = {
@@ -49,8 +56,9 @@ const OLSK60_GEOMETRY = {
   // rmk-config は keyboard.toml の層名 "mouse" が最上位でなければビルドを止める）。
   // 番号を書かず "top" とし、端末が返す層の数から決める。
   autoLayerSim: { layer: "top", delays: [150, 400, 800], defaultDelay: 800 },
-  // vial.json の layouts.labels（QMK 版・RMK 版とも同じ）。端末から vial.json を
-  // 取れない経路でも、端末が返す layout options（u32）を解釈できるようにする。
+  // vial.json の layouts.labels（QMK 版の順。RMK 版は 2026-10-07 に 3-Split を 0 番にしたので
+  // プロファイル側で上書きする）。端末から vial.json を取れない経路でも、端末が返す
+  // layout options（u32）を解釈できるようにする。
   layoutLabels: [["Spacebar", "5-Split Space", "3-Split Space", "6.25U Space"], "RotaryEncoder"],
   // m: [row, col] を鍵にした刻印・KeyboardEvent.code・修飾の対応表。
   // 座標と寸法は layoutKeymap に defaultLayoutOptions を適用して導く。
@@ -165,6 +173,11 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   // rmk-config keyboards/olsk60/vial.json (keyboard.toml と同じ 6x13)
   matrix: { rows: 6, cols: 13 },
   layoutKeymap: OLSK60_KLE_RMK,
+  // RMK 版は 2026-10-07 に Spacebar の並びを 3-Split / 5-Split / 6.25U にした（書き込み直後の
+  // Vial 表示 = 0 番を 3-Split にするため。rmk-config WATCHLIST W-37）。既定配置
+  // 「3-Split・エンコーダ無し」はこの順では 0。
+  layoutLabels: [["Spacebar", "3-Split Space", "5-Split Space", "6.25U Space"], "RotaryEncoder"],
+  defaultLayoutOptions: 0,
   // 押している間だけレイヤーを有効にするカスタムキー (正本: rmk-config
   // keyboards/olsk60/src/scroll_keys.rs — User20/21/22 = Scroll + Layer 1/2/3)。
   // TIL は MO(n) と同じ扱いで表示レイヤーを追従させる。単体の "Scrl" は層なし。
