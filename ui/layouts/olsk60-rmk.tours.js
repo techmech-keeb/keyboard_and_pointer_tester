@@ -40,13 +40,13 @@ tourEngine.registerTours("olsk60v2-rmk", [
       {
         title: "4. Fn2 + 3 で戻します",
         preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
-        body: "2 のキーが Spd3（出荷時の既定）です。LED が黄色く2回光ります。光っているキーだけを押してね。",
+        body: "2 のキーが Spd3（出荷時の既定）です。LED がシアンに2回光ります。光っているキーだけを押してね。",
         target: { custom: "TP Spd3" },
         cond: { type: "press", while: { mo: 2 } },
       },
       {
         title: "5. 調整枠もあります",
-        body: "2 は Spd2（紫は 4、橙は 5）。4 と 5 は自分好みに調整できる枠で、次のツアーで触れます。",
+        body: "3 はマゼンタ（赤紫）の Spd4、4 は橙の Spd5。どちらも自分好みに調整できる枠で、次のツアーで触れます（Spd2 は設定レイヤーに置いていません）。",
         cond: { type: "next" },
       },
     ],
@@ -109,7 +109,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
       {
         title: "3. Fn2 のまま ↑ を押します",
         preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
-        body: "↑ は選んでいる値（最初は基本速度）を上げます。LED が青く呼吸し、押すたびに明るく光ります。※Spd1〜Spd3 のときは赤3回、上限では黄3回で断られます。光っているキーだけを押してね。",
+        body: "↑ は選んでいる値（最初は基本速度）を上げます。LED が青く速く明滅し、押すたびに長めに1回光ります。※Spd1〜Spd3 のときは赤3回、上限では黄3回で断られます。光っているキーだけを押してね。",
         target: { custom: "Adj +" },
         cond: { type: "press", while: { mo: 2 } },
       },
@@ -120,7 +120,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
       },
       {
         title: "5. ほかの調整もできます",
-        body: "↓ で下げる、Q / W / E で対象（速度 / 加速度 / 減速度）、V でオートレイヤーの時間を選びます（← → で順送りも可）。LED の色が対象を表します。Fn2 + 2 でいつもの Spd3 に戻れます。",
+        body: "↓ で下げる（短く2回光ります）、Q / W / E で対象（速度 / 加速度 / 減速度）、V でオートレイヤーの時間を選びます（← → で順送りも可）。LED の色が対象を表します。Fn2 + 2 でいつもの Spd3 に戻れます。",
         cond: { type: "next" },
       },
     ],
@@ -139,7 +139,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
       {
         title: "2. Fn2 のまま X を押します",
         preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
-        body: "X は解除を短い150msにします。LED が白く1回光ります。光っているキーだけを押してね。",
+        body: "X は解除を短い150msにします。LED が橙に1回光ります。光っているキーだけを押してね。",
         target: { custom: "AL 150" },
         cond: { type: "press", while: { mo: 2 } },
       },
@@ -151,7 +151,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
       {
         title: "4. Fn2 のまま C を押します",
         preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
-        body: "C はデフォルトの800msに戻します。LED が白く3回光ります。光っているキーだけを押してね。",
+        body: "C はデフォルトの800msに戻します。LED が橙に3回光ります。光っているキーだけを押してね。",
         target: { custom: "AL 800" },
         cond: { type: "press", while: { mo: 2 } },
       },
