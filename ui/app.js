@@ -1173,9 +1173,11 @@ async function kbSettingsWrite(e, raw) {
     const r = KbSettings.parseReply(reply, e);
     if (r.unhandled) { kbSettingsSetStatus("このファームウェアは対応していません"); return; }
     kbSettingsShow(e, r.value);
+    const olderFirmware = e.olderFirmwareMax !== undefined && wanted > e.olderFirmwareMax;
     kbSettingsSetStatus(r.value === wanted
       ? e.label + " を " + r.value + " にしました（2 秒後に保存）"
-      : e.label + ": 範囲外のため " + r.value + " のままです");
+      : e.label + ": 範囲外のため " + r.value + " のままです"
+        + (olderFirmware ? "（" + e.olderFirmwareMax + " を超える値はファームウェア v3.0.2 以降で使えます）" : ""));
   } catch (err) {
     kbSettingsSetStatus("書き込みに失敗: " + ((err && err.message) || err));
   } finally {
