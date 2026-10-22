@@ -1,6 +1,7 @@
 # AGENTS.md
 
 <!-- from ai-agent-playbook@1c982cf (2026-09-06): tools/codex/templates/project-AGENTS.md / tools/claude-code/CLAUDE.md 雛形 / tools/claude-code/rules/github-workflow.md を Codex 主体（Claude Code 併用）の構成で導入 -->
+<!-- 2026-10-22: CLAUDE.md にあった TIL/Vial の同時起動の注意を本ファイルへ移した（Codex にも効かせるため。CLAUDE.md は @AGENTS.md の import に変更） -->
 <!-- 確認環境: Claude Code クラウド版（パターンA） / 2026-09-06 時点。Codex Cloud（D）・CLI/WSL2（E）は未確認 -->
 
 ## Repository purpose
@@ -32,6 +33,9 @@ UI は `ui/`（依存なしの HTML/CSS/JS）、Windows キオスクホストは
   連携仕様の正本は `docs/design/vial-integration.md`。
 - ガイドツアー（`ui/layouts/olsk60-qmk.tours.js` / `olsk60-rmk.tours.js`）の文言は OLSK60_v2 の公開ドキュメントと
   同期する。ファイル冒頭の docs revision を更新時に確認する。
+- **TIL 起動中は Vial が繋がらない**（TIL が 30Hz でポーリングしている入力レポートが Vial 側の
+  未初期化グローバル参照を踏む。Vial のバグでファームは無関係）。一方を終了してから開く。
+  詳細は `docs/guide/exhibition.md`「同時起動できない: TIL と Vial」。
 
 ## External context
 
