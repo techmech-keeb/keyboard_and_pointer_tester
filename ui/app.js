@@ -1065,7 +1065,8 @@ $("autoLayerSimDelaySelect").addEventListener("change", (event) => {
 // 口の無いファーム (QMK 版・古い RMK 版) は 0xFF を返すのでパネルを出さない。
 // 変更はキーボード側が 2 秒後に保存する。応答は「反映後の実際の値」なので、
 // 要求と違えば範囲外として捨てられたと分かる。
-const KB = { supported: null, busy: false };
+// 番号 0x02〜0x07 の意味は線路の版で違うので、番号 0x00 で版を読んでから表を選ぶ。
+const KB = { supported: null, busy: false, table: null };
 
 function kbSettingsSetStatus(text) {
   const el = $("kbSettingsStatus");
@@ -1076,13 +1077,19 @@ function kbSettingsHide() {
   const panel = $("kbSettings");
   if (panel) panel.hidden = true;
   KB.supported = null;
+  KB.table = null;
 }
 
-function kbSettingsBuild() {
+// 版ごとの表で組み立てる。版の違うキーボードへ繋ぎ替えたら作り直す。table = null なら空にする。
+function kbSettingsBuild(table) {
   const root = $("kbSettingsBody");
-  if (!root || root.dataset.built) return;
-  root.dataset.built = "1";
-  for (const group of KbSettings.GROUPS) {
+  if (!root) return;
+  const built = table ? String(table.version) : "";
+  if (root.dataset.built === built) return;
+  root.textContent = "";
+  root.dataset.built = built;
+  if (!table) return;
+  for (const group of table.groups) {
     const h = document.createElement("h5");
     h.textContent = group.title;
     root.appendChild(h);
@@ -1090,7 +1097,9 @@ function kbSettingsBuild() {
       const row = document.createElement("div");
       row.className = "kb-row";
       const label = document.createElement("label");
-      label.textContent = e.label;
+      // 単位は項目名に添える（行は 項目名 / スライダー / 数値欄 の 3 列）。
+      label.textContent = e.unit ? e.label + " (" + e.unit + ")" : e.label;
+      if (e.note) label.title = e.note;
       label.htmlFor = "kb_" + e.key;
       row.appendChild(label);
       let control;
@@ -1098,14 +1107,17 @@ function kbSettingsBuild() {
         control = document.createElement("input");
         control.type = "range";
         control.min = e.min; control.max = e.max; control.step = e.step;
+        // スライダーは生の値、数値欄は表示の単位（倍率は 1 倍 = 1）。
         const num = document.createElement("input");
         num.type = "number";
-        num.min = e.min; num.max = e.max; num.step = e.step;
+        num.min = KbSettings.toDisplay(e, e.min);
+        num.max = KbSettings.toDisplay(e, e.max);
+        num.step = KbSettings.toDisplay(e, e.step);
         num.className = "kb-num";
         num.id = "kb_" + e.key + "_n";
-        control.addEventListener("input", () => { num.value = control.value; });
+        control.addEventListener("input", () => { num.value = String(KbSettings.toDisplay(e, Number(control.value))); });
         control.addEventListener("change", () => kbSettingsWrite(e, control.value));
-        num.addEventListener("change", () => kbSettingsWrite(e, num.value));
+        num.addEventListener("change", () => kbSettingsWrite(e, KbSettings.fromDisplay(e, num.value)));
         row.appendChild(control);
         row.appendChild(num);
       } else if (e.kind === "toggle") {
@@ -1140,7 +1152,7 @@ function kbSettingsShow(e, value) {
   } else {
     c.value = String(value);
     const n = $("kb_" + e.key + "_n");
-    if (n) n.value = String(value);
+    if (n) n.value = String(KbSettings.toDisplay(e, value));
   }
 }
 
@@ -1148,13 +1160,19 @@ async function kbSettingsRefresh() {
   const panel = $("kbSettings");
   if (!panel) return;
   if (!VS.connected || !VS.dev) { kbSettingsHide(); return; }
-  kbSettingsBuild();
   try {
     const ver = KbSettings.parseProtocol(await VS.dev.customGet(KbSettings.CHANNEL, KbSettings.PROTOCOL_ID));
     KB.supported = ver !== null;
     panel.hidden = !KB.supported;
-    if (!KB.supported) return;
-    for (const e of KbSettings.VALUES) {
+    if (!KB.supported) { KB.table = null; return; }
+    KB.table = KbSettings.tableFor(ver);
+    kbSettingsBuild(KB.table);
+    if (!KB.table) {
+      // TIL より新しいファーム。番号の意味が分からないので読み書きしない。
+      kbSettingsSetStatus("このキーボードの設定線路 v" + ver + " にはこの TIL は対応していません。TIL を更新してください");
+      return;
+    }
+    for (const e of KB.table.values) {
       const r = KbSettings.parseReply(await VS.dev.customGet(KbSettings.CHANNEL, e.id), e);
       if (!r.unhandled) kbSettingsShow(e, r.value);
     }
@@ -1165,7 +1183,10 @@ async function kbSettingsRefresh() {
 }
 
 async function kbSettingsWrite(e, raw) {
-  if (!VS.connected || !VS.dev || KB.busy) return;
+  if (!VS.connected || !VS.dev || KB.busy || !KB.table) return;
+  // 表を作り直すと、入力中だった古い欄が外れるときに change が出る。版の違うキーボードへ
+  // 繋ぎ替えた後だと番号の意味が違うので、今の表に無い項目からの書き込みは捨てる。
+  if (KB.table.byId[e.id] !== e) return;
   const wanted = KbSettings.clamp(e, raw);
   KB.busy = true;
   try {
@@ -1175,8 +1196,8 @@ async function kbSettingsWrite(e, raw) {
     kbSettingsShow(e, r.value);
     const olderFirmware = e.olderFirmwareMax !== undefined && wanted > e.olderFirmwareMax;
     kbSettingsSetStatus(r.value === wanted
-      ? e.label + " を " + r.value + " にしました（2 秒後に保存）"
-      : e.label + ": 範囲外のため " + r.value + " のままです"
+      ? e.label + " を " + KbSettings.format(e, r.value) + " にしました（2 秒後に保存）"
+      : e.label + ": 範囲外のため " + KbSettings.format(e, r.value) + " のままです"
         + (olderFirmware ? "（" + e.olderFirmwareMax + " を超える値はファームウェア v3.0.2 以降で使えます）" : ""));
   } catch (err) {
     kbSettingsSetStatus("書き込みに失敗: " + ((err && err.message) || err));

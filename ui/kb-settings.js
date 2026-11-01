@@ -1,6 +1,7 @@
 // OLSK60 (RMK 版) の設定を VIA custom value で読み書きするための値の表と符号化。
 // 線路の正本は rmk-config docs/host_settings_protocol.md（チャネル 0x10・番号・型・範囲）。
-// 番号の意味は再割当てしない。足すときは末尾へ。
+// 番号の意味は再割当てしない。足すときは末尾へ。0x02〜0x07 の意味は線路の版で違う
+// （版 1 = 基本速度 / 加速 / 減速、版 2 = 微速の倍率 / 最高倍率 / 加速の幅）ので、表は版ごとに持つ。
 //
 // ワイヤ形式 (32 バイト): [cmd, CHANNEL, id, payload..]。cmd は VIA 標準の
 // 0x07 Set / 0x08 Get / 0x09 Save。多バイトは little-endian。Set の応答は
@@ -12,26 +13,55 @@ const KbSettings = (() => {
   const CMD = { SET: 0x07, GET: 0x08, SAVE: 0x09 };
   const UNHANDLED = 0xFF;
   const PROTOCOL_ID = 0x00;
-  const PROTOCOL_VERSION = 1;
+  // 線路の版。ファームは既存の番号の意味を変えるときだけ版を上げる。TIL は番号 0x00 で版を読み、
+  // 版ごとの表で表示する。知らない版（TIL より新しいファーム）には書き込まない。
+  const PROTOCOL_VERSIONS = [1, 2];
+  const LATEST_PROTOCOL_VERSION = PROTOCOL_VERSIONS[PROTOCOL_VERSIONS.length - 1];
 
   // kind: "range" (min/max/step) / "toggle" (0/1) / "select" (options [[label, value], ..])
+  // scale / unit: 表示の換算。表示値 = 生の値 / scale（倍率は Q8 = 256 で 1 倍）。送受信は常に生の値。
+  // note: 項目名に添える説明（マウスを重ねると出る）。
   // olderFirmwareMax: 古いファームの上限。これを超える書き込みが捨てられたら、ファームが古いと案内する
-  // （基本速度の上限は v3.0.1 まで 1536、v3.0.2 から 2048）。
-  const GROUPS = [
-    {
-      title: "TrackPoint の速度",
-      values: [
-        { id: 0x01, key: "speedLevel", label: "速度レベル", type: "u8", kind: "select",
-          // 出荷時の基本速度は 1 = 192 / 2 = 384 / 3 = 640。4・5 は調整枠 (初期値は 1・3 と同じ)。
-          options: [["1 (遅い)", 0], ["2 (中間)", 1], ["3 (速い・既定)", 2], ["4 (調整枠 4)", 3], ["5 (調整枠 5)", 4]] },
-        { id: 0x02, key: "custom4Base", label: "調整枠 4: 基本速度", type: "i16", kind: "range", min: 64, max: 2048, step: 32, olderFirmwareMax: 1536 },
-        { id: 0x03, key: "custom4Acceleration", label: "調整枠 4: 加速", type: "i16", kind: "range", min: 16, max: 256, step: 16 },
-        { id: 0x04, key: "custom4Deceleration", label: "調整枠 4: 減速", type: "i16", kind: "range", min: 32, max: 512, step: 16 },
-        { id: 0x05, key: "custom5Base", label: "調整枠 5: 基本速度", type: "i16", kind: "range", min: 64, max: 2048, step: 32, olderFirmwareMax: 1536 },
-        { id: 0x06, key: "custom5Acceleration", label: "調整枠 5: 加速", type: "i16", kind: "range", min: 16, max: 256, step: 16 },
-        { id: 0x07, key: "custom5Deceleration", label: "調整枠 5: 減速", type: "i16", kind: "range", min: 32, max: 512, step: 16 },
-      ],
-    },
+  // （版 1 の基本速度の上限は v3.0.1 まで 1536、v3.0.2 から 2048）。
+
+  // 版 1（ファーム v3.0.x まで）: 調整枠は 基本速度 / 加速 / 減速。
+  const SPEED_V1 = {
+    title: "TrackPoint の速度",
+    values: [
+      { id: 0x01, key: "speedLevel", label: "速度レベル", type: "u8", kind: "select",
+        // 出荷時の基本速度は 1 = 192 / 2 = 384 / 3 = 640。4・5 は調整枠 (初期値は 1・3 と同じ)。
+        options: [["1 (遅い)", 0], ["2 (中間)", 1], ["3 (速い・既定)", 2], ["4 (調整枠 4)", 3], ["5 (調整枠 5)", 4]] },
+      { id: 0x02, key: "custom4Base", label: "調整枠 4: 基本速度", type: "i16", kind: "range", min: 64, max: 2048, step: 32, olderFirmwareMax: 1536 },
+      { id: 0x03, key: "custom4Acceleration", label: "調整枠 4: 加速", type: "i16", kind: "range", min: 16, max: 256, step: 16 },
+      { id: 0x04, key: "custom4Deceleration", label: "調整枠 4: 減速", type: "i16", kind: "range", min: 32, max: 512, step: 16 },
+      { id: 0x05, key: "custom5Base", label: "調整枠 5: 基本速度", type: "i16", kind: "range", min: 64, max: 2048, step: 32, olderFirmwareMax: 1536 },
+      { id: 0x06, key: "custom5Acceleration", label: "調整枠 5: 加速", type: "i16", kind: "range", min: 16, max: 256, step: 16 },
+      { id: 0x07, key: "custom5Deceleration", label: "調整枠 5: 減速", type: "i16", kind: "range", min: 32, max: 512, step: 16 },
+    ],
+  };
+
+  // 版 2（ファーム v3.1.0 から）: 動きの速さで倍率を変える加速。調整枠は 微速の倍率 / 最高倍率 / 加速の幅。
+  // 刻みは L2 の ↑↓ と同じ（0.125 倍 / 0.5 倍 / 50 count/秒）。
+  const FINE_NOTE = "ゆっくり動かすときの倍率。小さいほど細かく合わせられる";
+  const TOP_NOTE = "速く動かすときの倍率。大きいほど遠くまで速く動く";
+  const RAMP_NOTE = "この速さ（count/秒）で最高倍率に届く。小さいほど早く速くなる";
+  const SPEED_V2 = {
+    title: "TrackPoint の速度",
+    values: [
+      { id: 0x01, key: "speedLevel", label: "速度レベル", type: "u8", kind: "select",
+        // 出荷時の 5 段は 1 = 精密 … 3 = 標準 … 5 = 速い。4・5 は調整枠 (初期値は 4 = 1 と同じ・5 = 速い)。
+        options: [["1 (精密)", 0], ["2 (やや精密)", 1], ["3 (標準・既定)", 2], ["4 (調整枠 4)", 3], ["5 (調整枠 5)", 4]] },
+      { id: 0x02, key: "custom4FineGain", label: "調整枠 4: 微速の倍率", note: FINE_NOTE, type: "i16", kind: "range", min: 128, max: 768, step: 32, scale: 256, unit: "倍" },
+      { id: 0x03, key: "custom4TopGain", label: "調整枠 4: 最高倍率", note: TOP_NOTE, type: "i16", kind: "range", min: 256, max: 4096, step: 128, scale: 256, unit: "倍" },
+      { id: 0x04, key: "custom4Ramp", label: "調整枠 4: 加速の幅", note: RAMP_NOTE, type: "i16", kind: "range", min: 100, max: 1000, step: 50, unit: "count/秒" },
+      { id: 0x05, key: "custom5FineGain", label: "調整枠 5: 微速の倍率", note: FINE_NOTE, type: "i16", kind: "range", min: 128, max: 768, step: 32, scale: 256, unit: "倍" },
+      { id: 0x06, key: "custom5TopGain", label: "調整枠 5: 最高倍率", note: TOP_NOTE, type: "i16", kind: "range", min: 256, max: 4096, step: 128, scale: 256, unit: "倍" },
+      { id: 0x07, key: "custom5Ramp", label: "調整枠 5: 加速の幅", note: RAMP_NOTE, type: "i16", kind: "range", min: 100, max: 1000, step: 50, unit: "count/秒" },
+    ],
+  };
+
+  // 0x08 以降は版 1・2 で意味が同じ。
+  const COMMON_GROUPS = [
     {
       title: "オートマウスレイヤー",
       values: [
@@ -56,10 +86,20 @@ const KbSettings = (() => {
       ],
     },
   ];
-  const VALUES = GROUPS.flatMap((g) => g.values);
-  const byKey = Object.fromEntries(VALUES.map((v) => [v.key, v]));
-  const byId = Object.fromEntries(VALUES.map((v) => [v.id, v]));
 
+  function makeTable(version, speedGroup) {
+    const groups = [speedGroup, ...COMMON_GROUPS];
+    const values = groups.flatMap((g) => g.values);
+    return {
+      version, groups, values,
+      byKey: Object.fromEntries(values.map((v) => [v.key, v])),
+      byId: Object.fromEntries(values.map((v) => [v.id, v])),
+    };
+  }
+  const TABLES = { 1: makeTable(1, SPEED_V1), 2: makeTable(2, SPEED_V2) };
+
+  // 版に対応する表。知らない版は null（表示も書き込みもしない）。
+  function tableFor(version) { return TABLES[version] || null; }
   function width(entry) { return entry.type === "u8" ? 1 : 2; }
 
   function encode(entry, value) {
@@ -85,12 +125,12 @@ const KbSettings = (() => {
   const protocolFrame = () => frame(CMD.GET, PROTOCOL_ID);
 
   // 応答 (32 バイト) を読む。unhandled なら口の無いファーム。
+  // 値の幅と符号は版で決まるので、読みたい項目 (entry) を渡す。渡さなければ 1 バイトとして読む。
   function parseReply(bytes, entry) {
     if (!bytes || bytes[0] === UNHANDLED) return { unhandled: true };
     if (bytes[1] !== CHANNEL) return { unhandled: true };
-    const e = entry || byId[bytes[2]];
-    if (!e) return { unhandled: false, id: bytes[2], value: bytes[3] };
-    return { unhandled: false, id: e.id, value: decode(e, bytes, 3) };
+    if (!entry) return { unhandled: false, id: bytes[2], value: bytes[3] };
+    return { unhandled: false, id: entry.id, value: decode(entry, bytes, 3) };
   }
 
   function parseProtocol(bytes) {
@@ -108,9 +148,23 @@ const KbSettings = (() => {
     return entry.min + Math.round((v - entry.min) / entry.step) * entry.step;
   }
 
+  // 表示の換算。scale の無い項目は生の値のまま。
+  function toDisplay(entry, raw) { return entry.scale ? raw / entry.scale : raw; }
+  function fromDisplay(entry, shown) {
+    const n = Number(shown);
+    return entry.scale ? Math.round(n * entry.scale) : n;
+  }
+  // 状態表示の文字列（例: "1.5 倍" / "400 count/秒" / "800"）。
+  function format(entry, raw) {
+    const shown = toDisplay(entry, raw);
+    const text = entry.scale ? String(Math.round(shown * 1000) / 1000) : String(shown);
+    return entry.unit ? text + " " + entry.unit : text;
+  }
+
   return {
-    CHANNEL, CMD, UNHANDLED, PROTOCOL_ID, PROTOCOL_VERSION, GROUPS, VALUES, byKey, byId,
+    CHANNEL, CMD, UNHANDLED, PROTOCOL_ID, PROTOCOL_VERSIONS, LATEST_PROTOCOL_VERSION, tableFor,
     width, encode, decode, frame, getFrame, setFrame, saveFrame, protocolFrame, parseReply, parseProtocol, clamp,
+    toDisplay, fromDisplay, format,
   };
 })();
 
