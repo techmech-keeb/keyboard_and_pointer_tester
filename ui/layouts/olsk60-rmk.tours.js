@@ -1,10 +1,14 @@
 // SPDX-FileCopyrightText: 2025-2026 Techmech keys
 // SPDX-License-Identifier: Apache-2.0
-// RMK 版 (rmk-config 3.0.1) 用のガイドツアー。QMK 版は olsk60-qmk.tours.js。
+// RMK 版 (OLSK60 ファームウェア v3.1.0) 用のガイドツアー。QMK 版は olsk60-qmk.tours.js。
+// Source (文言): techmech-keeb/olsk60_v2 docs/OLSK60_user_guide.md「レイヤー2：設定レイヤー」・
+//   docs/OLSK60_mouse_manual.md「調整枠の調整」
+// docs revision: 0f2fb64 (2026-11-02)
 //
 // QMK 版とは設定キーの名前と一部の意味が違う。
 //   - 速度は 5 段の直接指定 (TP Spd1..5)。既定は Spd3。Spd4/Spd5 が調整枠。
-//   - 調整の対象（Adj Spd / Acc / Dec / Dly）は Fn2 を離すと基本速度へ戻る。対象を選んでから
+//   - 調整の対象（Adj Fine / Top / Ramp / Dly = 微速の倍率 / 最高倍率 / 加速の幅 / 解除時間）は
+//     Fn2 を離すと微速の倍率へ戻る。v3.0.x までは Adj Spd / Acc / Dec（基本速度 / 加速 / 減速）。対象を選んでから
 //     ↑ / ↓ を押す手順は「Fn2 を離さずに続けて」と書く（離すと別の値が変わる）。
 //   - target.custom は端末の vial.json の shortName を空白正規化した名前と一致させる
 //     (例 "TP\nSpd1" → "TP Spd1")。fallback は layouts/olsk60.js の customKeycodes。
@@ -30,19 +34,19 @@ tourEngine.registerTours("olsk60v2-rmk", [
       {
         title: "2. Fn2 のまま 1 を押します",
         preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
-        body: "1 はいちばん遅い速度 Spd1 です。LED が青く2回光ったら成功です。光っているキーだけを押してね。",
+        body: "1 はいちばん精密な速度 Spd1 です。LED が青く2回光ったら成功です。光っているキーだけを押してね。",
         target: { custom: "TP Spd1" },
         cond: { type: "press", while: { mo: 2 } },
       },
       {
-        title: "3. 低速を体感します",
-        body: "赤いスティックを動かして、ゆっくり細かく動く感じを試します。次へでも進めます。",
+        title: "3. 精密な動きを体感します",
+        body: "赤いスティックをゆっくり動かして、細かく動く感じを試します。次へでも進めます。",
         cond: { type: "pointerSpeed", threshold: 300 },
       },
       {
         title: "4. Fn2 + 2 で既定に戻します",
         preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
-        body: "2 のキーが Spd3（出荷時の既定）です。LED がシアンに2回光ります。光っているキーだけを押してね。",
+        body: "2 のキーが標準の Spd3（出荷時の既定）です。LED がシアンに2回光ります。光っているキーだけを押してね。",
         target: { custom: "TP Spd3" },
         cond: { type: "press", while: { mo: 2 } },
       },
@@ -93,7 +97,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
   {
     id: "tp-custom",
     title: "じぶん好みの速さをつくる",
-    description: "Fn2 の設定レイヤーで、調整枠（Spd4 / Spd5）の基本速度と加速度を変えます。",
+    description: "Fn2 の設定レイヤーで、調整枠（Spd4 / Spd5）の最高倍率と微速の倍率を変えます。",
     steps: [
       {
         title: "1. Fn2 を押しつづけます",
@@ -109,41 +113,41 @@ tourEngine.registerTours("olsk60v2-rmk", [
         cond: { type: "press", while: { mo: 2 } },
       },
       {
-        title: "3. Fn2 のまま Q を押します",
+        title: "3. Fn2 のまま W を押します",
         preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
-        body: "Q で調整する対象を「基本速度」にします。LED が青で速く明滅します。光っているキーだけを押してね。",
-        target: { custom: "Adj Spd" },
+        body: "W で調整する対象を「最高倍率」にします。速く動かしたときの倍率です。LED がシアンで速く明滅します。光っているキーだけを押してね。",
+        target: { custom: "Adj Top" },
         cond: { type: "press", while: { mo: 2 } },
       },
       {
-        title: "4. Fn2 のまま ↑ を押します",
-        preBody: "Fn2 を押したまま、次に光るキーを押します（Fn2 を離すと対象は基本速度に戻ります）。",
-        body: "↑ で基本速度が 1 段上がります。LED が青く長めに1回光ります。Spd1〜Spd3 のときは赤3回、上限では黄3回で断られます。光っているキーだけを押してね。",
+        title: "4. Fn2 を離さずに ↑ を押します",
+        preBody: "Fn2 を離すと、対象が微速の倍率に戻ります。Fn2 を押しつづけたら、W を押してから ↑ を押してね。",
+        body: "↑ で最高倍率が 0.5 倍上がります。LED がシアンで長めに1回光ります。Spd1〜Spd3 のときは赤3回、上限では黄3回で断られます。光っているキーだけを押してね。",
         target: { custom: "Adj +" },
         cond: { type: "press", while: { mo: 2 } },
       },
       {
-        title: "5. 速くなったのを体感します",
-        body: "赤いスティックを動かして、速くなった感じを試します。次へでも進めます。",
+        title: "5. 速く動かして体感します",
+        body: "赤いスティックを強めに倒して、遠くまで速く届く感じを試します。次へでも進めます。",
         cond: { type: "pointerSpeed", threshold: 300 },
       },
       {
-        title: "6. Fn2 のまま W を押します",
+        title: "6. Fn2 のまま Q を押します",
         preBody: "まず Fn2 を押しつづけます。押したまま、次に光るキーを押します。",
-        body: "W で対象を「加速度」にします。LED がシアンで速く明滅します。強く押したときの伸び方を決める値です。光っているキーだけを押してね。",
-        target: { custom: "Adj Acc" },
+        body: "Q で対象を「微速の倍率」にします。ゆっくり動かしたときの倍率です。LED が青で速く明滅します。光っているキーだけを押してね。",
+        target: { custom: "Adj Fine" },
         cond: { type: "press", while: { mo: 2 } },
       },
       {
         title: "7. Fn2 を離さずに ↓ を押します",
-        preBody: "Fn2 を離すと、対象が基本速度に戻ります。Fn2 を押しつづけたら、W を押してから ↓ を押してね。",
-        body: "↓ で加速度が 1 段下がります。LED がシアンで短く2回光ります。光っているキーだけを押してね。",
+        preBody: "Fn2 を押しつづけたら、Q を押してから ↓ を押してね。",
+        body: "↓ で微速の倍率が 0.125 倍下がり、ゆっくり動かしたときがより細かくなります。LED が青で短く2回光ります。光っているキーだけを押してね。",
         target: { custom: "Adj -" },
         cond: { type: "press", while: { mo: 2 } },
       },
       {
         title: "8. ほかの設定とまとめ",
-        body: "E で「減速度」（紫）、← → で対象を順送りできます。値は自動で保存されます。Fn2 + 2 でいつもの Spd3 に戻れます。設定を出荷時に戻すときは Fn2 + 5 を2秒押しつづけます（緑ゆっくり3回）。",
+        body: "E で「加速の幅」（紫。小さいほど少し速く動かしただけで最高倍率になります）、← → で対象を順送りできます。値は自動で保存されます。Fn2 + 2 でいつもの Spd3 に戻れます。設定を出荷時に戻すときは Fn2 + 5 を2秒押しつづけます（緑ゆっくり3回）。",
         cond: { type: "next" },
       },
     ],
@@ -187,7 +191,7 @@ tourEngine.registerTours("olsk60v2-rmk", [
       },
       {
         title: "6. Fn2 を離さずに ↓ を押します",
-        preBody: "Fn2 を離すと、対象が基本速度に戻ります。Fn2 を押しつづけたら、V を押してから ↓ を押してね。",
+        preBody: "Fn2 を離すと、対象が微速の倍率に戻ります。Fn2 を押しつづけたら、V を押してから ↓ を押してね。",
         body: "↓ で 10ms 短くなります（LED が橙で短く2回）。↑ なら 10ms 長くなります（長めに1回）。100〜2000ms の範囲で、端では黄3回で止まります。光っているキーだけを押してね。",
         target: { custom: "Adj -" },
         cond: { type: "press", while: { mo: 2 } },
