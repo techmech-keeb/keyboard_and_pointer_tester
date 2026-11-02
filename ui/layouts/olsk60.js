@@ -187,10 +187,11 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   customLayerKeys: { "Scrl L1": 1, "Scrl L2": 2, "Scrl L3": 3, "Scrl Ms": "top" },
   // 並びは rmk-config keyboards/olsk60/vial.json の customKeycodes（= User 番号）。rc.4 (2026-10-07) で
   // 機能別に並べ替えた: 速度 / 調整の対象選択 / 汎用 ± / 出荷時に戻す / TrackPoint の切替 /
-  // スクロール / 自動マウス層 / 音。以後は末尾追加のみ。
+  // スクロール / 自動マウス層 / 音。以後は末尾追加のみ。v3.1.0 (2026-11-01) で調整の対象 3 つの名前が
+  // Adj Spd / Acc / Dec → Adj Fine / Top / Ramp に変わった（番号は同じ。カーソル加速の作り直し）。
   customKeycodes: [
     "TP Spd1", "TP Spd2", "TP Spd3", "TP Spd4", "TP Spd5",
-    "Adj Spd", "Adj Acc", "Adj Dec", "Adj Dly",
+    "Adj Fine", "Adj Top", "Adj Ramp", "Adj Dly",
     "Adj +", "Adj -", "Adj <", "Adj >",
     "Reset 2s",
     "Scrl Crv", "ZTap Tog",
