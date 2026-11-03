@@ -15,7 +15,7 @@ const EXPECTED = {
     [0x01, "u8", 0, 4], [0x02, "i16", 64, 2048], [0x03, "i16", 16, 256], [0x04, "i16", 32, 512],
     [0x05, "i16", 64, 2048], [0x06, "i16", 16, 256], [0x07, "i16", 32, 512], ...COMMON,
   ],
-  // ファーム logic/src/speed.rs の FINE_GAIN / TOP_GAIN / RAMP の MIN..=MAX。
+  // ファームが受け付ける範囲（線路の仕様書の値）。
   2: [
     [0x01, "u8", 0, 4], [0x02, "i16", 128, 768], [0x03, "i16", 256, 4096], [0x04, "i16", 100, 1000],
     [0x05, "i16", 128, 768], [0x06, "i16", 256, 4096], [0x07, "i16", 100, 1000], ...COMMON,
@@ -62,11 +62,11 @@ test("known versions and unknown versions", () => {
 
 test("version 2 steps match the firmware's L2 up/down steps", () => {
   const t = K.tableFor(2);
-  // logic/src/adjust.rs: 微速 ±32 (0.125 倍)・最高 ±128 (0.5 倍)・加速の幅 ±50。
+  // L2 の ↑↓ と同じ刻み: 微速 0.125 倍・最高 0.5 倍・加速の幅 50。
   assert.equal(t.byKey.custom4FineGain.step, 32);
   assert.equal(t.byKey.custom4TopGain.step, 128);
   assert.equal(t.byKey.custom4Ramp.step, 50);
-  // 出荷時の調整枠の値 (FACTORY_PROFILES[3] / [4]) が刻みに乗っている。
+  // 調整枠の初期値（公開のマウスマニュアルに載っている値）が刻みに乗っている。
   for (const [key, raw] of [["custom4FineGain", 192], ["custom4TopGain", 512], ["custom4Ramp", 500],
     ["custom5FineGain", 384], ["custom5TopGain", 2048], ["custom5Ramp", 300]]) {
     assert.equal(K.clamp(t.byKey[key], raw), raw, key);

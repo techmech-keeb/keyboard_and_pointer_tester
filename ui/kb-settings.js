@@ -19,7 +19,7 @@ const KbSettings = (() => {
   const LATEST_PROTOCOL_VERSION = PROTOCOL_VERSIONS[PROTOCOL_VERSIONS.length - 1];
 
   // kind: "range" (min/max/step) / "toggle" (0/1) / "select" (options [[label, value], ..])
-  // scale / unit: 表示の換算。表示値 = 生の値 / scale（倍率は Q8 = 256 で 1 倍）。送受信は常に生の値。
+  // scale / unit: 表示の換算。表示値 = 生の値 / scale。送受信は常に生の値。
   // note: 項目名に添える説明（マウスを重ねると出る）。
   // olderFirmwareMax: 古いファームの上限。これを超える書き込みが捨てられたら、ファームが古いと案内する
   // （版 1 の基本速度の上限は v3.0.1 まで 1536、v3.0.2 から 2048）。
@@ -29,7 +29,7 @@ const KbSettings = (() => {
     title: "TrackPoint の速度",
     values: [
       { id: 0x01, key: "speedLevel", label: "速度レベル", type: "u8", kind: "select",
-        // 出荷時の基本速度は 1 = 192 / 2 = 384 / 3 = 640。4・5 は調整枠 (初期値は 1・3 と同じ)。
+        // 4・5 は調整枠 (初期値は 1・3 と同じ)。
         options: [["1 (遅い)", 0], ["2 (中間)", 1], ["3 (速い・既定)", 2], ["4 (調整枠 4)", 3], ["5 (調整枠 5)", 4]] },
       { id: 0x02, key: "custom4Base", label: "調整枠 4: 基本速度", type: "i16", kind: "range", min: 64, max: 2048, step: 32, olderFirmwareMax: 1536 },
       { id: 0x03, key: "custom4Acceleration", label: "調整枠 4: 加速", type: "i16", kind: "range", min: 16, max: 256, step: 16 },

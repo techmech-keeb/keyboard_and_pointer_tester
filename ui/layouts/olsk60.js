@@ -174,12 +174,12 @@ const OLSK60_RMK_PROFILE = Object.assign({}, OLSK60_GEOMETRY, {
   matrix: { rows: 6, cols: 13 },
   layoutKeymap: OLSK60_KLE_RMK,
   // RMK 版は 2026-10-07 に Spacebar の並びを 3-Split / 5-Split / 6.25U にした（書き込み直後の
-  // Vial 表示 = 0 番を 3-Split にするため。rmk-config WATCHLIST W-37）。既定配置
+  // Vial 表示 = 0 番を 3-Split にするため。ファーム側で決めた並び）。既定配置
   // 「3-Split・エンコーダ無し」はこの順では 0。
   layoutLabels: [["Spacebar", "3-Split Space", "5-Split Space", "6.25U Space"], "RotaryEncoder"],
   defaultLayoutOptions: 0,
-  // 押している間だけレイヤーを有効にするカスタムキー (正本: rmk-config
-  // keyboards/olsk60/logic/src/custom_keys.rs — "Scrl L1".."Scrl L3" = Scroll + Layer 1..3)。
+  // 押している間だけレイヤーを有効にするカスタムキー (正本: ファームの独自キーの定義。
+  // "Scrl L1".."Scrl L3" = Scroll + Layer 1..3)。
   // TIL は MO(n) と同じ扱いで表示レイヤーを追従させる。単体の "Scrl" は層なし。
   // "Scrl Crv" はスクロールの非線形カーブを切り替えるトグルで、層は持たない。
   // "Scrl Ms" は Scroll + マウスレイヤー。マウスレイヤーは最上位の層なので "top"。
