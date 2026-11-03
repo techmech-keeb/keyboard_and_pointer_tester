@@ -159,7 +159,7 @@ test("composeOverlay keeps profile legends but takes geometry from the device", 
   const parsed = parseKle(OLSK60_KEYMAP);
   const at = (o, r, c) => o.keys.find((k) => k.m && k.m[0] === r && k.m[1] === c);
 
-  // Holy: 5-Split・エンコーダ無し = 2（Spacebar 1 / RotaryEncoder 0）
+  // 5-Split・エンコーダ無しの構成 = 2（Spacebar 1 / RotaryEncoder 0）
   const five = composeOverlay(rmk.keys, selectLayout(parsed, decodeOptions(OLSK60_LABELS, 2)));
   assert.equal(five.keys.length, 62);
   assert.equal(five.encoders.length, 0);
